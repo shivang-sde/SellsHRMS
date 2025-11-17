@@ -1,0 +1,35 @@
+services:
+  mysql-db:
+    # Use the official MySQL 8.0 image from Docker Hub
+    image: mysql:8.0
+    # Assign a consistent container name for easy reference
+    container_name:  sells-hrms
+    # Restart the container automatically if it stops
+    restart: always
+    
+    # Environment variables to configure the database upon first run
+    environment:
+      # !! IMPORTANT: Change this to a secure password in production !!
+      MYSQL_ROOT_PASSWORD: root
+      # Create an initial default user (optional, but good practice)
+      MYSQL_USER:  hrmsuser
+      # Set a password for the default user (optional)
+      MYSQL_PASSWORD: hrmspassword
+      # Create an initial database schema
+      MYSQL_DATABASE:  SellsHRMS
+    
+    # Port mapping: host_port:container_port
+    # Exposes MySQL on port 3306 of your local machine
+    ports:
+      - "3306:3306"
+      
+    # Data Persistence: Mount a named volume to save data outside the container
+    volumes:
+     #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+
+# Define the named volume to be created and managed by Docker Compose
+volumes:
+  mysql_data:
+    # Use a local driver for standard volume management
+    driver: local
