@@ -20,15 +20,19 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "tbl_leave")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Leave {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organiation_id", nullable = false)
+    @JoinColumn(name = "organisation_id", nullable = false)
     private Organisation organisation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,9 +43,9 @@ public class Leave {
     @JoinColumn(name = "leave_type_id", nullable = false)
     private LeaveType leaveType;
 
-    private LocalDate starDate;
-    private LocalDate enDate;
-    private String reasone;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private String reason;
 
     private Integer totalDays;
 
@@ -52,7 +56,8 @@ public class Leave {
     @Enumerated(EnumType.STRING)
     private LeaveStatus leaveStatus;
 
-    
-    public enum LeaveStatus {PENDING, APPROVE, CANCELED, REJECTED}
+    public enum LeaveStatus {
+        PENDING, APPROVE, CANCELED, REJECTED
+    }
 
 }

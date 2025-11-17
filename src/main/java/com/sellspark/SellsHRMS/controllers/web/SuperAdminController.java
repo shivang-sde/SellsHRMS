@@ -1,12 +1,11 @@
-package com.sellspark.SellsHRMS.superadmin;
+package com.sellspark.SellsHRMS.controllers.web;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.sellspark.SellsHRMS.entity.Role;
-import com.sellspark.SellsHRMS.repository.RoleRepository;
+import com.sellspark.SellsHRMS.entity.SuperAdmin;
 
 @Controller
 @RequestMapping("/sa")
@@ -14,7 +13,6 @@ import com.sellspark.SellsHRMS.repository.RoleRepository;
 public class SuperAdminController {
 
     private final SuperAdminRepositry superAdminRepo;
-    private final RoleRepository roleRepo;
     private final PasswordEncoder passwordEncoder;
     // private final AuthenticationManager authenticationManager;
 
@@ -24,33 +22,25 @@ public class SuperAdminController {
         return "sa/register";
     }
 
-
     @PostMapping("/register")
     public String registerSuperAdmin(@RequestParam String email,
-                                     @RequestParam String password,
-                                     Model model) {
+            @RequestParam String password,
+            Model model) {
 
         if (superAdminRepo.findByEmail(email).isPresent()) {
             model.addAttribute("error", "Super Admin already exists!");
             return "sa/register";
         }
 
-        Role role = roleRepo.findByName("SUPER_ADMIN")
-            .orElseThrow(() -> new RuntimeException("Role not found"));
-
         SuperAdmin superAdmin = SuperAdmin.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
-                .role(role)
                 .build();
 
-        
         superAdminRepo.save(superAdmin);
         model.addAttribute("success", "Super Admin registered successfully!");
         return "sa/login";
     }
-
-
 
     @GetMapping("/login")
     public String showLoginPage() {
@@ -58,28 +48,27 @@ public class SuperAdminController {
         return "sa/login";
     }
 
-
     // @PostMapping("/login")
     // public String login(@RequestParam String email,
-    //                     @RequestParam String password,
-    //                     Model model) {
+    // @RequestParam String password,
+    // Model model) {
 
-    //     try {
-    //         UsernamePasswordAuthenticationToken authToken =
-    //                 new UsernamePasswordAuthenticationToken(email, password);
+    // try {
+    // UsernamePasswordAuthenticationToken authToken =
+    // new UsernamePasswordAuthenticationToken(email, password);
 
-    //         authenticationManager.authenticate(authToken);
+    // authenticationManager.authenticate(authToken);
 
-    //         return "redirect:/sa/dashboard";
+    // return "redirect:/sa/dashboard";
 
-    //     } catch (Exception e) {
+    // } catch (Exception e) {
 
-    //         model.addAttribute("error", "Invalid email or password!");
-    //         return "sa/login";
-    //     }
+    // model.addAttribute("error", "Invalid email or password!");
+    // return "sa/login";
+    // }
     // }
 
-     @GetMapping("/dashboard")
+    @GetMapping("/dashboard")
     public String dashboard() {
         return "sa/dashboard";
     }

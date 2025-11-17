@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,8 +22,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_user")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "tbl_user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 
 public class User {
     @Id
@@ -37,17 +42,15 @@ public class User {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-
     @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String passwordHash;
 
-
     private String changePasswordHash;
 
-    private LocalDate changePasswordDate; 
+    private LocalDate changePasswordDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
@@ -57,12 +60,10 @@ public class User {
 
     @Builder.Default
     private Boolean isActive = true;
-    
 
     @PrePersist
     public void onCreate() {
         isActive = true;
     }
 
-    
 }
