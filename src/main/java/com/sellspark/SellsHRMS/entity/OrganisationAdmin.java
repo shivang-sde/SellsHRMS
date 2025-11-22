@@ -1,7 +1,6 @@
 package com.sellspark.SellsHRMS.entity;
 
 import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,20 +17,17 @@ public class OrganisationAdmin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organisation_id", nullable = false)
-    private Organisation organisation;
-
     private String fullName;
 
     @Column(unique = true, nullable = false)
     private String email;
-
-    private String passwordHash;
 
     private LocalDateTime lastLogin;
 
     @Builder.Default
     private Boolean isActive = true;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organisation_id", nullable = false)
+    private Organisation organisation;
 }

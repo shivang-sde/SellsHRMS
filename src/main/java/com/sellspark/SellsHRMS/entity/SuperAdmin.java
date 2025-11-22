@@ -1,16 +1,7 @@
 package com.sellspark.SellsHRMS.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "tbl_super_admin")
@@ -28,9 +19,7 @@ public class SuperAdmin {
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String passwordHash;
-
+    // password removed from profile entity; login goes through User
     @Builder.Default
     private Boolean isActive = true;
-
 }

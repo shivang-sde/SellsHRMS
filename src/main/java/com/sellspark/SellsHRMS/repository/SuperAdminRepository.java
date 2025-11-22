@@ -10,4 +10,5 @@ import com.sellspark.SellsHRMS.entity.SuperAdmin;
 @Repository
 public interface SuperAdminRepository extends JpaRepository<SuperAdmin, Long> {
     Optional<SuperAdmin> findByEmail(String email);
+
 }

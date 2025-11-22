@@ -2,7 +2,6 @@ package com.sellspark.SellsHRMS.entity;
 
 import java.time.LocalDate;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,23 +20,25 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "tbl_employee")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "tbl_employee")
 public class Employee {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true)
     private String employeeCode;
-    
+
     @Column(nullable = false)
     private String firstName;
     private String lastName;
+
     private String email;
     private String phone;
 
@@ -55,16 +56,12 @@ public class Employee {
     private String country;
     private String pincode;
 
-
     @Enumerated(EnumType.STRING)
     private EmployeeStatus status;
 
     @Enumerated(EnumType.STRING)
     private EmploymentType employmentType;
 
-
-
-    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id", nullable = false)
     private Organisation organisation;
@@ -81,11 +78,15 @@ public class Employee {
     @JoinColumn(name = "manager_id")
     private Employee manager;
 
+    public enum Gender {
+        Male, Female, Other
+    }
 
+    public enum EmploymentType {
+        FullTime, PartTime, Contract, Intern
+    }
 
-    
-    public enum Gender {Male, Female, Other}
-    public enum EmploymentType {FullTime,PartTime, Contract, Intern}
-    public enum EmployeeStatus {Active, OnLeave, Resigned, Terminated }
-
+    public enum EmployeeStatus {
+        Active, OnLeave, Resigned, Terminated
+    }
 }

@@ -6,9 +6,11 @@ import java.time.LocalDateTime;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -38,14 +40,14 @@ public class Organisation {
     private String contactEmail;
     private String contactPhone;
 
-    private String adress;
+    private String address;
     private String country;
 
     private String pan;
     private String tan;
 
     private Integer maxEmployees;
-    
+
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus subscriptionStatus;
 
@@ -54,6 +56,9 @@ public class Organisation {
 
     // TODO: add Plans related fields or create seprate entity plam(id, name, price,
     // max_user)
+
+    @OneToOne(mappedBy = "organisation", fetch = FetchType.LAZY)
+    private OrganisationAdmin orgAdmin;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

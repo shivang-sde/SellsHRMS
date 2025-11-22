@@ -1,0 +1,1 @@
+$(function(){"use strict";$('#food').multiselect();$('#basic-form').parsley();$('#optgroup').multiSelect({selectableOptgroup:true});});

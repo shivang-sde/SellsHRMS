@@ -6,4 +6,7 @@ import com.sellspark.SellsHRMS.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+
+    public boolean existsByEmail(String email);
+
 }

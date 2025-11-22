@@ -1,0 +1,32 @@
+/* custom.css - small UI polish */
+body {
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.navbar-brand-text {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.small-box {
+    border-radius: 12px;
+}
+
+.table th,
+.table td {
+    vertical-align: middle !important;
+}
+
+.card .card-header {
+    background: transparent;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.login-box .card,
+.register-box .card {
+    border-radius: 12px;
+}
+
+.btn-primary {
+    border-radius: 8px;
+}
