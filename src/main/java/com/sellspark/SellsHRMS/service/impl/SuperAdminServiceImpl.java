@@ -33,6 +33,7 @@ public class SuperAdminServiceImpl implements SuperAdminService {
                 email,
                 rawPassword,
                 "SUPER_ADMIN",
+                "SUPER_ADMIN",
                 1L // root organisation
         );
         SuperAdmin superAdmin = new SuperAdmin();

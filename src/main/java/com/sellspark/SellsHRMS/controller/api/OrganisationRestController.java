@@ -1,89 +1,83 @@
 package com.sellspark.SellsHRMS.controller.api;
 
-import com.sellspark.SellsHRMS.entity.Organisation;
-import com.sellspark.SellsHRMS.entity.OrganisationAdmin;
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminSummaryDTO;
+import com.sellspark.SellsHRMS.dto.organisation.*;
 import com.sellspark.SellsHRMS.service.OrganisationAdminService;
+import com.sellspark.SellsHRMS.service.OrganisationPolicyService;
 import com.sellspark.SellsHRMS.service.OrganisationService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+
+
+
 
 @RestController
-@RequestMapping("/api/organisations")
+@RequestMapping("/api/organisation")
 @RequiredArgsConstructor
 public class OrganisationRestController {
 
     private final OrganisationService organisationService;
+    private final OrganisationPolicyService organisationPolicyService;
     private final OrganisationAdminService orgAdminService;
 
-    // --------------------------------------
-    // CREATE ORGANISATION
-    // --------------------------------------
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody Organisation organisation) {
-        Organisation saved = organisationService.create(organisation);
+    // Create organisation (option A: may include admin inside create DTO)
+    @PostMapping("/create")
+    public ResponseEntity<OrganisationDTO> create(@RequestBody OrganisationDTO dto) {
+        OrganisationDTO saved = organisationService.create(dto);
         return ResponseEntity.ok(saved);
     }
 
-    // --------------------------------------
-    // UPDATE
-    // --------------------------------------
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(
-            @PathVariable Long id,
-            @RequestBody Organisation organisation) {
 
-        Organisation updated = organisationService.update(id, organisation);
-        return ResponseEntity.ok(updated);
-    }
-
-    // --------------------------------------
-    // GET ONE
-    // --------------------------------------
+    // Get one
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable Long id) {
-
-        Optional<Organisation> orgOpt = organisationService.getById(id);
-
-        if (orgOpt.isPresent()) {
-            return ResponseEntity.ok(orgOpt.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-
+    public ResponseEntity<OrganisationDTO> get(@PathVariable Long id) {
+        OrganisationDTO dto = organisationService.getById(id);
+        return ResponseEntity.ok(dto);
     }
 
-    // --------------------------------------
-    // DELETE
-    // --------------------------------------
+   // Delete
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         organisationService.delete(id);
         return ResponseEntity.ok().build();
     }
 
-    // --------------------------------------
-    // LIST ALL
-    // --------------------------------------
+
+    @PostMapping("/{orgId}/policy/create")
+    public ResponseEntity<OrganisationPolicyDTO> createOrganisationPolicy(@PathVariable Long orgId, @RequestBody OrganisationPolicyDTO dto) {
+        organisationPolicyService.createOrUpdatePolicy(orgId, dto);
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/{orgId}/policy")
+    public ResponseEntity<OrganisationPolicyDTO> getOrganisationPolicy(@PathVariable Long orgId) {
+        OrganisationPolicyDTO policy = organisationPolicyService.getOrganisationPolicyByOrgId(orgId);
+        return ResponseEntity.ok(policy);
+    }
+    
+    @PutMapping("/{orgId}/policy/{policyId}/update")
+    public ResponseEntity<OrganisationPolicyDTO> updateOrganisationPolicy(@PathVariable Long orgId, @PathVariable Long policyId, @RequestBody OrganisationPolicyDTO dto) {
+        organisationPolicyService.createOrUpdatePolicy(orgId, dto);
+        return ResponseEntity.ok(dto);
+    }
+    
+
+    // List all (summary)
     @GetMapping
-    public ResponseEntity<?> list() {
-        List<Organisation> list = organisationService.getAll();
+    public ResponseEntity<List<OrganisationDTO>> list() {
+        List<OrganisationDTO> list = organisationService.getAllOrganisations();
         return ResponseEntity.ok(list);
     }
 
-    // --------------------------------------
-    // OPTIONAL: LIST ADMINS OF ORGANISATION
-    // --------------------------------------
+    // List admins of organisation
     @GetMapping("/{id}/admins")
-    public ResponseEntity<?> getAdmins(@PathVariable Long id) {
-
-        List<OrganisationAdmin> admins = orgAdminService.getByOrganisationId(id);
+    public ResponseEntity<List<OrgAdminSummaryDTO>> getAdmins(@PathVariable Long id) {
+        List<OrgAdminSummaryDTO> admins = orgAdminService.getByOrganisationId(id);
         return ResponseEntity.ok(admins);
     }
+
 
 }

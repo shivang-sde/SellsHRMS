@@ -1,0 +1,29 @@
+-- Monthly report (instant)
+SELECT 
+    employee_id,
+    COUNT(CASE WHEN status = 'PRESENT' THEN 1 END) as present_days,
+    COUNT(CASE WHEN status = 'ABSENT' THEN 1 END) as absent_days,
+    COUNT(CASE WHEN status = 'HALF_DAY' THEN 1 END) as half_days,
+    COUNT(CASE WHEN status = 'ON_LEAVE' THEN 1 END) as leave_days,
+    SUM(work_hours) as total_hours
+FROM tbl_attendance_summary
+WHERE attendance_date BETWEEN '2025-01-01' AND '2025-01-31'
+GROUP BY employee_id;
+
+
+
+-- Easy query: Show all absences in January
+SELECT * FROM tbl_attendance_summary 
+WHERE attendance_date BETWEEN '2025-01-01' AND '2025-01-31'
+AND status = 'ABSENT';
+
+-- Easy query: Employee attendance for month
+SELECT 
+    attendance_date,
+    status,
+    work_hours,
+    remarks
+FROM tbl_attendance_summary
+WHERE employee_id = 123
+AND MONTH(attendance_date) = 1
+ORDER BY attendance_date;

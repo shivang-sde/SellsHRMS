@@ -1,7 +1,7 @@
 package com.sellspark.SellsHRMS.entity;
 
-import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,5 +43,11 @@ public class PunchInOut {
     @Enumerated(EnumType.STRING)
     private Source punchSource;
 
-    public enum Source {Web, mobile, Biometric}
+    @Builder.Default
+    private Boolean isAutoPunchGenerated = false;
+    
+    private String location;
+
+
+    public enum Source {WEB, MOBILE, BIOMETRIC}
 }

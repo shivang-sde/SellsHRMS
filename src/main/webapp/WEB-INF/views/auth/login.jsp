@@ -40,9 +40,9 @@
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">Login</button>
                         </div>
-                        <p class="text-center">
+                        <!-- <p class="text-center">
                             <a href="/register">Register Super Admin</a>
-                        </p>
+                        </p> -->
                         <div id="loginMessage" class="mt-3"></div>
                     </form>
                 </div>
@@ -71,10 +71,10 @@
                             if (response.systemRole === 'SUPER_ADMIN') {
                                 window.location.href = "/superadmin/dashboard";
                             } else if (response.systemRole === 'ORG_ADMIN') {
-                                window.location.href = "/orgadmin/dashboard";
+                                window.location.href = "/org/dashboard";
                             } else {
                                 // Assuming other roles go to a generic employee dashboard
-                                window.location.href = "/user/dashboard";
+                                window.location.href = "/employee/dashboard";
                             }
                         },
                         error: function (jqXHR, textStatus, errorThrown) {

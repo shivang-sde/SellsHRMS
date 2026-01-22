@@ -1,25 +1,29 @@
 package com.sellspark.SellsHRMS.service;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeCreateRequest;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeDetailResponse;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeResponse;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
-import com.sellspark.SellsHRMS.dto.EmployeeDTO;
-import com.sellspark.SellsHRMS.entity.Employee;
-import com.sellspark.SellsHRMS.entity.Organisation;
 
 public interface EmployeeService {
+    EmployeeResponse create(EmployeeCreateRequest request);
+    EmployeeResponse update(Long id, EmployeeCreateRequest request);
+    List<EmployeeResponse> getAll(Long organisationId);
+    EmployeeDetailResponse getById(Long id);
+    EmployeeDetailResponse getByIdAndOrg(Long id, Long orgId);
 
-    Employee create(EmployeeDTO dto);
 
-    List<Employee> getAll();
+    List<EmployeeResponse> findUpcomingWorkAnniversaries( Long orgId, LocalDate startDate, LocalDate endDate);
+     List<EmployeeResponse>findUpcomingBirthdays( Long orgId, LocalDate startDate, LocalDate endDate);
 
-    List<Employee> getByOrganisationId(Long orgId);
+    // Employee getDetailEmpById(Long id);
+    void softDelete(Long id);
 
-    Optional<Employee> getById(Long id);
+    EmployeeResponse updateStatus(Long id, String status);
 
-    List<Employee> getByOrganisation(Organisation organisation);
+    List<EmployeeResponse> getSubordinates(Long managerId, Long organisationId);
 
-    Employee update(Long id, EmployeeDTO dto);
 
-    void delete(Long id);
 }

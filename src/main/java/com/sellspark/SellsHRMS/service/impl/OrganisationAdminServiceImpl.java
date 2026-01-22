@@ -1,16 +1,20 @@
 package com.sellspark.SellsHRMS.service.impl;
 
-import com.sellspark.SellsHRMS.dto.OrgAdminDTO;
 
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminPatchRequest;
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminSummaryDTO;
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminUpdateDTO;
+import com.sellspark.SellsHRMS.dto.mapper.DtoMapper;
+import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationAdmin;
-
+import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationAdminRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.OrganisationAdminService;
-import com.sellspark.SellsHRMS.service.UserService;
 
-import jakarta.transaction.Transactional;
+
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -22,7 +26,7 @@ public class OrganisationAdminServiceImpl implements OrganisationAdminService {
 
     private final OrganisationAdminRepository orgAdminRepo;
     private final OrganisationRepository orgRepo;
-    private final UserService userService;
+    private final DtoMapper mapper;
     private final EmployeeRepository employeeRepo;
 
     @Override
@@ -30,69 +34,70 @@ public class OrganisationAdminServiceImpl implements OrganisationAdminService {
         return orgAdminRepo.findByEmail(email).orElse(null);
     }
 
-    // @Override
-    // public OrganisationAdmin create(String fullName, String email, String
-    // rawPassword, Long OrgId) {
-    // OrganisationAdmin orgAdmin = new OrganisationAdmin();
-    // Optional<Organisation> org = orgRepo.findById(OrgId);
-    // orgAdmin.setEmail(email);
-    // orgAdmin.setFullName(fullName);
-    // orgAdmin.setOrganisation(org.get());
-    // return orgAdminRepo.save(orgAdmin);
-    // }
 
     @Override
-    @Transactional
-    public OrganisationAdmin create(OrgAdminDTO dto) {
-
-        userService.createUser(
-                dto.getEmail(),
-                dto.getPassword(),
-                "ORG_ADMIN",
-                dto.getOrganisationId());
-
-        OrganisationAdmin admin = new OrganisationAdmin();
-        admin.setFullName(dto.getFullName());
-        admin.setEmail(dto.getEmail());
-        admin.setOrganisation(
-                orgRepo.findById(dto.getOrganisationId())
-                        .orElseThrow(() -> new RuntimeException("Organisation not found: " + dto.getOrganisationId())));
-
-        return orgAdminRepo.save(admin);
+    @Transactional(readOnly = true)
+    public OrgAdminSummaryDTO getById(Long id) {
+        OrganisationAdmin admin = orgAdminRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("OrganisationAdmin", "id", id));
+        return mapper.toAdminSummary(admin);
     }
 
     @Override
-    public OrganisationAdmin getById(Long id) {
-        return orgAdminRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("OrgAdmin not found"));
+    @Transactional(readOnly = true)
+    public List<OrgAdminSummaryDTO> getAll() {
+        return orgAdminRepo.findAll().stream().map(mapper::toAdminSummary).toList();
     }
 
     @Override
-    public List<OrganisationAdmin> getByOrganisationId(Long orgId) {
-        return orgAdminRepo.findByOrganisation(orgRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation does not exits by orgId: " + orgId)));
-    }
+public OrgAdminSummaryDTO patchUpdate(Long id, OrgAdminPatchRequest dto) {
+    OrganisationAdmin admin = orgAdminRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("OrganisationAdmin", "id", id));
+    if (dto.getFullName() != null) admin.setFullName(dto.getFullName());
+    if (dto.getEmail() != null) admin.setEmail(dto.getEmail());
+    if (dto.getIsActive() != null) admin.setIsActive(dto.getIsActive());
+    orgAdminRepo.save(admin);
+    return mapper.toAdminSummary(admin);
+}
 
     @Override
-    public List<OrganisationAdmin> getAll() {
-        return orgAdminRepo.findAll();
+    public OrgAdminSummaryDTO update(Long id, OrgAdminUpdateDTO dto) {
+        OrganisationAdmin admin = orgAdminRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("OrganisationAdmin", "id", id));
+
+        if (dto.getFullName() != null) admin.setFullName(dto.getFullName());
+        if (dto.getEmail() != null) admin.setEmail(dto.getEmail());
+        if (dto.getIsActive() != null) admin.setIsActive(dto.getIsActive());
+
+        orgAdminRepo.save(admin);
+        return mapper.toAdminSummary(admin);
     }
 
+
     @Override
-    public OrganisationAdmin update(Long id, OrgAdminDTO dto) {
-        return orgAdminRepo.findById(id)
-                .map(admin -> {
-                    admin.setFullName(dto.getFullName());
-                    admin.setEmail(dto.getEmail());
-                    return orgAdminRepo.save(admin);
-                })
-                .orElseThrow(() -> new RuntimeException("OrgAdmin not found"));
+    public void activateOrgAdmin(Long id){
+        OrganisationAdmin orgAdmin = orgAdminRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("OrganisationAdmin", "id", id));
+        orgAdmin.setIsActive(true);
+        orgAdminRepo.save(orgAdmin);
     }
+
+     @Override
+    public void deactivateOrgAdmin(Long id){
+        OrganisationAdmin orgAdmin = orgAdminRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("OrganisationAdmin", "id", id));
+        orgAdmin.setIsActive(false);
+        orgAdminRepo.save(orgAdmin);
+    }
+
 
     @Override
     public void delete(Long id) {
         orgAdminRepo.deleteById(id);
     }
+
+    @Override
+public List<OrgAdminSummaryDTO> getByOrganisationId(Long orgId) {
+    Organisation org = orgRepo.findById(orgId).orElseThrow(() -> new ResourceNotFoundException("Organisation", "id", orgId));
+    return orgAdminRepo.findByOrganisation(org).stream().map(mapper::toAdminSummary).toList();
+}
 
     @Override
     public int getEmployeeCount(Long organisationId) {

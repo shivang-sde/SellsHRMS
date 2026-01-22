@@ -7,7 +7,13 @@ public interface UserService {
 
     boolean matchesPassword(User user, String rawPassword);
 
-    User createUser(String email, String rawPassword, String roleName, Long organisationId);
+    User createUser(String email, String rawPassword, String systemRole, String roleName, Long organisationId);
+
+    // User createOrgAdminUser(String email, String rawPassword, String systemRole, Long organisationId);
+
+    User createEmpUser(Long employeeId, String email, String rawPassword, String roleName, Long organisationId);
 
     boolean existsByEmail(String email);
+
+    User getCurrentUser();
 }

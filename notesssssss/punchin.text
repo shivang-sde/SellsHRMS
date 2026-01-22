@@ -1,0 +1,184 @@
+// When employee punches IN
+public PunchRecordResponse punchIn(PunchInRequest request) {
+    LocalDate today = LocalDate.now();
+    
+    // 1. Create punch record (raw data)
+    PunchInOut punch = new PunchInOut();
+    punch.setEmployee(employee);
+    punch.setPunchIn(request.getPunchIn());
+    punch.setPunchSource(Source.valueOf(request.getSource()));
+    punchRepo.save(punch);
+    
+    // 2. UPDATE attendance summary (status)
+    AttendanceSummary summary = attendanceSummaryRepo
+        .findByEmployeeAndDate(employee.getId(), today)
+        .orElseThrow();
+    
+    summary.setStatus(AttendanceStatus.PRESENT); // Update from ABSENT
+    summary.setPunchRecord(punch);
+    summary.setEffectivePunchIn(request.getPunchIn());
+    summary.setSource(AttendanceSource.PUNCH_SYSTEM);
+    summary.setRemarks("Punched in via " + request.getSource());
+    
+    // Check if late
+    if (isLate(employee, request.getPunchIn())) {
+        summary.setIsLate(true);
+    }
+    
+    attendanceSummaryRepo.save(summary);
+    
+    return mapToResponse(punch);
+}
+
+// When employee punches OUT
+public PunchRecordResponse punchOut(PunchOutRequest request) {
+    // 1. Update punch record
+    PunchInOut punch = punchRepo.findById(request.getPunchId())
+        .orElseThrow();
+    punch.setPunchOut(request.getPunchOut());
+    
+    // Calculate work hours
+    Duration duration = Duration.between(
+        punch.getPunchIn(), 
+        punch.getPunchOut()
+    );
+    double hours = duration.toMinutes() / 60.0;
+    punch.setWorkHours(hours);
+    punchRepo.save(punch);
+    
+    // 2. Update attendance summary
+    AttendanceSummary summary = attendanceSummaryRepo
+        .findByEmployeeAndDate(punch.getEmployee().getId(), LocalDate.now())
+        .orElseThrow();
+    
+    summary.setEffectivePunchOut(request.getPunchOut());
+    summary.setWorkHours(hours);
+    
+    // Determine final status based on hours
+    if (hours >= 8) {
+        summary.setStatus(AttendanceStatus.PRESENT);
+    } else if (hours >= 4) {
+        summary.setStatus(AttendanceStatus.HALF_DAY);
+        summary.setRemarks("Half day - worked " + hours + " hours");
+    } else {
+        summary.setStatus(AttendanceStatus.HALF_DAY);
+        summary.setRemarks("Short day - worked " + hours + " hours");
+    }
+    
+    attendanceSummaryRepo.save(summary);
+    
+    return mapToResponse(punch);
+}
+
+
+
+
+public PunchRecordResponse punchIn(PunchInRequest request) {
+    
+    Employee employee = employeeRepo.findById(request.getEmployeeId())
+        .orElseThrow();
+    
+    // 1. Create punch record
+    PunchInOut punch = PunchInOut.builder()
+        .organisation(employee.getOrganisation())  // ✅ Set org
+        .employee(employee)
+        .punchIn(request.getPunchIn())
+        .punchSource(PunchInOut.Source.valueOf(request.getSource()))
+        .build();
+    punchRepo.save(punch);
+    
+    // 2. Update attendance summary (already exists from midnight cron)
+    AttendanceSummary summary = attendanceSummaryRepo
+        .findByEmployeeAndDate(
+            employee.getId(), 
+            LocalDate.now()
+        )
+        .orElseThrow(() -> new RuntimeException("Attendance summary not found!"));
+    
+    // Update from ABSENT to PRESENT
+    summary.setStatus(AttendanceStatus.PRESENT);
+    summary.setPunchRecord(punch);
+    summary.setEffectivePunchIn(request.getPunchIn());
+    summary.setSource(AttendanceSource.PUNCH_SYSTEM);
+    summary.setRemarks("Punched in via " + request.getSource());
+    
+    attendanceSummaryRepo.save(summary);
+    
+    return mapToResponse(punch, summary);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@Repository
+public interface AttendanceSummaryRepository 
+    extends JpaRepository<AttendanceSummary, Long> {
+    
+    // ✅ Find by employee and date
+    Optional<AttendanceSummary> findByEmployeeIdAndAttendanceDate(
+        Long employeeId, 
+        LocalDate date
+    );
+    
+    // ✅ Find all for an organisation on a specific date
+    List<AttendanceSummary> findByOrganisationIdAndAttendanceDate(
+        Long organisationId, 
+        LocalDate date
+    );
+    
+    // ✅ Find by employee and date range
+    List<AttendanceSummary> findByEmployeeIdAndAttendanceDateBetween(
+        Long employeeId,
+        LocalDate startDate,
+        LocalDate endDate
+    );
+    
+    // ✅ Find by organisation and date range
+    List<AttendanceSummary> findByOrganisationIdAndAttendanceDateBetween(
+        Long organisationId,
+        LocalDate startDate,
+        LocalDate endDate
+    );
+    
+    // ✅ Count absences for employee in a month
+    @Query("SELECT COUNT(a) FROM AttendanceSummary a " +
+           "WHERE a.employee.id = :employeeId " +
+           "AND a.status = 'ABSENT' " +
+           "AND YEAR(a.attendanceDate) = :year " +
+           "AND MONTH(a.attendanceDate) = :month")
+    Long countAbsencesByEmployeeAndMonth(
+        @Param("employeeId") Long employeeId,
+        @Param("year") int year,
+        @Param("month") int month
+    );
+    
+    // ✅ Get monthly summary for organisation
+    @Query("SELECT new com.sellspark.SellsHRMS.dto.attendance.MonthlySummaryDTO(" +
+           "a.employee.id, " +
+           "a.employee.firstName, " +
+           "a.employee.lastName, " +
+           "COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END), " +
+           "COUNT(CASE WHEN a.status = 'ABSENT' THEN 1 END), " +
+           "COUNT(CASE WHEN a.status = 'HALF_DAY' THEN 1 END), " +
+           "COUNT(CASE WHEN a.status = 'ON_LEAVE' THEN 1 END), " +
+           "SUM(a.workHours)) " +
+           "FROM AttendanceSummary a " +
+           "WHERE a.organisation.id = :orgId " +
+           "AND a.attendanceDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY a.employee.id, a.employee.firstName, a.employee.lastName")
+    List<MonthlySummaryDTO> getMonthlySummary(
+        @Param("orgId") Long orgId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+}

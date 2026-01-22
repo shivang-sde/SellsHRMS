@@ -1,151 +1,113 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-        <!DOCTYPE html>
-        <html lang="en">
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${pageTitle} | SellsHRMS</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            <style>
-                /* Simple Custom Styling for HRMS */
-                :root {
-                    --primary-color: #0d6efd;
-                    /* Bootstrap Blue */
-                    --sidebar-width: 280px;
-                }
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>${fn:escapeXml(pageTitle)} | SellsHRMS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
 
-                .sidebar {
-                    width: var(--sidebar-width);
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    bottom: 0;
-                    background-color: #343a40;
-                    /* Dark background */
-                    padding-top: 56px;
-                    /* Space for fixed navbar */
-                    color: white;
-                    transition: all 0.3s;
-                }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-                .main-content {
-                    margin-left: var(--sidebar-width);
-                    padding: 20px;
-                    transition: all 0.3s;
-                }
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-                @media (max-width: 991.98px) {
-                    .sidebar {
-                        margin-left: calc(-1 * var(--sidebar-width));
-                    }
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/layout.css">
+    <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css"> -->
+    <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/header.css"> -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/toast.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/payroll.css">
 
-                    .sidebar.active {
-                        margin-left: 0;
-                    }
+</head>
 
-                    .main-content {
-                        margin-left: 0;
-                    }
+<body class="hrms-app">
+    <c:if test="${not empty sessionScope.ORG_ID}">
+        <input type="hidden" id="globalOrgId" value="${sessionScope.ORG_ID}">
+    </c:if>
+    <input type="hidden" id="globalRole" value="${sessionScope.SYSTEM_ROLE}">
+    <input type="hidden" id="globalUserId" value="${sessionScope.USER_ID}">
 
-                    .main-content.active {
-                        margin-left: var(--sidebar-width);
-                    }
-                }
+    <div class="hrms-wrapper">
+        <c:import url="/WEB-INF/views/layout/sidebar.jsp"/>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-                .nav-link.active {
-                    background-color: var(--primary-color);
-                    color: white !important;
-                }
-            </style>
-        </head>
+       <div id="toast-container" class="toast-container"></div>
 
-        <body>
+        <div class="hrms-main">
+            <c:import url="/WEB-INF/views/layout/header.jsp"/>
 
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-                <div class="container-fluid">
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
-                        aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">SellsHRMS</a>
-                    <div class="collapse navbar-collapse">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" href="#" onclick="logout(event)">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+            <main class="hrms-content">
+                <div class="container-fluid py-3">
+                    <c:choose>
+                        <c:when test="${not empty contentPage}">
+                            <c:import url="/WEB-INF/views/${contentPage}.jsp" />
+                        </c:when>
+                        <c:otherwise>
+                            <div class="card p-5 shadow-sm text-center">
+                                <i class="fa-solid fa-house-user fa-3x text-primary mb-3"></i>
+                                <h3>Welcome back, ${fn:escapeXml(sessionScope.USER_NAME)}</h3>
+                                <p class="text-muted">Select a module from the sidebar to begin.</p>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
-            </nav>
+            </main>
 
-            <div class="d-flex">
-                <nav id="sidebarMenu" class="sidebar collapse d-lg-block">
-                    <div class="position-sticky">
-                        <div class="list-group list-group-flush mx-3 mt-4">
-                            <c:import url="/WEB-INF/views/layout/sidebar-nav.jsp" />
-                        </div>
-                    </div>
-                </nav>
+            <c:import url="/WEB-INF/views/layout/footer.jsp"/>
+        </div>
+    </div>
 
-                <main class="main-content flex-grow-1">
-                    <div class="pt-5">
-                        <h2 class="mb-4">${pageTitle}</h2>
-                        <c:choose>
-                            <c:when test="${not empty contentPage}">
-                                <c:import url="/WEB-INF/views/${contentPage}.jsp" />
-                            </c:when>
-                            <c:otherwise>
-                                <p>Welcome to SellsHRMS. Select a navigation link.</p>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </main>
+    <div id="errorModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon"></div>
+            <h3 id="errorTitle" class="fw-bold"></h3>
+            <p id="errorMessage" class="text-muted"></p>
+            <div class="modal-actions">
+                <button id="errorConfirm" class="btn-primary-hrms">Confirm</button>
+                <button id="errorCancel" class="btn-secondary-hrms">Cancel</button>
             </div>
+        </div>
+    </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-            <script>
-                function logout(event) {
-                    event.preventDefault();
-                    // Assuming your logout API is accessible at /api/auth/logout
-                    $.post("/api/auth/logout")
-                        .done(function (data) {
-                            alert("Logged out successfully!");
-                            window.location.href = "/login"; // Redirect to login page
-                        })
-                        .fail(function (jqXHR, textStatus, errorThrown) {
-                            alert("Logout failed: " + jqXHR.responseJSON.error);
-                        });
-                }
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-                // Toggle sidebar on smaller screens
-                const sidebar = document.getElementById('sidebarMenu');
-                const toggler = document.querySelector('.navbar-toggler');
-                const mainContent = document.querySelector('.main-content');
 
-                toggler.addEventListener('click', () => {
-                    sidebar.classList.toggle('active');
-                    mainContent.classList.toggle('active');
-                });
+    <script>
+    // Global App Context - Shared across all HRMS modules
+    window.APP = {
+        USER_NAME: "${fn:escapeXml(sessionScope.USER_NAME)}",
+        USER_ID: "${sessionScope.USER_ID}",
+        EMPLOYEE_ID: "${sessionScope.EMP_ID}",
+        ORG_ID: "${sessionScope.ORG_ID}",
+        ROLE: "${sessionScope.SYSTEM_ROLE}",
+        PERMISSIONS: "${sessionScope.PERMISSIONS}",
+        LAST_LOGIN: "${sessionScope.LAST_LOGIN}",
+        CONTEXT_PATH: "${pageContext.request.contextPath}"
+    };
 
-                // Set active class on sidebar links based on the current URL
-                $(function () {
-                    var path = window.location.pathname;
-                    $('.list-group-item-action').each(function () {
-                        if (path.startsWith($(this).attr('href'))) {
-                            $(this).addClass('active');
-                        } else {
-                            $(this).removeClass('active');
-                        }
-                    });
-                });
-            </script>
-        </body>
+        console.log("%c🔧 SellsHRMS App Context Loaded", "color:#0ea5e9;font-weight:bold;");
+        console.table(window.APP);
 
-        </html>
+    </script>
+
+    
+        <!-- Utilities (must come before tasks.js) -->
+        <script src="${pageContext.request.contextPath}/js/modalUtils.js"></script>
+        <script src="${pageContext.request.contextPath}/js/apiClient.js"></script>
+
+
+
+        <script src="${pageContext.request.contextPath}/js/utils/global-helper.js"></script>
+        <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
+        <c:if test="${not empty pageScript}">
+            <script src="${pageContext.request.contextPath}/js/${pageScript}.js"></script>
+        </c:if>
+</body>
+</html>

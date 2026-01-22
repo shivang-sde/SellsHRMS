@@ -4,6 +4,8 @@ import com.sellspark.SellsHRMS.entity.User;
 import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.service.AccessService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -25,6 +28,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         Set<String> perms = accessService.getPermissionsForUser(u.getId()); // implement in AccessService
         var authorities = perms.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
+
+        log.info("authorites {}", authorities.toArray().toString());
+
+         log.info("User: " + u.getEmail());
+        log.info("Authorities: " + authorities.stream()
+            .map(SimpleGrantedAuthority::getAuthority)
+            .toList());
+
+        
 
         return new org.springframework.security.core.userdetails.User(
                 u.getEmail(),

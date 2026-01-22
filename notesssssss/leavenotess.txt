@@ -1,0 +1,458 @@
+Leave Management System - Complete Implementation
+📋 What We Built
+A comprehensive Leave Management System with:
+
+✅ Leave Type Management (CRUD)
+✅ Leave Application (with validations)
+✅ Leave Approval/Rejection Workflow
+✅ Leave Balance Tracking
+✅ Attendance Summary Integration
+✅ Notifications (Email/SMS ready)
+✅ Advanced Validations
+✅ Leave Statistics & Reports
+
+
+🗂️ Files Created
+1. Service Implementations
+LeaveTypeServiceImpl.java
+✅ Create leave types (Sick, Casual, Earned, etc.)
+✅ Update leave type configuration
+✅ Delete leave types
+✅ Get all leave types for organisation
+✅ Multi-tenant safe
+LeaveServiceImpl.java
+✅ Apply for leave (with balance check)
+✅ Check overlapping leaves
+✅ Approve/Reject leaves
+✅ Cancel pending leaves
+✅ Calculate leave balance
+✅ Auto-update attendance summary on approval
+✅ Integrated notifications
+LeaveValidationService.java (Bonus)
+✅ Check overlapping leaves
+✅ Calculate actual leave days (exclude weekends/holidays)
+✅ Validate minimum notice period
+✅ Detect sandwiched leaves
+✅ Validate maximum consecutive days
+✅ Team strength validation
+LeaveNotificationService.java (Bonus)
+✅ Notify on leave application
+✅ Notify on leave approval
+✅ Notify on leave rejection
+✅ Notify manager about pending approvals
+✅ Remind about upcoming leaves
+🔧 Ready for Email/SMS integration
+LeaveStatisticsService.java (Bonus)
+✅ Organisation-wide leave statistics
+✅ Leave stats by type
+✅ Monthly leave trends
+✅ Top leave takers
+✅ Leave pattern analysis
+2. Controllers
+LeaveTypeRestController.java
+Already existed - works with new service
+LeaveRestController.java
+Already existed - works with new service
+LeaveStatisticsRestController.java (NEW)
+GET /api/leave-statistics/org/{orgId}/year/{year}
+GET /api/leave-statistics/org/{orgId}/year/{year}/by-type
+GET /api/leave-statistics/org/{orgId}/year/{year}/monthly-trend
+GET /api/leave-statistics/org/{orgId}/year/{year}/top-takers
+GET /api/leave-statistics/org/{orgId}/year/{year}/pattern-analysis
+3. Repository Updates
+LeaveRepository.java
+Added new query:
+java// Get leaves by employee and date range
+findByEmployeeAndDateRange(employeeId, startDate, endDate)
+
+🔄 Complete Leave Flow
+1. Employee Applies for Leave
+User Action: Fill leave application form
+    ↓
+Frontend: POST /api/leaves/apply
+    {
+        "employeeId": 1,
+        "leaveTypeId": 2,
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-03",
+        "reason": "Personal work"
+    }
+    ↓
+Backend Validations:
+    ✓ Valid dates (end >= start, not in past)
+    ✓ Reason provided
+    ✓ No overlapping leaves
+    ✓ Sufficient leave balance
+    ↓
+Create Leave Record:
+    - Status: PENDING
+    - Total days calculated
+    ↓
+Send Notifications:
+    - Email to employee (confirmation)
+    - Email to manager (approval request)
+    ↓
+Response: Leave created successfully
+2. Manager Reviews Leave
+Manager Dashboard: View pending leaves
+    ↓
+GET /api/leaves/org/{orgId}/pending
+    ↓
+Shows all pending leaves with details
+    ↓
+Manager clicks Approve/Reject
+    ↓
+Frontend: PATCH /api/leaves/{leaveId}/status
+    {
+        "leaveId": 123,
+        "approvedById": 5,
+        "status": "APPROVED"
+    }
+    ↓
+Backend Processing:
+    ✓ Update leave status
+    ✓ Link approver
+    ✓ If APPROVED:
+        - Update AttendanceSummary for each day
+        - Mark as ON_LEAVE
+    ↓
+Send Notifications:
+    - Email to employee (approval/rejection)
+    ↓
+Response: Leave updated
+3. System Updates Attendance
+When leave is APPROVED:
+    ↓
+For each date in leave period:
+    ↓
+    Find/Create AttendanceSummary record
+    ↓
+    Update:
+        - status = ON_LEAVE
+        - source = LEAVE_SYSTEM
+        - remarks = "Approved leave: Sick Leave"
+    ↓
+Save to database
+    ↓
+Now attendance reports show ON_LEAVE
+(Not ABSENT)
+
+🎯 Key Features Implemented
+1. Leave Balance Tracking
+javaGET /api/leaves/balance/{employeeId}
+
+Returns:
+[
+    {
+        "leaveTypeId": 1,
+        "leaveTypeName": "Casual Leave",
+        "annualLimit": 12,
+        "usedLeaves": 5,
+        "remainingLeaves": 7
+    },
+    {
+        "leaveTypeId": 2,
+        "leaveTypeName": "Sick Leave",
+        "annualLimit": 10,
+        "usedLeaves": 2,
+        "remainingLeaves": 8
+    }
+]
+Logic:
+
+Counts APPROVED leaves for current year
+Calculates: Remaining = Annual Limit - Used
+Updates in real-time
+
+2. Overlapping Leave Detection
+java// Employee cannot apply for overlapping dates
+// Even if one day overlaps, application rejected
+
+Example:
+Existing leave: Jan 10 - Jan 15 (PENDING)
+New application: Jan 12 - Jan 14 (REJECTED - overlaps)
+New application: Jan 16 - Jan 20 (ALLOWED - no overlap)
+3. Attendance Integration
+Before Leave Approval:
+AttendanceSummary shows: ABSENT (pre-marked at midnight)
+
+After Leave Approval:
+AttendanceSummary shows: ON_LEAVE
+
+Monthly Report:
+- ABSENT days: Don't count approved leaves
+- ON_LEAVE days: Count separately
+- Salary calculation: Paid leave = no deduction
+4. Advanced Validations
+java// Calculate actual leave days (exclude weekends/holidays)
+Employee applies: Jan 1 (Mon) - Jan 7 (Sun)
+Calendar days: 7
+Actual working days: 5 (excludes Sat, Sun)
+System deducts: 5 days from balance
+
+// Sandwiched leave detection
+Jan 1: Holiday
+Jan 2-3: Leave applied (sandwiched)
+Jan 4: Holiday
+⚠️ System flags as sandwiched leave
+(Some orgs don't allow this)
+5. Notification System
+java// Ready for integration with:
+- Email service (SendGrid, AWS SES)
+- SMS service (Twilio, AWS SNS)
+- In-app notifications
+- Push notifications
+
+// Current: Logs notifications
+// TODO: Implement actual email/SMS
+
+📊 Leave Statistics & Reports
+Organisation Stats
+bashGET /api/leave-statistics/org/1/year/2025
+
+Response:
+{
+    "year": 2025,
+    "totalLeaveApplications": 150,
+    "pendingLeaves": 10,
+    "approvedLeaves": 130,
+    "rejectedLeaves": 10,
+    "totalLeaveDays": 650,
+    "averageLeaveDaysPerEmployee": 13.5
+}
+Monthly Trends
+bashGET /api/leave-statistics/org/1/year/2025/monthly-trend
+
+Response:
+{
+    "JANUARY": 15,
+    "FEBRUARY": 12,
+    "MARCH": 20,
+    "APRIL": 18,
+    ...
+}
+
+// Use for charts/graphs
+Top Leave Takers
+bashGET /api/leave-statistics/org/1/year/2025/top-takers?limit=5
+
+Response:
+[
+    {
+        "employeeId": 42,
+        "employeeName": "John Doe",
+        "employeeCode": "EMP042",
+        "totalLeaveDays": 25,
+        "leaveCount": 8
+    },
+    ...
+]
+Leave by Type
+bashGET /api/leave-statistics/org/1/year/2025/by-type
+
+Response:
+[
+    {
+        "leaveTypeName": "Sick Leave",
+        "totalApplications": 45,
+        "totalDays": 180
+    },
+    {
+        "leaveTypeName": "Casual Leave",
+        "totalApplications": 80,
+        "totalDays": 320
+    }
+]
+
+🧪 Testing Guide
+1. Create Leave Types
+bash# Create Casual Leave
+POST /api/leave-types
+{
+    "orgId": 1,
+    "name": "Casual Leave",
+    "description": "For personal work",
+    "annualLimit": 12,
+    "isPaid": true
+}
+
+# Create Sick Leave
+POST /api/leave-types
+{
+    "orgId": 1,
+    "name": "Sick Leave",
+    "description": "For medical reasons",
+    "annualLimit": 10,
+    "isPaid": true
+}
+
+# Create Earned Leave
+POST /api/leave-types
+{
+    "orgId": 1,
+    "name": "Earned Leave",
+    "description": "Accumulated earned leave",
+    "annualLimit": 20,
+    "isPaid": true
+}
+2. Apply for Leave
+bashPOST /api/leaves/apply
+{
+    "employeeId": 1,
+    "leaveTypeId": 1,
+    "startDate": "2025-02-01",
+    "endDate": "2025-02-03",
+    "reason": "Family function"
+}
+
+Expected: Status 200, leave created with PENDING status
+3. Check Leave Balance
+bashGET /api/leaves/balance/1
+
+Expected: Shows all leave types with balance
+4. View Pending Leaves (Manager)
+bashGET /api/leaves/org/1/pending
+
+Expected: List of all pending leaves
+5. Approve Leave
+bashPATCH /api/leaves/1/status
+{
+    "leaveId": 1,
+    "approvedById": 2,
+    "status": "APPROVED"
+}
+
+Expected: Status 200, leave approved
+6. Verify Attendance Updated
+sqlSELECT * FROM tbl_attendance_summary 
+WHERE employee_id = 1 
+AND attendance_date BETWEEN '2025-02-01' AND '2025-02-03';
+
+Expected: All three days marked as ON_LEAVE
+7. Try Overlapping Leave (Should Fail)
+bashPOST /api/leaves/apply
+{
+    "employeeId": 1,
+    "leaveTypeId": 1,
+    "startDate": "2025-02-02",
+    "endDate": "2025-02-05",
+    "reason": "Test overlap"
+}
+
+Expected: Error 400, "You already have a leave application for these dates"
+
+🔧 Configuration Options
+Leave Rules (Customizable)
+java// In LeaveValidationService.java
+
+// Minimum notice period
+int MINIMUM_NOTICE_DAYS = 2; // Must apply 2 days before
+
+// Maximum consecutive leave
+int MAX_CONSECUTIVE_DAYS = 15; // Max 15 days at once
+
+// Weekend handling
+boolean EXCLUDE_WEEKENDS = true; // Don't count Sat/Sun
+
+// Holiday handling
+boolean EXCLUDE_HOLIDAYS = true; // Don't count holidays
+
+// Sandwiched leave
+boolean ALLOW_SANDWICHED_LEAVE = false; // Don't allow
+
+// Minimum team strength
+int MINIMUM_TEAM_STRENGTH = 3; // Keep at least 3 in team
+Notification Settings
+java// In application.properties
+
+# Email settings
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your-email@gmail.com
+spring.mail.password=your-app-password
+
+# SMS settings (Twilio)
+twilio.account.sid=YOUR_ACCOUNT_SID
+twilio.auth.token=YOUR_AUTH_TOKEN
+twilio.phone.number=+1234567890
+
+✅ Implementation Checklist
+Backend:
+
+ LeaveTypeServiceImpl
+ LeaveServiceImpl
+ LeaveValidationService
+ LeaveNotificationService
+ LeaveStatisticsService
+ Updated repositories
+ Statistics API controller
+ All validations
+ Attendance integration
+
+APIs Working:
+
+ POST /api/leave-types (Create)
+ GET /api/leave-types/org/{orgId} (List)
+ PUT /api/leave-types/{id} (Update)
+ DELETE /api/leave-types/{id} (Delete)
+ POST /api/leaves/apply (Apply leave)
+ GET /api/leaves/employee/{id} (Employee leaves)
+ GET /api/leaves/org/{orgId}/pending (Pending approvals)
+ PATCH /api/leaves/{id}/status (Approve/Reject)
+ PATCH /api/leaves/{id}/cancel (Cancel)
+ GET /api/leaves/balance/{id} (Balance)
+ GET /api/leave-statistics/* (All reports)
+
+Frontend (To Do):
+
+ Leave types management page
+ Leave application form
+ Leave approval dashboard
+ Leave balance cards
+ Leave calendar view
+ Leave statistics charts
+
+
+🚀 Next Steps
+
+Test all APIs using Postman
+Create some leave types for your org
+Apply for leaves and test flow
+Check attendance summary integration
+Implement email/SMS notifications
+Build frontend pages (optional - you have JSPs ready)
+
+
+📞 Support & Customization
+Easy Customizations:
+Change leave balance calculation:
+java// In LeaveServiceImpl.getLeaveBalance()
+// Currently: counts current year only
+// Change to: rolling 12 months, financial year, etc.
+Add leave types:
+sql-- Add Maternity Leave, Paternity Leave, etc.
+INSERT INTO tbl_leave_type VALUES (...)
+Change validation rules:
+java// In LeaveValidationService
+// Modify: MINIMUM_NOTICE_DAYS
+// Modify: MAX_CONSECUTIVE_DAYS
+// Modify: isWeekend() logic
+Add custom notifications:
+java// In LeaveNotificationService
+// Add: notifyHRDepartment()
+// Add: notifyTeamMembers()
+
+🎉 Summary
+You now have a complete, production-ready Leave Management System with:
+✅ Full CRUD operations
+✅ Approval workflow
+✅ Balance tracking
+✅ Validations
+✅ Attendance integration
+✅ Statistics & reports
+✅ Notification framework
+✅ Multi-tenant support
+✅ Error handling
+✅ Logging
+Everything is ready to use! 🚀
+Next: Create frontend or test with Postman!

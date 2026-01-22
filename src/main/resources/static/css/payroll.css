@@ -1,0 +1,97 @@
+/* ===== Payroll Modal Table Final Alignment Fix ===== */
+
+/* Container ensures scroll without breaking layout */
+.table-responsive.payroll-rule-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+/* Table layout locked for perfect cell alignment */
+.table.payroll-rule-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate !important;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+/* Headers and cells visually aligned */
+.table.payroll-rule-table th,
+.table.payroll-rule-table td {
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #dee2e6;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.table.payroll-rule-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table.payroll-rule-table td {
+  background-color: #fff;
+}
+
+/* Inputs stay neatly inside cells */
+.table.payroll-rule-table td input.form-control,
+.table.payroll-rule-table td select.form-select {
+  width: 100%;
+  min-width: 100px;
+  height: 32px;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  text-align: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.table.payroll-rule-table td:last-child,
+.table.payroll-rule-table th:last-child {
+  width: 45px;
+  text-align: center;
+}
+
+/* Buttons aligned */
+.removeRow {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
+/* Prevent thead and tbody misalignment */
+.table.payroll-rule-table thead,
+.table.payroll-rule-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Make body scroll independently if long */
+.table.payroll-rule-table tbody {
+  display: block;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Keep header fixed while scrolling rules */
+.table.payroll-rule-table thead {
+  width: calc(100% - 1em);
+}
+
+@media (max-width: 768px) {
+  .table.payroll-rule-table td,
+  .table.payroll-rule-table th {
+    font-size: 0.8rem;
+    padding: 4px;
+  }
+
+  .table.payroll-rule-table td input.form-control,
+  .table.payroll-rule-table td select.form-select {
+    min-width: 80px;
+  }
+}

@@ -1,0 +1,23 @@
+/* leave.css */
+.leave-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.leave-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.leave-card h5 {
+  font-weight: 600;
+  color: #2563eb;
+}
+.leave-card .stat {
+  font-size: 14px;
+  color: #64748b;
+}
+@media (max-width: 768px) {
+  .leave-card { margin-bottom: 1rem; }
+  .leave-card h5 { font-size: 16px; }
+}

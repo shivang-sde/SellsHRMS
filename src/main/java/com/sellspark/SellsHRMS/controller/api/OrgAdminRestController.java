@@ -1,14 +1,15 @@
 package com.sellspark.SellsHRMS.controller.api;
 
-import com.sellspark.SellsHRMS.dto.EmployeeDTO;
-import com.sellspark.SellsHRMS.entity.Employee;
-import com.sellspark.SellsHRMS.entity.Organisation;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeCreateRequest;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeDetailResponse;
+import com.sellspark.SellsHRMS.dto.employee.EmployeeResponse;
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminPatchRequest;
+import com.sellspark.SellsHRMS.dto.admin.OrgAdminSummaryDTO;
 import com.sellspark.SellsHRMS.service.EmployeeService;
 import com.sellspark.SellsHRMS.service.OrganisationAdminService;
-import com.sellspark.SellsHRMS.service.OrganisationService;
 
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,51 +19,63 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrgAdminRestController {
 
-    private final OrganisationService organisationService;
     private final EmployeeService employeeService;
     private final OrganisationAdminService orgAdminService;
 
-    // --- UPDATE OWN ORGANISATION ---
+    // ORG ADMIN PATCH UPDATE
+    @PatchMapping("/{adminId}")
+    public ResponseEntity<OrgAdminSummaryDTO> patchUpdateOrgAdmin(
+            @PathVariable Long adminId,
+            @RequestBody OrgAdminPatchRequest patchRequest) {
 
-    @PutMapping("/organisation/{id}")
-    public Organisation updateOrg(@PathVariable Long id, @RequestBody Organisation org) {
-        return organisationService.update(id, org);
+        OrgAdminSummaryDTO updated = orgAdminService.patchUpdate(adminId, patchRequest);
+        return ResponseEntity.ok(updated);
     }
 
-    // --- EMPLOYEE CRUD ---
+    // -------------------------------------------------------------
+    // EMPLOYEE CRUD
+    // -------------------------------------------------------------
 
     @PostMapping("/employee")
-    public Employee createEmployee(@RequestBody EmployeeDTO employeeDTO) {
-        return employeeService.create(employeeDTO);
+    public ResponseEntity<EmployeeResponse> createEmployee(@RequestBody EmployeeCreateRequest request) {
+        return ResponseEntity.ok(employeeService.create(request));
     }
 
     @PutMapping("/employee/{id}")
-    public Employee updateEmployee(@PathVariable Long id, @RequestBody EmployeeDTO updatedDTO) {
-        return employeeService.update(id, updatedDTO);
+    public ResponseEntity<EmployeeResponse> updateEmployee(
+            @PathVariable Long id,
+            @RequestBody EmployeeCreateRequest request) {
+        return ResponseEntity.ok(employeeService.update(id, request));
     }
 
     @GetMapping("/employee/{id}")
-    public Employee getEmployee(@PathVariable Long id) {
-        return employeeService.getById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+    public ResponseEntity<EmployeeDetailResponse> getEmployee(@PathVariable Long id) {
+        return ResponseEntity.ok(employeeService.getById(id));
     }
 
     @DeleteMapping("/employee/{id}")
-    public void deleteEmployee(@PathVariable Long id) {
-        employeeService.delete(id);
+    public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+        employeeService.softDelete(id); // <-- uses flag-based deletion
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/employees/{orgId}")
-    public List<Employee> getEmployeesByOrg(@PathVariable Long orgId) {
-        Organisation org = organisationService.getById(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation not found"));
-        return employeeService.getByOrganisation(org);
+    public ResponseEntity<List<EmployeeResponse>> getEmployeesByOrg(@PathVariable Long orgId) {
+        return ResponseEntity.ok(employeeService.getAll(orgId));
     }
 
-    // --- DASHBOARD ---
+    // update status: ACTIVE / SUSPENDED / TERMINATED
+    @PatchMapping("/employee/{id}/status")
+    public ResponseEntity<EmployeeResponse> updateEmployeeStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
 
+        return ResponseEntity.ok(employeeService.updateStatus(id, status));
+    }
+
+    // DASHBOARD
     @GetMapping("/stats/employees/{orgId}")
-    public int getEmployeeCount(@PathVariable Long orgId) {
-        return orgAdminService.getEmployeeCount(orgId);
+    public ResponseEntity<Integer> getEmployeeCount(@PathVariable Long orgId) {
+        return ResponseEntity.ok(orgAdminService.getEmployeeCount(orgId));
     }
 }

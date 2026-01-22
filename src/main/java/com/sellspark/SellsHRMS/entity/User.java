@@ -37,8 +37,14 @@ public class User {
     private LocalDate changePasswordDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @JoinColumn(name = "org_role_id")
+    private Role orgRole;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "system_role", length = 30)
+    private SystemRole systemRole; // SUPER_ADMIN, ORG_ADMIN, EMPLOYEE, SYSTEM_ACCOUNT
+    
 
     private LocalDateTime lastLogin;
 
@@ -49,5 +55,15 @@ public class User {
     public void onCreate() {
         if (isActive == null)
             isActive = true;
+    }
+
+
+    // enums
+
+    public enum SystemRole {
+        SUPER_ADMIN,
+        ORG_ADMIN,
+        EMPLOYEE,
+        SYSTEM_ACCOUNT
     }
 }

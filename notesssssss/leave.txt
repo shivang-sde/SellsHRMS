@@ -1,0 +1,366 @@
+Policy-Driven & Configurable:
+Each organization can define rules per leave type (accrual, carry-forward, encashment, half-days, probation restrictions, gender-based leave, etc.).
+Already handled in LeaveType with policy fields.
+
+Multi-Tenant Friendly:
+Each leave type is linked to organisation_id.
+Each employee’s balances, leave applications, and accruals are isolated per tenant.
+Ledger-Based Tracking:
+EmployeeLeaveBalance maintains opening, accrued, availed, carry-forward, encashed, lapsed, closing per financial year.
+Ensures payroll integration and year-end correctness.
+
+Attendance-Integrated:
+Leave applications automatically update AttendanceSummary per day.
+Attendance statuses depend on leave, work hours, holidays, WFH, etc.
+
+Payroll-Integrated:
+Paid leaves → normal salary.
+LOP → deduction.
+Encashment → added to payroll.
+Half-day / partial leaves → pro-rated calculation.
+
+Financial-Year Awareness:
+Accrual, carry-forward, and encashment are financial-year bound.
+Multi-year leaves split across years.
+
+Edge Case Handling:
+
+Cross-month/year leaves
+Leaves overlapping holidays/weekends
+Half-day / hourly leaves
+Comp-offs and optional holidays
+Probationary and gender-restricted leaves
+Retroactive leaves / regularization
+Leaves during business travel or work-from-home
+
+
+Leave Types & Policies (Configurable)
+
+
+| Feature                     | Logic / Rule                  | Notes                                                   |
+| --------------------------- | ----------------------------- | ------------------------------------------------------- |
+| **Accrual**                 | Monthly / Annual / Pro-rata   | Applied via scheduled job per tenant.                   |
+| **Carry Forward**           | Allowed or capped             | Apply per tenant policy; update `EmployeeLeaveBalance`. |
+| **Encashment**              | Allowed or not                | Auto calculate for payroll integration.                 |
+| **Half-Day / Hourly Leave** | LeaveDays as decimal          | Update `AttendanceSummary` accordingly.                 |
+| **Probation Restriction**   | Block leave or restrict types | Evaluated based on `Employee.joinDate` and policy.      |
+| **Gender-Specific**         | LeaveType.applicableGender    | Only allow relevant gender.                             |
+| **Validity / Expiry**       | Comp-offs / Optional leaves   | Auto-lapse after `validityDays`.                        |
+
+
+Payroll Integration Logic
+
+Payroll should calculate:
+
+Paid Days:
+Present + ON_LEAVE (paid) + WFH + Holiday + Week-Off
+
+Unpaid Days / LOP:
+If leave balance < 0 or leave type is unpaid → mark as LOP in payroll.
+
+Encashment:
+At FY-end or exit, read EmployeeLeaveBalance.encashed → add to payroll.
+
+Partial Day Leave Deduction:
+Salary deduction = (Daily Rate) * leaveDaysDecimal
+
+Clock-In / Working Hours Dependency:
+Compare punch hours to standard hours.
+Insufficient hours → auto-mark HALF_DAY or LOP if no approved leave.
+
+
+Edge Cases / Complex Scenarios
+
+| Scenario                         | Handling                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| Leave across two financial years | Split into two leave records, update two `EmployeeLeaveBalance` rows     |
+| Retroactive leave                | Update attendance, recalculate payroll for affected period               |
+| Holiday within leave             | Skip if policy excludes holidays; count if policy is continuous          |
+| Comp-off earned & applied        | Track in `LeaveType` or `EmployeeLeaveBalance`; expires per validityDays |
+| Partial / hourly leave           | Use `leaveDays` decimal; adjust AttendanceSummary.workHours              |
+| Employee transfers between orgs  | Reset balances, optionally carry forward within org rules                |
+| Probation / eligibility rules    | Check on apply; auto-approve or reject based on policy                   |
+
+Workflow Overview
+
+Employee applies leave:
+Check policy (LeaveType) and eligibility.
+Check balance (EmployeeLeaveBalance).
+Record leave in Leave table with PENDING status.
+
+Manager/HR approval:
+Update LeaveStatus.
+Update EmployeeLeaveBalance.availed.
+Update AttendanceSummary per day.
+
+Attendance reconciliation:
+Approved leave → marks ON_LEAVE (paid/unpaid).
+Punch hours used to auto-detect SHORT_DAY/HALF_DAY.
+
+Payroll run:
+Reads attendance, leave balance, encashment → calculates salary.
+
+Monthly accrual:
+Scheduled job reads LeaveType.accrualMethod → adds accrued leave in EmployeeLeaveBalance.
+
+FY-End rollover:
+Carry forward per policy.
+Lapse or encashment applied.
+Lock previous year balances.
+
+Key Components Needed in Platform
+| Component                 | Responsibility                                                    |
+| ------------------------- | ----------------------------------------------------------------- |
+| LeaveType                 | Tenant-specific policy & leave configuration                      |
+| Leave                     | Employee leave applications                                       |
+| EmployeeLeaveBalance      | Ledger for accrual, carry-forward, encashment, lapsed balances    |
+| AttendanceSummary         | Daily snapshot; maps punches, leaves, holidays, WFH               |
+| PunchInOut                | Raw clock-in/out data                                             |
+| Holiday                   | Holiday calendar per tenant                                       |
+| Scheduler / Cron Jobs     | Accrual, carry-forward, expiry, year-end processing               |
+| Payroll Integration Layer | Reads attendance + leave → calculates pay, deductions, encashment |
+| Notifications / Audit     | Alerts on apply/approve/reject; logs for audit                    |
+| Service Layer             | Implements business logic: validation, accrual, FY transitions    |
+
+
+
+
+Define Services / Jobs:
+Leave apply/approval workflow
+Attendance reconciliation
+Payroll integration
+Monthly accrual & FY-end rollover
+
+Edge Case Handling:
+Half-day, cross-FY, retroactive, optional holidays, comp-off expiration, probation rules.
+Multi-Tenant Design Checks:
+Ensure all queries, cron jobs, and reports are org-scoped.
+Payroll & Clock-In Dependency:
+Build logic to auto-detect LOP/half-day using PunchInOut + standard working hours.
+
+
+
+Core Idea (One-Line Summary)
+
+“Our leave management is a policy-driven, event-based system that automatically synchronizes attendance, payroll, and leave balances for each organization based on their configured rules.”
+
+Everything revolves around three engines:
+Policy Engine → decides what rules apply (per organization)
+Leave Engine → applies and updates leave balances
+Attendance Engine → reconciles punches, holidays, and leaves
+Payroll Engine → reads processed attendance and calculates salary impact
+
+High-Level Algorithm Summary
+Step 1: Employee Applies Leave
+1. User submits LeaveRequest(startDate, endDate, leaveType)
+2. System loads LeaveType policy + EmployeeLeaveBalance + OrganisationPolicy
+3. Validate:
+   - Leave balance available?
+   - LeaveType applicable (gender, probation, etc.)?
+   - Dates valid (no overlap, not holiday if restricted)?
+4. If valid → create Leave(status = PENDING)
+5. Notify approver (manager/HR)
+
+Step 2: Approval & Balance Update
+1. Manager/HR approves or rejects leave.
+2. On approval:
+   - For each date in range:
+       - Check if holiday/weekend → skip or count per policy.
+       - Update AttendanceSummary(status = ON_LEAVE)
+   - Deduct from EmployeeLeaveBalance.availed
+   - Update closing balance = opening + accrued - availed - encashed - lapsed
+3. On rejection:
+   - Do not modify balances or attendance.
+
+
+Step 3: Attendance & Punch Integration
+1. Every day, PunchInOut records are read.
+2. Attendance Engine runs nightly:
+   - Aggregate punches per employee/day → total workHours
+   - Compare against OrganisationPolicy.dailyHours
+   - Decide AttendanceSummary.status:
+       IF ON_LEAVE → keep as ON_LEAVE
+       ELSE IF workHours >= 8 → PRESENT
+       ELSE IF 4 ≤ workHours < 8 → HALF_DAY
+       ELSE IF 0 < workHours < 4 → SHORT_DAY
+       ELSE → ABSENT
+3. Auto-punch logic:
+   - If no punches before cutoff time → mark as ABSENT or apply grace period.
+4. Late/early out detection → flags for reports.
+
+
+Step 4: Payroll Preparation
+1. Payroll Engine runs at month-end.
+2. For each employee:
+   - totalDays = calendar working days
+   - paidDays = PRESENT + ON_LEAVE(paid) + HOLIDAY + WEEK_OFF + WFH
+   - lopDays = ABSENT + ON_LEAVE(unpaid)
+   - partialDays = HALF_DAY, SHORT_DAY (convert to 0.5/0.25 day)
+3. grossPay = (MonthlySalary / totalDays) * paidDays
+4. If overtime or extra hours approved:
+   grossPay += overtimePay
+5. If leave encashment exists:
+   grossPay += (encashableDays * BasicSalary / 26)
+6. Finalize deductions, taxes, benefits, etc.
+
+
+Step 5: Financial Year-End Processing
+1. System runs yearly rollover job (31 March or org-defined FY end).
+2. For each EmployeeLeaveBalance:
+   - carryForward = min(closingBalance, LeaveType.carryForwardLimit)
+   - if encashable → calculate encashment and add to Payroll
+   - lapse remaining leaves
+3. Create new EmployeeLeaveBalance for next FY:
+   opening = carryForward
+   reset accrued/availed
+
+
+Step 6: Edge Case Logic
+| Case                                   | Algorithm                                                                       |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| **Cross-year leave**                   | Split leave period into two — update both FY balances separately.               |
+| **Half-day leave**                     | Leave.totalDays = 0.5 → AttendanceSummary = HALF_DAY → Payroll pro-rated.       |
+| **Leave overlap with holiday/weekend** | Policy decides whether to count or skip those dates.                            |
+| **Employee on probation**              | LeaveType.availableDuringProbation = false → reject or auto-LOP.                |
+| **Optional holiday**                   | Mark as ON_LEAVE only if employee selects it; others = HOLIDAY.                 |
+| **Retroactive leave**                  | Allow if within policy-defined backdate limit; update attendance retroactively. |
+| **Comp-off leave**                     | Generated automatically when employee works on HOLIDAY or WEEK_OFF.             |
+| **Encashment**                         | Calculated in payroll or on exit; update EmployeeLeaveBalance.encashed.         |
+
+
+How Multi-Tenancy Works in the Logic
+Each Organisation (tenant) has:
+Its own LeaveType configurations (limits, accruals, encashment)
+Its own OrganisationPolicy (working hours, grace period, overtime)
+Its own holiday calendar
+Its own payroll calendar and salary computation rules
+
+Algorithmically:
+Whenever any module (Leave, Attendance, Payroll) runs,
+the system filters by organisation_id
+and loads relevant policies and rules dynamically.
+
+That means:
+HR of Org A can have 8-hour days, monthly accrual
+HR of Org B can have 7.5-hour days, quarterly accrual, 2x overtime
+Both run on the same platform without code duplication.
+
+Data Flow Logic (Simplified)
+[ PunchInOut ] 
+     ↓
+Aggregate Daily → [ AttendanceSummary ]
+     ↓
+Integrate with [ Leave ] (approved leaves → ON_LEAVE)
+     ↓
+End of Month → [ Payroll Engine ]
+     ├─ Reads AttendanceSummary
+     ├─ Reads EmployeeLeaveBalance
+     ├─ Reads LeaveType & OrgPolicy
+     └─ Calculates pay, LOP, encashment, overtime
+
+Leave Accrual & Balance Algorithm (Cron Job)
+1. For each active employee:
+   For each active leave type:
+     if accrualMethod == MONTHLY:
+        balance.accrued += LeaveType.accrualRate
+     if accrualMethod == ANNUAL and FY start:
+        balance.accrued = LeaveType.annualLimit
+     if accrualMethod == PRO_RATA (for new joiner):
+        balance.accrued = (monthsWorked / 12) * LeaveType.annualLimit
+     balance.closingBalance = opening + accrued - availed - encashed - lapsed
+
+
+Our leave system is entirely policy-driven and multi-tenant.
+Each organization defines its own leave types, accruals, working hours, and payroll integration rules.
+The Leave Engine validates requests, updates balances, and syncs with attendance.
+The Attendance Engine consolidates daily punches, holidays, and leaves into daily statuses.
+Finally, the Payroll Engine uses these processed records to calculate paid days, LOP, and encashment.
+
+We handle all edge cases — cross-year, holidays within leave, half-days, and probation restrictions.
+The entire system runs on automated jobs: daily attendance sync, monthly accrual, and yearly carry-forward.
+So HR doesn’t have to manually reconcile — everything flows automatically from attendance to payroll.
+
+
+Optional: Pseudocode Overview
+# Daily Attendance & Leave Integration
+for each organisation:
+    policy = getOrgPolicy(org)
+    for each employee in org.activeEmployees:
+        punches = getPunches(employee, today)
+        workHours = calculateWorkHours(punches)
+        status = deriveAttendanceStatus(workHours, policy)
+        if leaveApproved(employee, today):
+            status = ON_LEAVE
+        updateAttendanceSummary(employee, today, status, workHours)
+
+# Monthly Payroll Calculation
+for each organisation:
+    for each employee in org.activeEmployees:
+        attnSummary = getMonthlyAttendance(employee)
+        paidDays = countPaidDays(attnSummary)
+        lopDays = countLOPDays(attnSummary)
+        overtime = getApprovedOvertime(employee)
+        encashment = getLeaveEncashment(employee)
+        grossPay = computeSalary(employee, paidDays, lopDays, overtime, encashment)
+        savePayslip(employee, grossPay)
+
+
+WHAT’S STILL MISSING FOR “ENTERPRISE-GRADE PLUS” (Optional Future Enhancements)
+These are nice-to-have or “Phase 2” improvements. The current version will still work perfectly fine for production in most companies.
+| Area                   | Enhancement                                                                         | Description                                               |
+| ---------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 🕓 Attendance sync     | Integrate leave & holiday check in your **AttendanceSummary** cron job.             | Mark “On Leave” automatically post-approval.              |
+| 🧾 LeaveType behavior  | Add policy-based flags for **encashment**, **carry forward**, **probation limits**. | Use these during year-end reconciliation or payroll runs. |
+| 🔄 Auto accrual job    | Monthly scheduler that increments balances for `AccrualMethod.MONTHLY`.             | Use `accrueMonthlyLeaves()` in a Spring `@Scheduled` job. |
+| 🧮 Cross-year handling | Automatically create new balances for next FY.                                      | Triggered by fiscal rollover or first login after April.  |
+| 💰 Payroll sync        | Link `LeaveSummary` → `Payroll` deduction.                                          | Only if attendance hours < policy.minMonthlyHours.        |
+| 🧠 Smart validation    | Add weekend/holiday skipping in `calculateLeaveDays()`.                             | Use `HolidayRepository` if your policy excludes holidays. |
+| 🧍 Workflow approval   | Add **multi-level approval** (Manager → HR → Admin).                                | Expand `approveLeave()` to support chained approvals.     |
+
+
+When a New Financial Year Starts
+👉 Automatically carry forward balances if allowed in OrganisationPolicy.
+You can do this in a scheduled job (cron) once per year:
+
+@Scheduled(cron = "0 0 2 1 4 *") // Example: 1st April every year
+public void carryForwardBalances() {
+    String newFY = getCurrentFinancialYear();
+    String prevFY = getPreviousFinancialYear();
+    
+    List<Organisation> orgs = organisationRepository.findAll();
+    for (Organisation org : orgs) {
+        OrganisationPolicy policy = policyRepo.findByOrganisation(org);
+        if (policy == null) continue;
+
+        List<Employee> employees = employeeRepository.findByOrganisation(org);
+        for (Employee emp : employees) {
+            List<EmployeeLeaveBalance> prevBalances = balanceRepo.findByEmployeeAndFinancialYear(emp, prevFY);
+            for (EmployeeLeaveBalance oldBal : prevBalances) {
+                LeaveType type = oldBal.getLeaveType();
+                double carryForward = 0.0;
+                
+                if (policy.getCarryForwardEnabled() && Boolean.TRUE.equals(type.getCarryForwardAllowed())) {
+                    carryForward = Math.min(
+                        oldBal.getClosingBalance(),
+                        Optional.ofNullable(type.getCarryForwardLimit()).orElse(oldBal.getClosingBalance().intValue())
+                    );
+                }
+
+                // create next FY balance
+                balanceRepo.findByEmployeeAndLeaveTypeAndFinancialYear(emp, type, newFY)
+                    .orElseGet(() -> {
+                        EmployeeLeaveBalance newBal = EmployeeLeaveBalance.builder()
+                            .organisation(org)
+                            .employee(emp)
+                            .leaveType(type)
+                            .financialYear(newFY)
+                            .openingBalance(carryForward)
+                            .closingBalance(carryForward)
+                            .lastUpdatedOn(LocalDateTime.now())
+                            .build();
+                        return balanceRepo.save(newBal);
+                    });
+            }
+        }
+    }
+}

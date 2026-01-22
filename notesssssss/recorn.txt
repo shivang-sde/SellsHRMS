@@ -1,0 +1,62 @@
+@Scheduled(cron = "0 59 23 * * ?") // Every day at 11:59 PM
+public void reconcileAttendance() {
+    LocalDate today = LocalDate.now();
+    
+    // Get all attendance records for today
+    List<AttendanceSummary> todayAttendance = 
+        attendanceSummaryRepo.findByDate(today);
+    
+    for (AttendanceSummary summary : todayAttendance) {
+        
+        // Skip if already finalized (HOLIDAY, WEEK_OFF, LEAVE)
+        if (summary.getStatus() == AttendanceStatus.HOLIDAY ||
+            summary.getStatus() == AttendanceStatus.WEEK_OFF ||
+            summary.getStatus() == AttendanceStatus.ON_LEAVE) {
+            continue;
+        }
+        
+        // Case 1: Still marked ABSENT (never punched in)
+        if (summary.getStatus() == AttendanceStatus.ABSENT) {
+            // Check if there's a regularization request
+            boolean hasRegularization = regularizationRepo
+                .existsPendingForDate(summary.getEmployee().getId(), today);
+            
+            if (hasRegularization) {
+                summary.setStatus(AttendanceStatus.PENDING);
+                summary.setRemarks("Awaiting regularization approval");
+            } else {
+                // Final absent - no punch, no regularization
+                summary.setRemarks("Absent - No attendance record");
+            }
+        }
+        
+        // Case 2: Punched IN but forgot to punch OUT
+        else if (summary.getStatus() == AttendanceStatus.PRESENT &&
+                 summary.getEffectivePunchOut() == null) {
+            
+            PunchInOut punch = summary.getPunchRecord();
+            
+            // Auto punch out after 10 hours
+            LocalDateTime autoPunchOut = punch.getPunchIn().plusHours(10);
+            punch.setPunchOut(autoPunchOut);
+            
+            // Calculate hours
+            Duration duration = Duration.between(
+                punch.getPunchIn(), 
+                autoPunchOut
+            );
+            double hours = duration.toMinutes() / 60.0;
+            punch.setWorkHours(hours);
+            punchRepo.save(punch);
+            
+            // Update summary
+            summary.setEffectivePunchOut(autoPunchOut);
+            summary.setWorkHours(hours);
+            summary.setRemarks("Auto punched out after 10 hours");
+        }
+        
+        attendanceSummaryRepo.save(summary);
+    }
+    
+    log.info("Reconciled attendance for {} employees", todayAttendance.size());
+}

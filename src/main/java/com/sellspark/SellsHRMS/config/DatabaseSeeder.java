@@ -121,3 +121,45 @@
 // .build();
 // }
 // }
+
+
+package com.sellspark.SellsHRMS.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.sellspark.SellsHRMS.entity.Employee;
+import com.sellspark.SellsHRMS.repository.EmployeeRepository;
+import com.sellspark.SellsHRMS.service.LeaveService;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DatabaseSeeder {
+
+    // @Autowired
+    // private EmployeeRepository employeeRepository;
+
+    // @Autowired
+    // private LeaveService leaveService;
+
+    // @PostConstruct
+    // public void seedLeavesForExistingEmployees() {
+    //     log.info("Starting leave balance initialization for existing employees...");
+    //     Iterable<Employee> employees = employeeRepository.findAll();
+    //     for (Employee employee : employees) {
+    //         try {
+    //             String leaveYear = leaveService.getCurrentLeaveYear(employee.getOrganisation().getId());
+    //             leaveService.initializeLeaveBalancesForEmployee(employee.getId(), employee.getOrganisation().getId(), leaveYear);
+    //             log.info("Initialized leave balances for employee ID: " + employee.getId());
+    //         } catch (Exception e) {
+    //             log.error("Failed to initialize leave balances for employee ID: " + employee.getId(), e);
+    //         }
+    //     }
+    // }
+}

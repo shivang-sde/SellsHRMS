@@ -1,0 +1,290 @@
+/* work.css - Styles for Work Management Module */
+
+/* Dashboard Stats Cards */
+.stats-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+}
+
+/* List Items */
+.list-group-item-action {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.list-group-item-action:hover {
+    border-left-color: #0ea5e9;
+    background-color: #f8fafc;
+    transform: translateX(4px);
+}
+
+/* Table Styles */
+.table-hover tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.35rem 0.65rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Priority Badges */
+.badge.bg-danger {
+    background-color: #ef4444 !important;
+}
+
+.badge.bg-warning {
+    background-color: #f59e0b !important;
+}
+
+.badge.bg-info {
+    background-color: #06b6d4 !important;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Card Headers */
+.card-header {
+    padding: 1rem 1.5rem;
+}
+
+.card-header h5 {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.15);
+}
+
+/* Button Group */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Activity Timeline */
+#activityLog .d-flex {
+    position: relative;
+    padding-left: 1rem;
+}
+
+#activityLog .d-flex::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 50px;
+    bottom: -10px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+#activityLog .d-flex:last-child::before {
+    display: none;
+}
+
+/* Attachment List */
+#attachmentsList .border {
+    transition: all 0.2s ease;
+}
+
+#attachmentsList .border:hover {
+    background-color: #f8fafc;
+    border-color: #0ea5e9 !important;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+    border-bottom: 2px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.modal-footer {
+    border-top: 2px solid #f1f5f9;
+    padding: 1rem 1.5rem;
+}
+
+/* Quick Info Card */
+#quickInfo .progress {
+    background-color: #e5e7eb;
+}
+
+#quickInfo .progress-bar {
+    background-color: #0ea5e9;
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Empty State */
+.text-center .fa-3x {
+    font-size: 3rem;
+}
+
+/* Filter Section */
+.card-body .row.g-3 {
+    align-items: flex-end;
+}
+
+/* Project Cards Enhancement */
+.project-card {
+    border-left: 4px solid #0ea5e9;
+    transition: all 0.3s ease;
+}
+
+.project-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Task Priority Indicator */
+.task-priority-high {
+    border-left: 4px solid #ef4444;
+}
+
+.task-priority-medium {
+    border-left: 4px solid #f59e0b;
+}
+
+.task-priority-low {
+    border-left: 4px solid #06b6d4;
+}
+
+/* Ticket Status Colors */
+.ticket-open {
+    background-color: #dbeafe;
+}
+
+.ticket-in-progress {
+    background-color: #fef3c7;
+}
+
+.ticket-resolved {
+    background-color: #d1fae5;
+}
+
+.ticket-closed {
+    background-color: #f3f4f6;
+}
+
+.ticket-row:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 0 8px rgba(0,0,0,0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.5em;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
+
+#ticketAttachmentsList > div {
+  background: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  transition: background 0.2s;
+}
+
+#ticketAttachmentsList > div:hover {
+  background: #e9ecef;
+}
+
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Custom Scrollbar */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

@@ -1,0 +1,118 @@
+:root {
+  --header-height: 60px;
+  --header-bg: #ffffffcc; /* subtle translucency for blur effect */
+  --header-border: #e2e8f0;
+  --header-text: #334155;
+  --header-icon: #64748b;
+  --header-hover: #0ea5e9;
+  --transition-speed: 0.25s;
+}
+
+/* Base Header */
+.hrms-header {
+  height: var(--header-height);
+  background: var(--header-bg);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--header-border);
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  transition: all var(--transition-speed) ease;
+  display: flex;
+  align-items: center;
+}
+
+/* Scroll shadow */
+.hrms-header.scrolled {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Container */
+.hrms-header .container-fluid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+/* Sidebar toggle button */
+#sidebarToggle {
+  background: transparent;
+  border: none;
+  color: var(--header-icon);
+  font-size: 1.25rem;
+  padding: 6px 10px;
+  transition: color var(--transition-speed);
+}
+#sidebarToggle:hover {
+  color: var(--header-hover);
+}
+
+/* Brand */
+.navbar-brand img {
+  max-height: 40px;
+  transition: transform var(--transition-speed);
+}
+.navbar-brand:hover img {
+  transform: scale(1.05);
+}
+
+/* Avatar dropdown */
+.nav-item.dropdown img {
+  border: 2px solid #e2e8f0;
+  transition: border-color var(--transition-speed);
+}
+.nav-item.dropdown img:hover {
+  border-color: var(--header-hover);
+}
+
+/* Username */
+#name {
+  color: var(--header-text);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  border-radius: 10px;
+  padding: 6px 0;
+}
+.dropdown-item {
+  color: var(--header-text);
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  transition: background var(--transition-speed);
+}
+.dropdown-item i {
+  width: 18px;
+  text-align: center;
+}
+.dropdown-item:hover {
+  background: var(--header-hover);
+  color: #fff;
+}
+
+/* Notification (optional) */
+.notification-badge {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 3px 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .brand-name {
+    display: none;
+  }
+  #name {
+    display: none;
+  }
+  #sidebarToggle {
+    font-size: 1.1rem;
+  }
+}

@@ -14,5 +14,8 @@ public interface OrganisationAdminRepository extends JpaRepository<OrganisationA
     Optional<OrganisationAdmin> findByEmail(String email);
 
     List<OrganisationAdmin> findByOrganisation(Organisation organisation);
+    
+    OrganisationAdmin findByOrganisation_Id(Long id);
+
 
 }

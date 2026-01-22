@@ -1,12 +1,39 @@
+app:
+  base-url: http://localhost:8080
+  upload:
+    base-dir: /uploads/hrms-files/
+    url-path: /files/hrms
+
+  async:
+    pool:
+      core-size: 4
+      max-size: 10
+      queue-capacity: 50
+
 spring:
   application:
     name: SellsHRMS
+
+  task:
+    scheduling:
+      pool:
+        size: 5
+      thread-name-prefix: attendance-scheduler-
+
+  devtools:
+    add-properties: false
+    restart:
+      enabled: true     # ✅ Prevents RestartClassLoader issues (caused your PDF errors)
+      additional-paths:
+        - src/main/resources
+        - src/main/java   # ✅ fixed comma placement + correct directory
 
   session:
     store-type: jdbc
     jdbc:
       initialize-schema: always
-
+      flush-mode: immediate
+      save-mode: on_get_attribute
 
   datasource:
     url: jdbc:mysql://localhost:3306/SellsHRMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -16,12 +43,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update     # change to validate in production
-    show-sql: true
+      ddl-auto: update     # change to 'validate' in production
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
 
   mvc:
     view:
@@ -30,8 +57,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 20MB
+      max-request-size: 25MB
 
 server:
   port: 8080
@@ -42,6 +69,9 @@ server:
 logging:
   level:
     '[org.springframework]': INFO
-    '[org.hibernate.SQL]': DEBUG
-    '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE
-    '[org.springframework.security]': DEBUG
+    '[com.sellspark.SellsHRMS]': DEBUG
+    '[com.sellspark.SellsHRMS.controller.api]': DEBUG
+    # '[org.hibernate.SQL]': DEBUG
+    # '[org.springframework.security.web.FilterChainProxy]': INFO
+    # '[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]': ERROR
+    # '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE

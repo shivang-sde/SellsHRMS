@@ -1,8 +1,15 @@
 
 package com.sellspark.SellsHRMS.entity;
 
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,30 +41,46 @@ public class Organisation {
     private Long id;
 
     private String name;
+    @Column(unique = true)
     private String domain;
     private String logoUrl;
+    
+   
 
     private String contactEmail;
     private String contactPhone;
 
     private String address;
     private String country;
+    private String countryCode; // ISO country code (PH, IN, US, etc.)
+    private String currencyCode; // default currency for org
+    private String timeZone;
+
+    //  @OneToMany(mappedBy = "organisation")
+    // private List<WorkLocation> workLocations;
 
     private String pan;
     private String tan;
 
+
+    private LocalDate validity;
     private Integer maxEmployees;
 
-    @Enumerated(EnumType.STRING)
-    private SubscriptionStatus subscriptionStatus;
+    @Column(name = "licence_key")
+    private String licenceKey;
 
     @Builder.Default
     private Boolean isActive = true;
 
-    // TODO: add Plans related fields or create seprate entity plam(id, name, price,
-    // max_user)
+    @Column(name = "suspended_reason")
+    private String suspendedReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private SubscriptionStatus subscriptionStatus;
 
     @OneToOne(mappedBy = "organisation", fetch = FetchType.LAZY)
+    @JsonManagedReference
     private OrganisationAdmin orgAdmin;
 
     private LocalDateTime createdAt;

@@ -12,12 +12,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccessService {
 
-    private final ModuleRepository moduleRepo;
+   
     private final OrganisationModuleRepository orgModuleRepo;
     private final RoleModuleRepository roleModuleRepo;
     private final UserModuleRepository userModuleRepo;
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+
 
     // earlier method (module codes)
     public List<String> getModuleCodesForUser(Long userId) {
@@ -31,8 +31,8 @@ public class AccessService {
                 .map(om -> om.getModule().getCode()).collect(Collectors.toSet());
 
         Set<String> roleCodes = new HashSet<>();
-        if (user.getRole() != null) {
-            roleCodes = roleModuleRepo.findByRoleId(user.getRole().getId()).stream()
+        if (user.getOrgRole() != null) {
+            roleCodes = roleModuleRepo.findByRoleId(user.getOrgRole().getId()).stream()
                     .map(rm -> rm.getModule().getCode()).collect(Collectors.toSet());
         }
 
@@ -59,28 +59,35 @@ public class AccessService {
 
     // permissions: gather permission codes from role -> role.permissions and map to
     // set
+    // authorities = [systemRole, ROLE_<orgRoleName>, <permissionCodes>]
     public Set<String> getPermissionsForUser(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
-        if (user == null)
-            return Set.of();
+        if (user == null || user.getOrgRole() == null) return Set.of();
+            
 
-        Role role = user.getRole();
-        Set<String> perms = new HashSet<>();
+        // Role role = user.getOrgRole();
+        // String systemRole = user.getSystemRole().toString();
+        // Set<String> perms = new HashSet<>();
 
-        if (role != null && role.getPermissions() != null) {
-            perms.addAll(role.getPermissions().stream()
-                    .map(Permission::getCode)
-                    .collect(Collectors.toSet()));
-        }
+        // if (role != null && role.getPermissions() != null) {
+        //     perms.addAll(role.getPermissions().stream()
+        //             .map(Permission::getCode)
+        //             .collect(Collectors.toSet()));
+        // }
+
+
+        return user.getOrgRole().getPermissions().stream()
+               .map(Permission::getCode)
+               .collect(Collectors.toSet());
 
         // optional: apply per-user explicit permission grants/revokes (if you want)
         // we didn't create a user-permission table in this iteration; add if needed
 
         // optionally map module codes to coarse-grained MODULE_* permissions for UI
-        List<String> modules = getModuleCodesForUser(userId);
-        for (String m : modules)
-            perms.add("MODULE_" + m);
+        // List<String> modules = getModuleCodesForUser(userId);
+        // for (String m : modules)
+        //     perms.add("MODULE_" + m);
 
-        return perms;
+        // return perms;
     }
 }

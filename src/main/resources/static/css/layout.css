@@ -1,0 +1,229 @@
+/* ================================================
+   HRMS Layout (Unified, Responsive, Enterprise)
+   ================================================ */
+
+:root {
+  --header-height: 60px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 72px;
+  --transition-speed: 0.25s;
+
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+
+  --sidebar-bg: #1e293b;
+  --sidebar-hover: #334155;
+  --sidebar-active: #0284c7;
+  --sidebar-color: #e2e8f0;
+}
+
+/* Global base */
+body.hrms-app, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+/* ============= Layout Structure ============= */
+.hrms-wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.hrms-sidebar {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-color);
+  overflow-y: auto;
+  transition: width var(--transition-speed) ease;
+  z-index: 1040;
+  border-right: 1px solid #334155;
+}
+
+.hrms-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* Sidebar Links */
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  color: var(--sidebar-color);
+  text-decoration: none;
+  transition: background var(--transition-speed);
+}
+
+.nav-link:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+.nav-link.active {
+  background: var(--sidebar-active);
+  color: #fff;
+}
+
+.sub-menu {
+  list-style: none;
+  margin: 0;
+  padding-left: 20px;
+  max-height: 0;
+  overflow: hidden;
+  background: #243447;
+  color: #cbd5e1;
+  transition: max-height var(--transition-speed) ease;
+}
+
+.sub-menu.open {
+  max-height: 999px;
+}
+
+.nav-text {
+  font-size: small;
+}
+.sub-menu li a {
+  display: block;
+  padding: 8px 14px;
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.sub-menu li a:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+/* Toggle icon animation */
+.toggle-icon {
+  transition: transform var(--transition-speed);
+}
+.toggle-link.open .toggle-icon {
+  transform: rotate(45deg);
+}
+
+/* Scrollbar */
+.hrms-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.hrms-sidebar::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+/* Header */
+.hrms-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transition: all var(--transition-speed);
+}
+
+/* Main Content */
+.hrms-main {
+  position: relative;
+  flex: 1;
+  height: 100vh;
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-width);
+  background: var(--color-bg);
+  transition: margin-left var(--transition-speed) ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+}
+
+.hrms-sidebar.collapsed ~ .hrms-main {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ============= Mobile ============= */
+@media (max-width: 992px) {
+  .hrms-sidebar {
+    top: 0;
+    left: -250px;
+    width: var(--sidebar-width);
+    transition: left var(--transition-speed) ease;
+    z-index: 1050;
+  }
+
+  .hrms-sidebar.mobile-open {
+    left: 0;
+  }
+
+  .hrms-main {
+    margin-left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-speed), visibility var(--transition-speed);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  body.sidebar-active {
+    overflow: hidden;
+  }
+}
+
+/* Collapsed mode: icon-only sidebar */
+.hrms-sidebar.collapsed .nav-text,
+.hrms-sidebar.collapsed .toggle-icon,
+.hrms-sidebar.collapsed .sub-menu {
+  display: none !important;
+}
+
+.hrms-sidebar.collapsed .nav-link {
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Ensure icon stays centered */
+.hrms-sidebar.collapsed .nav-link i.fa:first-child {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* Tooltip spacing fix */
+.tooltip {
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}

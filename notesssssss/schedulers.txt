@@ -1,0 +1,9 @@
+@Scheduled(cron = "0 0 0 * * *") // every midnight
+public void autoDisableExpiredOrganisations() {
+    List<Organisation> expired = repo.findByValidityBeforeAndIsActiveTrue(LocalDate.now());
+    expired.forEach(org -> {
+        org.setIsActive(false);
+        org.setSuspendedReason("License expired");
+    });
+    repo.saveAll(expired);
+}

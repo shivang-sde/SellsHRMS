@@ -4,6 +4,7 @@ import com.sellspark.SellsHRMS.dto.OrgAdminDTO;
 import com.sellspark.SellsHRMS.dto.OrganisationRequest;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationAdmin;
+import com.sellspark.SellsHRMS.exception.DuplicateResourceException;
 import com.sellspark.SellsHRMS.repository.OrganisationAdminRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 
@@ -24,8 +25,8 @@ public class RegistrationService {
 
     public Organisation createOrganisation(OrganisationRequest request) {
 
-        organisationRepo.findByName(request.getName()).ifPresent(o -> {
-            throw new RuntimeException("Organisation name already exists");
+        organisationRepo.findByDomain(request.getDomain()).ifPresent(o -> {
+            throw new DuplicateResourceException("Organisation", "Doamin", request);
         });
 
         Organisation organisation = Organisation.builder()
@@ -34,7 +35,6 @@ public class RegistrationService {
                 .contactEmail(request.getContactEmail())
                 .contactPhone(request.getContactPhone())
                 .maxEmployees(request.getMaxEmployees())
-                .subscriptionStatus(Organisation.SubscriptionStatus.ACTIVE)
                 .isActive(true)
                 .build();
 
