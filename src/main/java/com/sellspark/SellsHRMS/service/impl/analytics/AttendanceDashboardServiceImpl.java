@@ -2,7 +2,7 @@ package com.sellspark.SellsHRMS.service.impl.analytics;
 
 import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.*;
 import com.sellspark.SellsHRMS.entity.Organisation;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.analytics.AttendanceDashboardRepository;
@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,33 +42,27 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
         Long totalActiveEmp = empRepo.countByOrganisationIdAndDeletedFalse(orgId);
 
         LocalDate today = LocalDate.now();
-        LocalDate yersterday = LocalDate.now().minusDays(1);
-        LocalDate startOfCurrentMonth = today.withDayOfMonth(1);
-        LocalDate endOfCurrentMonth = today.with(TemporalAdjusters.lastDayOfMonth());
-
-        LocalDate startOfPreviousMonth = startOfCurrentMonth.minusMonths(1);
-        LocalDate endOfPreviousMonth = startOfPreviousMonth.with(TemporalAdjusters.lastDayOfMonth());
+        LocalDate yesterday = today.minusDays(1);
 
         try {
+            // ✅ Attendance %
+            BigDecimal todayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, today);
+            BigDecimal yesterdayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, yesterday);
 
-            BigDecimal currentDayAvgAttendance = dashboardRepository.calculateAverageAttendance(
-                    orgId, today);
+            // ✅ Missed Days
+            Long todayMissed = dashboardRepository.countDaysMissedByDate(orgId, today);
+            Long yesterdayMissed = dashboardRepository.countDaysMissedByDate(orgId, yesterday);
 
-            // last day attebdays
-            BigDecimal previousDayAvgAttendance = dashboardRepository.calculateAverageAttendance(
-                    orgId, yersterday);
+            // ✅ Late arrivals
+            Long todayLateArrivals = dashboardRepository.countTodayLateArrivals(orgId, today);
 
-            Long currentMonthDaysMissed = dashboardRepository.countDaysMissed(
-                    orgId, today, startOfCurrentMonth);
-
-            Long previousMonthDaysMissed = dashboardRepository.countDaysMissed(
-                    orgId, endOfPreviousMonth, startOfPreviousMonth);
-
+            // ✅ Build response
             return AttendanceDashboardSummaryDTO.builder()
-                    .averageAttendance(currentDayAvgAttendance != null ? currentDayAvgAttendance : BigDecimal.ZERO)
-                    .previousAttendance(previousDayAvgAttendance != null ? previousDayAvgAttendance : BigDecimal.ZERO)
-                    .totalDaysMissed(currentMonthDaysMissed != null ? currentMonthDaysMissed : 0L)
-                    .previousDaysMissed(previousMonthDaysMissed != null ? previousMonthDaysMissed : 0L)
+                    .averageAttendance(todayAvgAttendance != null ? todayAvgAttendance : BigDecimal.ZERO)
+                    .previousAttendance(yesterdayAvgAttendance != null ? yesterdayAvgAttendance : BigDecimal.ZERO)
+                    .totalDaysMissed(todayMissed != null ? todayMissed : 0L)
+                    .previousDaysMissed(yesterdayMissed != null ? yesterdayMissed : 0L)
+                    .todayLateArrivals(todayLateArrivals != null ? todayLateArrivals : 0L)
                     .activeEmployees(totalActiveEmp)
                     .build();
 
@@ -77,6 +73,8 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
                     .previousAttendance(BigDecimal.ZERO)
                     .totalDaysMissed(0L)
                     .previousDaysMissed(0L)
+                    .todayLateArrivals(0L)
+                    .activeEmployees(totalActiveEmp)
                     .build();
         }
     }
@@ -148,10 +146,19 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
     @Override
     public List<WeeklyHoursDTO> getWeeklyHours(Long orgId) {
         validateOrgId(orgId);
-        LocalDateTime startDate = LocalDate.now().minusMonths(3).atStartOfDay();
 
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(7);
+
+        Instant startInstant = startDate.atStartOfDay(ZoneId.of("UTC")).toInstant();
+        Instant endInstant = endDate.plusDays(1).atStartOfDay(ZoneId.of("UTC")).toInstant();
+
+        log.info("Weekly hours range: start={}, end={}", startInstant, endInstant);
         try {
-            List<WeeklyHoursDTO> data = dashboardRepository.getAllDepartmentsAverageWeeklyHours(orgId, startDate);
+            List<WeeklyHoursDTO> data = dashboardRepository
+                    .getAllDepartmentsAverageWeeklyHours(orgId, startInstant, endInstant);
+
+            log.info("Weekly hours raw result: {}", data);
             return data != null ? data : List.of();
         } catch (Exception e) {
             log.error("Error fetching weekly hours for orgId={}", orgId, e);

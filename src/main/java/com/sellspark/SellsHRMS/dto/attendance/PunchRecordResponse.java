@@ -4,12 +4,12 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 
-
 @Data
 public class PunchRecordResponse {
     private Long id;
     private Long employeeId;
     private String employeeName;
+    private String department;
     private String employeeCode;
     private LocalDateTime punchIn;
     private LocalDateTime punchOut;

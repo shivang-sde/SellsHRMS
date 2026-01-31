@@ -3,8 +3,6 @@ package com.sellspark.SellsHRMS.entity;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.sellspark.SellsHRMS.entity.payroll.SalaryStructure;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,27 +11,31 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.ArrayList;
 
-
 @Entity
-@Table(name = "tbl_employee")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "tbl_employee", uniqueConstraints = @UniqueConstraint(columnNames = { "organisation_id",
+        "employeeCode" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Employee {
 
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     // ------------- BASIC IDENTIFIERS ----------------
     @Column(unique = true, nullable = false)
-    private String employeeCode;     // Human-readable employee ID
+    private String employeeCode; // Human-readable employee ID
 
     private String firstName;
     private String lastName;
 
     @Column(unique = true)
-    private String email;            // official email
+    private String email; // official email
 
-    private String phone;            // primary phone
+    private String phone; // primary phone
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
@@ -46,30 +48,27 @@ public class Employee {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "employment_type", length = 20, nullable = false)
-    private EmploymentType employmentType;   // FullTime / PartTime / Contract / Intern
+    private EmploymentType employmentType; // FullTime / PartTime / Contract / Intern
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
-    private EmployeeStatus status;           // Active / Suspended / Terminated / Inactive
+    private EmployeeStatus status; // Active / Suspended / Terminated / Inactive
 
-//     @Enumerated(EnumType.STRING)
-// @Column(name = "data_visibility", length = 20, )
-// @Builder.Default
-// private DataVisibility dataVisibility = DataVisibility.SELF;
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "data_visibility", length = 20, )
+    // @Builder.Default
+    // private DataVisibility dataVisibility = DataVisibility.SELF;
 
-
-    private Double salary;                   // Quick reference CTC or basic salary
-
+    private Double salary; // Quick reference CTC or basic salary
 
     // ------------- EMPLOYMENT LIFECYCLE ----------------
-private LocalDate probationEndDate;   // e.g., 3 or 6 months after joining
-private LocalDate confirmationDate;   // official date of confirmation
-private Integer noticePeriodDays;     // applicable during exit
+    private LocalDate probationEndDate; // e.g., 3 or 6 months after joining
+    private LocalDate confirmationDate; // official date of confirmation
+    private Integer noticePeriodDays; // applicable during exit
 
-@Enumerated(EnumType.STRING)
-@Column(length = 20)
-private ServiceStage serviceStage;   // ACTIVE, PROBATION, NOTICE, LEAVE_WITHOUT_PAY, SABBATICAL
-
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ServiceStage serviceStage; // ACTIVE, PROBATION, NOTICE, LEAVE_WITHOUT_PAY, SABBATICAL
 
     // ------------- SOFT DELETE FLAG ----------------
     @Builder.Default
@@ -135,7 +134,6 @@ private ServiceStage serviceStage;   // ACTIVE, PROBATION, NOTICE, LEAVE_WITHOUT
     @Builder.Default
     private List<EmployeeSalaryDetail> salaryDetails = new ArrayList<>();
 
-
     // @OneToOne(mappedBy = "employee")
     // private SalaryStructure salaryStructure;
 
@@ -144,52 +142,49 @@ private ServiceStage serviceStage;   // ACTIVE, PROBATION, NOTICE, LEAVE_WITHOUT
     private String personalEmail;
     private String alternatePhone;
     private String nationality;
-    private String maritalStatus;       // Keep as String (simple, no overengineering)
+    private String maritalStatus; // Keep as String (simple, no overengineering)
 
     private String referenceName;
     private String referencePhone;
 
-    private String photoUrl;            
-    private String biometricId;         
+    private String photoUrl;
+    private String biometricId;
 
     // ------------- ENUMS ----------------
-    public enum Gender { MALE, FEMALE, OTHER }
+    public enum Gender {
+        MALE, FEMALE, OTHER
+    }
 
     public enum EmploymentType {
         FULLTIME, PARTTIME, CONTRACT, INTERN, CONSULTANT
-    
-    }
-    public enum EmployeeStatus {
-        ACTIVE, INACTIVE, SUSPENDED, TERMINATED
+
     }
 
-    
+    public enum EmployeeStatus {
+        ACTIVE, INACTIVE, SUSPENDED, TERMINATED, EXIT
+    }
 
     public enum ServiceStage {
-    PROBATION,
-    CONFIRMED,
-    NOTICE,
-    LEAVE_WITHOUT_PAY,
-    SABBATICAL,
-    RETIRED
-}
+        PROBATION,
+        CONFIRMED,
+        NOTICE,
+        LEAVE_WITHOUT_PAY,
+        SABBATICAL,
+        RETIRED
+    }
 
-//     public enum DataVisibility {
-//     SELF,        // can view only own record
-//     TEAM,        // can view direct reports (reporting_to = self)
-//     ORG          // can view everyone in org
-// }
+    // public enum DataVisibility {
+    // SELF, // can view only own record
+    // TEAM, // can view direct reports (reporting_to = self)
+    // ORG // can view everyone in org
+    // }
 
+    public boolean isOnProbation() {
+        return probationEndDate != null && LocalDate.now().isBefore(probationEndDate);
+    }
 
-public boolean isOnProbation() {
-    return probationEndDate != null && LocalDate.now().isBefore(probationEndDate);
-}
-
-public boolean isConfirmed() {
-    return confirmationDate != null && !LocalDate.now().isBefore(confirmationDate);
-}
-
-
-
+    public boolean isConfirmed() {
+        return confirmationDate != null && !LocalDate.now().isBefore(confirmationDate);
+    }
 
 }

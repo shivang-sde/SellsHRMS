@@ -1,6 +1,6 @@
 package com.sellspark.SellsHRMS.entity;
 
-
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
@@ -21,10 +21,14 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "tbl_punch_in_out")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PunchInOut {
 
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -36,8 +40,14 @@ public class PunchInOut {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    private LocalDateTime punchIn;
-    private LocalDateTime punchOut;
+    private Double lat;
+    private Double lng;
+
+    @Enumerated(EnumType.STRING)
+    private PUNCHFROM punchedFrom;
+
+    private Instant punchIn;
+    private Instant punchOut;
     private Double workHours;
 
     @Enumerated(EnumType.STRING)
@@ -45,9 +55,14 @@ public class PunchInOut {
 
     @Builder.Default
     private Boolean isAutoPunchGenerated = false;
-    
+
     private String location;
 
+    public enum Source {
+        WEB, MOBILE, BIOMETRIC
+    }
 
-    public enum Source {WEB, MOBILE, BIOMETRIC}
+    public enum PUNCHFROM {
+        WFH, WFO
+    }
 }

@@ -48,7 +48,7 @@
                         </div>
                     </div>
 
-                    <!-- <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="col-md-6 col-lg-3 mb-3">
                         <div class="card dashboard-metric-card h-100 shadow-sm">
                             <div class="card-body text-center">
                                 <div class="metric-icon mb-3">
@@ -56,10 +56,10 @@
                                 </div>
                                 <h6 class="text-muted text-uppercase mb-2">Late Arrivals</h6>
                                 <h2 class="metric-value text-warning mb-2" id="lateArrivals">--</h2>
-                                <p class="metric-change mb-0 text-muted">This Month</p>
+                                <p class="metric-change mb-0 text-muted">Today</p>
                             </div>
                         </div>
-                    </div> -->
+                    </div>
 
                     <div class="col-md-6 col-lg-3 mb-3">
                         <div class="card dashboard-metric-card h-100 shadow-sm">
@@ -153,7 +153,7 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="position: relative; height: 300px;">
+                                <div class="chart-container" style="position: relative; height: 200px;">
                                     <canvas id="deptMissedChart"></canvas>
                                 </div>
                             </div>

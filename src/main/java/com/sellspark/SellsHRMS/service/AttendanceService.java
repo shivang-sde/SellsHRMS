@@ -15,5 +15,8 @@ public interface AttendanceService {
     List<PunchRecordResponse> getTodayOrgAttendance(Long orgId);
     AttendanceSummaryResponse getAttendanceSummary(Long employeeId, LocalDate startDate, LocalDate endDate);
     List<AttendanceSummary> getOrgAttendanceSummary(Long orgId, LocalDate date);
+    List<PunchRecordResponse> getOrgAttendanceByRange(Long orgId, LocalDate startDate, LocalDate endDate);
+
+
 
 }

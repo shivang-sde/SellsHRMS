@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 @Getter
 @Setter
@@ -25,6 +28,7 @@ public class EmployeeLeaveBalance {
     private Employee employee;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE) 
     private LeaveType leaveType;
 
     @Column(name = "leave_year", length = 20)

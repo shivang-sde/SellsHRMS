@@ -8,9 +8,11 @@ import com.sellspark.SellsHRMS.entity.AttendanceSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,20 +41,16 @@ public interface AttendanceDashboardRepository extends JpaRepository<AttendanceS
             @Param("orgId") Long orgId,
             @Param("startDate") LocalDate startDate);
 
-    /**
-     * Count total days missed (ABSENT, ON_LEAVE, HALF_DAY, SHORT_DAY)
-     */
     @Query("""
-                SELECT COUNT(a.id)
+                SELECT COALESCE(COUNT(a.id), 0)
                 FROM AttendanceSummary a
                 WHERE a.organisation.id = :orgId
-                AND a.status IN ('ABSENT', 'ON_LEAVE', 'HALF_DAY', 'SHORT_DAY')
-                AND a.attendanceDate BETWEEN :startDate AND :endDate
+                  AND a.status IN ('ABSENT', 'ON_LEAVE', 'HALF_DAY', 'SHORT_DAY')
+                  AND a.attendanceDate = :date
             """)
-    Long countDaysMissed(
+    Long countDaysMissedByDate(
             @Param("orgId") Long orgId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("date") LocalDate date);
 
     /**
      * Get monthly attendance trend for an organization
@@ -131,14 +129,15 @@ public interface AttendanceDashboardRepository extends JpaRepository<AttendanceS
                 FROM Department d
                 LEFT JOIN Employee e ON e.department.id = d.id
                 LEFT JOIN PunchInOut p ON p.employee.id = e.id
-                    AND p.punchIn >= :startDate
+                    AND p.punchIn BETWEEN :startDate AND :endDate
                 WHERE d.organisation.id = :orgId
                 GROUP BY d.id, d.name
                 ORDER BY d.name
             """)
     List<WeeklyHoursDTO> getAllDepartmentsAverageWeeklyHours(
             @Param("orgId") Long orgId,
-            @Param("startDate") LocalDateTime startDate);
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate);
 
     /**
      * Get late arrivals trend (month-wise)
@@ -171,5 +170,14 @@ public interface AttendanceDashboardRepository extends JpaRepository<AttendanceS
     List<Object[]> getLateArrivalsDayWiseTrend(
             @Param("orgId") Long orgId,
             @Param("startDate") LocalDate startDate);
+
+    @Query("""
+                SELECT COUNT(a.id)
+                FROM AttendanceSummary a
+                WHERE a.organisation.id = :orgId
+                  AND a.isLate = TRUE
+                  AND a.attendanceDate = :date
+            """)
+    Long countTodayLateArrivals(@Param("orgId") Long orgId, @Param("date") LocalDate date);
 
 }

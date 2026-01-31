@@ -155,6 +155,7 @@
         const daysMissed = summary.totalDaysMissed || 0;
         const prevDaysMissed = summary.previousDaysMissed || 0;
         const activeEmp = summary.activeEmployees || 0;
+        const lateArrivals = summary.todayLateArrivals || 0;
 
         const attendanceChange = avgAttendance - prevAttendance;
         const daysMissedChange = daysMissed - prevDaysMissed;
@@ -170,6 +171,7 @@
         // Update Days Missed
         $('#daysMissed').text(daysMissed);
         $('#activeEmployees').text(activeEmp);
+        $('#lateArrivals').text(lateArrivals);
 
         const daysMissedChangeEl = $('#daysMissedChange');
         const missedChangeText = `${daysMissedChange >= 0 ? '+' : ''}${daysMissedChange} vs Previous (${prevDaysMissed})`;
@@ -397,8 +399,9 @@
                     label: 'Days Missed',
                     data: data.map(d => d.daysMissed),
                     backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.danger,
-                    borderRadius: 8,
+                    borderRadius: 10,
                     borderSkipped: false
+
                 }]
             },
             options: {
@@ -439,6 +442,8 @@
      */
     function renderWeeklyHoursChart(data) {
         const ctx = document.getElementById('weeklyHoursChart');
+
+        console.log('Weekly Hours Data:', data);
 
         if (charts.weeklyHours) {
             charts.weeklyHours.destroy();

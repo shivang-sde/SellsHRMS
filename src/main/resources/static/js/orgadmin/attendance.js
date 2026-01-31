@@ -124,6 +124,7 @@ $(document).ready(function() {
 
         let html = '';
         data.forEach(record => {
+            console.log(record);    
             const statusBadge = getStatusBadge(record.status);
             const punchIn = record.punchIn ? formatTime(record.punchIn) : '<span class="text-muted">--:--</span>';
             const punchOut = record.punchOut ? formatTime(record.punchOut) : '<span class="text-muted">--:--</span>';

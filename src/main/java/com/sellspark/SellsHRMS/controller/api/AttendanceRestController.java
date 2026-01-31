@@ -7,6 +7,7 @@ import com.sellspark.SellsHRMS.dto.attendance.AttendanceSummaryResponse;
 import com.sellspark.SellsHRMS.dto.attendance.PunchInRequest;
 import com.sellspark.SellsHRMS.dto.attendance.PunchOutRequest;
 import com.sellspark.SellsHRMS.dto.attendance.PunchRecordResponse;
+import com.sellspark.SellsHRMS.entity.AttendanceSummary;
 import com.sellspark.SellsHRMS.service.AttendanceService;
 
 import lombok.RequiredArgsConstructor;
@@ -75,12 +76,13 @@ public class AttendanceRestController {
         return ResponseEntity.ok(attendanceService.getTodayOrgAttendance(orgId));
     }
 
-    // @GetMapping("/org/{orgId}/attendance")
-    // public List<AttendanceSummaryResponse> getOrgAttendance(@PathVariable Long orgId, @RequestParam LocalDate date) {
-    //     return attendanceService.getOrgAttendance(orgId, date);
-    // }
+    @GetMapping("/org/{orgId}")
+    public ResponseEntity<List<PunchRecordResponse>> getOrgAttendanceByDate(    @PathVariable Long orgId, 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate ) {
+        
+        return ResponseEntity.ok(attendanceService.getOrgAttendanceByRange(orgId, startDate, endDate));
+    }
 
-    
-     
 
 }
