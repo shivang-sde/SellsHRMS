@@ -1,10 +1,8 @@
-package com.sellspark.SellsHRMS.exception;
+package com.sellspark.SellsHRMS.exception.core;
 
-import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties.Http;
 import org.springframework.http.HttpStatus;
 
 import lombok.Getter;
-
 
 /**
  * Base exception class for all custom exceptions
