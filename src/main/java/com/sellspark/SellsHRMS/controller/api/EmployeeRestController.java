@@ -41,13 +41,12 @@ public class EmployeeRestController {
 
     @GetMapping("/subordinates")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getSubordinates(
-        @RequestParam Long managerId,
-        @RequestParam Long organisationId) {
+            @RequestParam Long managerId,
+            @RequestParam Long organisationId) {
 
-    List<EmployeeResponse> subordinates = service.getSubordinates(managerId, organisationId);
-    return ResponseEntity.ok(ApiResponse.ok("Subordinates fetched successfully", subordinates));
-}
-
+        List<EmployeeResponse> subordinates = service.getSubordinates(managerId, organisationId);
+        return ResponseEntity.ok(ApiResponse.ok("Subordinates fetched successfully", subordinates));
+    }
 
     /**
      * Get employee details by ID with role-based visibility.
@@ -55,7 +54,7 @@ public class EmployeeRestController {
      * - Org Admin → can see any employee in their org
      * - Super Admin → can see anyone
      */
-    @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_ALL')")
+    // @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_ALL')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id, HttpSession session) {
         String role = (String) session.getAttribute("SYSTEM_ROLE");
@@ -69,7 +68,6 @@ public class EmployeeRestController {
             }
             return ResponseEntity.ok(service.getById(id));
         }
-
 
         if ("ORG_ADMIN".equals(role)) {
             EmployeeDetailResponse emp = service.getByIdAndOrg(id, orgId);

@@ -1,0 +1,9 @@
+Example Scenarios
+
+| Role                 | Ticket Assigned? | Member? | Result (`canPick`) | Why                                    |
+| -------------------- | ---------------- | ------- | ------------------ | -------------------------------------- |
+| Project member       | ❌ No             | ✅ Yes   | ✅ `true`           | Can pick it                            |
+| Project member       | ✅ Yes            | ✅ Yes   | ❌ `false`          | Already assigned                       |
+| Project manager      | ❌ No             | ✅ Yes   | ❌ `false`          | Managers can assign manually, not pick |
+| Not a project member | ❌ No             | ❌ No    | ❌ `false`          | Not part of project                    |
+| Team lead            | ❌ No             | ✅ Yes   | ❌ `false`          | Lead cannot pick                       |

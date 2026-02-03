@@ -7,18 +7,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
-@Table(
-  name = "tbl_project",
-  indexes = {
-      @Index(name = "idx_project_org", columnList = "organisation_id"),
-      @Index(name = "idx_project_status", columnList = "status"),
-      @Index(name = "idx_project_type", columnList = "project_type")
-  }
-)
+@Table(name = "tbl_project", indexes = {
+        @Index(name = "idx_project_org", columnList = "organisation_id"),
+        @Index(name = "idx_project_status", columnList = "status"),
+        @Index(name = "idx_project_type", columnList = "project_type")
+})
 public class Project {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -61,14 +62,13 @@ public class Project {
     @JoinColumn(name = "project_manager_id")
     private Employee projectManager;
 
-     @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_team_lead_id")
     private Employee projectTeamLead;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private Employee createdBy;
-
 
     @Builder.Default
     private Boolean isActive = true;
@@ -80,6 +80,10 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Task> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProjectAttachment> attachments = new ArrayList<>();
 
     // @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
     // @Builder.Default
@@ -99,8 +103,10 @@ public class Project {
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();
-        if (isActive == null) isActive = true;
-        if (status == null) status = ProjectStatus.PLANNING;
+        if (isActive == null)
+            isActive = true;
+        if (status == null)
+            status = ProjectStatus.PLANNING;
     }
 
     @PreUpdate
@@ -132,15 +138,14 @@ public class Project {
     }
 
     public enum ProjectMethodology {
-    AGILE,
-    SCRUM,
-    KANBAN,
-    WATERFALL,
-    LEAN,
-    PRINCE2,
-    OTHER
-}
-
+        AGILE,
+        SCRUM,
+        KANBAN,
+        WATERFALL,
+        LEAN,
+        PRINCE2,
+        OTHER
+    }
 
     public enum ProjectStatus {
         PLANNING,

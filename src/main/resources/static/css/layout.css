@@ -144,9 +144,33 @@ body.hrms-app, html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 0;
   transition: all var(--transition-speed);
 }
+
+/* Brand */
+/* .brand-logo-wrap {
+  margin: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f1f5f9;
+  transition: background var(--transition-speed);
+} */
+
+.brand-logo-wrap img {
+  margin: 10px;
+    padding: 10px;
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+/* .brand-link:hover .brand-logo-wrap {
+  background: #e2e8f0;
+} */
 
 /* Main Content */
 .hrms-main {
@@ -159,7 +183,11 @@ body.hrms-app, html {
   transition: margin-left var(--transition-speed) ease;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
+
+}
+
+.hrms-content {
+  padding-bottom: 80px;
 }
 
 .hrms-sidebar.collapsed ~ .hrms-main {
@@ -226,4 +254,21 @@ body.hrms-app, html {
 .tooltip {
   font-size: 0.85rem;
   padding: 6px 10px;
+}
+
+
+.hrms-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  z-index: 1000;
 }

@@ -1,0 +1,85 @@
+@Scheduled(cron = "0 0 0 * * ?") // Every day at midnight
+public void preMarkAttendance() {
+    LocalDate today = LocalDate.now();
+    
+    // Get all ACTIVE employees
+    List<Employee> activeEmployees = employeeRepo.findByStatus(ACTIVE);
+    
+    for (Employee emp : activeEmployees) {
+        
+        // Check if today is holiday for this org
+        boolean isHoliday = holidayRepo.existsByOrgAndDate(
+            emp.getOrganisation().getId(), today
+        );
+        
+        // Check if today is employee's week off
+        boolean isWeekOff = isWeekOffForEmployee(emp, today);
+        
+        // Check if employee has approved leave
+        boolean hasLeave = leaveRepo.existsByEmployeeAndDateAndStatus(
+            emp.getId(), today, LeaveStatus.APPROVED
+        );
+        
+        // Create attendance summary record
+        AttendanceSummary summary = new AttendanceSummary();
+        summary.setEmployee(emp);
+        summary.setAttendanceDate(today);
+        summary.setSource(AttendanceSource.AUTO_SYSTEM);
+        
+        if (isHoliday) {
+            summary.setStatus(AttendanceStatus.HOLIDAY);
+            summary.setRemarks("Public/Company Holiday");
+        } else if (isWeekOff) {
+            summary.setStatus(AttendanceStatus.WEEK_OFF);
+            summary.setRemarks("Weekly Off");
+        } else if (hasLeave) {
+            summary.setStatus(AttendanceStatus.ON_LEAVE);
+            summary.setRemarks("Approved Leave");
+        } else {
+            // Pre-mark as ABSENT (will be updated if they punch in)
+            summary.setStatus(AttendanceStatus.ABSENT);
+            summary.setRemarks("Tentative - Awaiting punch in");
+        }
+        
+        attendanceSummaryRepo.save(summary);
+    }
+    
+    log.info("Pre-marked attendance for {} employees", activeEmployees.size());
+}
+
+
+
+
+
+@Scheduled(cron = "0 0 0 * * ?")
+public void preMarkAttendance() {
+    LocalDate today = LocalDate.now();
+    
+    // ✅ Get ALL organisations (multi-tenant system)
+    List<Organisation> orgs = organisationRepo.findAllActive();
+    
+    for (Organisation org : orgs) {
+        
+        // ✅ Get employees for THIS organisation only
+        List<Employee> employees = employeeRepo
+            .findByOrganisationIdAndStatus(org.getId(), EmployeeStatus.ACTIVE);
+        
+        for (Employee emp : employees) {
+            
+            // Create attendance summary
+            AttendanceSummary summary = AttendanceSummary.builder()
+                .organisation(org)        // ✅ Set organisation
+                .employee(emp)            // ✅ Set employee
+                .attendanceDate(today)
+                .status(AttendanceStatus.ABSENT)  // Pre-mark as absent
+                .source(AttendanceSource.AUTO_SYSTEM)
+                .remarks("Auto-marked at midnight")
+                .build();
+            
+            attendanceSummaryRepo.save(summary);
+        }
+        
+        log.info("Pre-marked attendance for {} employees in org {}", 
+                 employees.size(), org.getName());
+    }
+}

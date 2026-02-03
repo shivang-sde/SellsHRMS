@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class RoleServiceImpl implements RoleService {
-    
+
     private final RoleRepository roleRepo;
     private final OrganisationRepository orgRepo;
     private final PermissionRepository permissionRepo;
@@ -54,54 +54,52 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-public List<RoleResponse> getRolesByOrganisation(Long organisationId) {
-    return roleRepo.findByOrganisationId(organisationId).stream()
-        .map(role -> mapToRoleResponse(role))
-        .collect(Collectors.toList());
-}
+    public List<RoleResponse> getRolesByOrganisation(Long organisationId) {
+        return roleRepo.findByOrganisationId(organisationId).stream()
+                .map(role -> mapToRoleResponse(role))
+                .collect(Collectors.toList());
+    }
 
     @Override
     public RoleResponse getRoleResponseById(Long id) {
-    Role role = roleRepo.findById(id)
-        .orElseThrow(() -> new RuntimeException("Role not found"));
+        Role role = roleRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
 
-    Designation desg = role.getDesignation();
+        Designation desg = role.getDesignation();
 
-    log.info("desg {}, desig title {}, desig id {}", desg, desg.getTitle(), desg.getId());
-    
-    return mapToRoleResponse(role);
-}
+        log.info("desg {}, desig title {}, desig id {}", desg, desg.getTitle(), desg.getId());
 
-private RoleResponse mapToRoleResponse(Role role) {
-    if (role == null) return null;
+        return mapToRoleResponse(role);
+    }
 
-    RoleResponse.RoleResponseBuilder builder = RoleResponse.builder()
-            .id(role.getId())
-            .name(role.getName())
-            .description(role.getDescription())
-            .organisationId(
-                    role.getOrganisation() != null ? role.getOrganisation().getId() : null
-            )
-            .permissions(
-                    role.getPermissions() != null
-                            ? role.getPermissions().stream()
-                                    .map(permission -> PermissionDTO.builder()
-                                            .id(permission.getId())
-                                            .module(permission.getModule())
-                                            .action(permission.getAction())
-                                            .code(permission.getCode())
-                                            .build())
-                                    .toList()
-                            : List.of()
-            );
-            log.info("role desg {}", role.getDesignation().getTitle());
-            if (role.getDesignation() != null) {
-                log.info("role -> desg {}", role.getName() );
+    private RoleResponse mapToRoleResponse(Role role) {
+        if (role == null)
+            return null;
+
+        RoleResponse.RoleResponseBuilder builder = RoleResponse.builder()
+                .id(role.getId())
+                .name(role.getName())
+                .description(role.getDescription())
+                .organisationId(
+                        role.getOrganisation() != null ? role.getOrganisation().getId() : null)
+                .permissions(
+                        role.getPermissions() != null
+                                ? role.getPermissions().stream()
+                                        .map(permission -> PermissionDTO.builder()
+                                                .id(permission.getId())
+                                                .module(permission.getModule())
+                                                .action(permission.getAction())
+                                                .code(permission.getCode())
+                                                .build())
+                                        .toList()
+                                : List.of());
+        log.info("role desg {}", role.getDesignation() != null ? role.getDesignation().getTitle() : "role is null");
+        if (role.getDesignation() != null) {
+            log.info("role -> desg {}", role.getName());
             builder.designationId(role.getDesignation().getId());
-            builder.designationTitle(role.getDesignation().getTitle());
+            builder.designationTitle(role.getDesignation() != null ? role.getDesignation().getTitle() : null);
         }
-         return builder.build();
-}
-
+        return builder.build();
+    }
 
 }

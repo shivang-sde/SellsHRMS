@@ -3,6 +3,8 @@ $(document).ready(function() {
     let deleteHolidayId = null;
     let allHolidays = [];
 
+    $('#yearSelect').val(new Date().getFullYear());
+
     // Load holidays on page load
     loadHolidays();
 

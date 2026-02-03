@@ -2,10 +2,8 @@ package com.sellspark.SellsHRMS.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.Builder.Default;
 
 import java.util.Set;
-
 
 @Entity
 @Getter

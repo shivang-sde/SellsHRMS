@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.entity;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -12,13 +13,12 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "tbl_attendance_summary",
-       uniqueConstraints = {@UniqueConstraint(columnNames = {"employee_id", "attendance_date"})},
-       indexes = {
-           @Index(name = "idx_org_date", columnList = "organisation_id, attendance_date"),
-           @Index(name = "idx_emp_date", columnList = "employee_id, attendance_date"),
-           @Index(name = "idx_org_date_status", columnList = "organisation_id, attendance_date, status")
-       })
+@Table(name = "tbl_attendance_summary", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "employee_id", "attendance_date" }) }, indexes = {
+                @Index(name = "idx_org_date", columnList = "organisation_id, attendance_date"),
+                @Index(name = "idx_emp_date", columnList = "employee_id, attendance_date"),
+                @Index(name = "idx_org_date_status", columnList = "organisation_id, attendance_date, status")
+        })
 public class AttendanceSummary {
 
     @Id
@@ -27,14 +27,14 @@ public class AttendanceSummary {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id", nullable = false)
-    private Organisation organisation;  
+    private Organisation organisation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee; 
+    private Employee employee;
 
     @Column(name = "attendance_date", nullable = false)
-    private LocalDate attendanceDate; 
+    private LocalDate attendanceDate;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
@@ -42,17 +42,17 @@ public class AttendanceSummary {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "punch_record_id")
-    private PunchInOut punchRecord; 
+    private PunchInOut punchRecord;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leave_id")
     private Leave leave;
 
     @Column(name = "effective_punch_in")
-    private LocalDateTime effectivePunchIn;
+    private Instant effectivePunchIn;
 
     @Column(name = "effective_punch_out")
-    private LocalDateTime effectivePunchOut;
+    private Instant effectivePunchOut;
 
     @Column(name = "work_hours")
     private Double workHours;

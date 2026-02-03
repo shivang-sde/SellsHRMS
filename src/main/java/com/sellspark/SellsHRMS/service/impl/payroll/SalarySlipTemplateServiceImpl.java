@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
 import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.html.simpleparser.HTMLWorker;
@@ -18,8 +17,8 @@ import com.sellspark.SellsHRMS.entity.payroll.SalarySlipComponent;
 import com.sellspark.SellsHRMS.entity.payroll.SalarySlipTemplate;
 import com.sellspark.SellsHRMS.entity.payroll.StatutoryComponent;
 import com.sellspark.SellsHRMS.exception.InvalidOperationException;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.DepartmentRepository;
 import com.sellspark.SellsHRMS.repository.DesignationRepository;
 import com.sellspark.SellsHRMS.repository.EmployeeBankRepository;
@@ -77,8 +76,6 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
     private static final String UPLOAD_DIR = "uploads/salary-templates/";
 
-    
-
     @Override
     public List<SalarySlipTemplateDTO> getAllTemplates(Long orgId) {
         return templateRepository.findByOrganisation_IdAndIsActiveTrue(orgId).stream()
@@ -106,16 +103,17 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
         SalarySlipTemplate template;
 
         Organisation org = organisationRepository.findById(orgId)
-        .orElseThrow(() -> new OrganisationNotFoundException(orgId));
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
         if (templateDTO.getId() != null) {
             // Update existing
             template = templateRepository.findByIdAndOrganisation_Id(templateDTO.getId(), templateDTO.getOrgId())
                     .orElseThrow(() -> new RuntimeException("Template not found"));
-    
+
         } else {
             // Create new
             template = new SalarySlipTemplate();
-            template.setOrganisation(org);;
+            template.setOrganisation(org);
+            ;
         }
 
         // Check duplicate name
@@ -142,7 +140,7 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
         try {
             renderTemplateWithData(templateDTO.getTemplateHtml(), getMockData(orgId));
         } catch (Exception e) {
-        throw new RuntimeException("Template syntax invalid: " + e.getMessage());
+            throw new RuntimeException("Template syntax invalid: " + e.getMessage());
         }
 
         template = templateRepository.save(template);
@@ -152,15 +150,14 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
     @Override
     @Transactional
     public boolean deleteTemplate(Long id, Long orgId) {
-    SalarySlipTemplate salarySlipTemplate = templateRepository.findByIdAndOrganisation_Id(id, orgId)
-        .orElseThrow(() -> new ResourceNotFoundException("Salary Slip Template", "Id", id));
+        SalarySlipTemplate salarySlipTemplate = templateRepository.findByIdAndOrganisation_Id(id, orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("Salary Slip Template", "Id", id));
 
-    // Mark as inactive instead of active
-    salarySlipTemplate.setIsActive(false);
+        // Mark as inactive instead of active
+        salarySlipTemplate.setIsActive(false);
 
-    return templateRepository.save(salarySlipTemplate) != null;
-}
-
+        return templateRepository.save(salarySlipTemplate) != null;
+    }
 
     @Override
     @Transactional
@@ -177,11 +174,10 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
     @Override
     public String generatePreview(TemplatePreviewRequest request, Long orgId) {
-        Map<String, Object> mockData = request.getCustomData() != null 
-            ? request.getCustomData() 
-            : getMockData(orgId);
+        Map<String, Object> mockData = request.getCustomData() != null
+                ? request.getCustomData()
+                : getMockData(orgId);
 
-        
         return renderTemplateWithData(request.getTemplateHtml(), mockData);
 
     }
@@ -283,44 +279,42 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
         // Organisation fields
         fields.put("organisation", Arrays.asList(
-            createField("name", "Company Name"),
-            createField("address", "Address"),
-            createField("email", "Email"),
-            createField("phone", "Phone"),
-            createField("logoUrl", "Logo")
-        ));
+                createField("name", "Company Name"),
+                createField("address", "Address"),
+                createField("email", "Email"),
+                createField("phone", "Phone"),
+                createField("logoUrl", "Logo")));
 
         // Employee fields
         fields.put("employee", Arrays.asList(
-            createField("employeeCode", "Employee Code"),
-            createField("firstName", "First Name"),
-            createField("lastName", "Last Name"),
-            createField("email", "Email"),
-            createField("phone", "Phone"),
-            createField("department", "Department"),
-            createField("designation", "Designation"),
-            createField("joiningDate", "Joining Date")
+                createField("employeeCode", "Employee Code"),
+                createField("firstName", "First Name"),
+                createField("lastName", "Last Name"),
+                createField("email", "Email"),
+                createField("phone", "Phone"),
+                createField("department", "Department"),
+                createField("designation", "Designation"),
+                createField("joiningDate", "Joining Date")
 
         ));
 
         // Bank fields
         fields.put("bank", Arrays.asList(
-            createField("bankName", "Bank Name"),
-            createField("accountNumber", "Account Number"),
-            createField("ifscCode", "IFSC Code")
-        ));
+                createField("bankName", "Bank Name"),
+                createField("accountNumber", "Account Number"),
+                createField("ifscCode", "IFSC Code")));
 
         // PayRun fields
         fields.put("payRun", Arrays.asList(
-            createField("month", "Month"),
-            createField("year", "Year"),
-            createField("payPeriod", "Pay Period"),
-            createField("payDate", "Pay Date")
-        ));
+                createField("month", "Month"),
+                createField("year", "Year"),
+                createField("payPeriod", "Pay Period"),
+                createField("payDate", "Pay Date")));
 
         // Salary Components from database
         List<SalaryComponent> components = salaryComponentRepository.findByOrganisationIdAndActiveTrue(orgId);
-        List<StatutoryComponent> stComponents = statutoryComponentRepository.findByOrganisation_IdAndIsActiveTrue(orgId);
+        List<StatutoryComponent> stComponents = statutoryComponentRepository
+                .findByOrganisation_IdAndIsActiveTrue(orgId);
         List<Map<String, String>> earningFields = new ArrayList<>();
         List<Map<String, String>> deductionFields = new ArrayList<>();
 
@@ -333,7 +327,7 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
             }
         }
 
-        for(StatutoryComponent component : stComponents ) {
+        for (StatutoryComponent component : stComponents) {
             Map<String, String> filed = createField(component.getCode(), component.getName());
             deductionFields.add(filed);
         }
@@ -343,12 +337,11 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
         // Summary fields
         fields.put("summary", Arrays.asList(
-            createField("basePay", "Base Salary"),
-            createField("totalEarnings", "Total Earnings"),
-            createField("totalDeductions", "Total Deductions"),
-            createField("netPay", "Net Pay"),
-            createField("netPayInWords", "Net Pay (In Words)")
-        ));
+                createField("basePay", "Base Salary"),
+                createField("totalEarnings", "Total Earnings"),
+                createField("totalDeductions", "Total Deductions"),
+                createField("netPay", "Net Pay"),
+                createField("netPayInWords", "Net Pay (In Words)")));
 
         return fields;
     }
@@ -386,62 +379,58 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
     @Override
     public byte[] generatePDF(Long salarySlipId, Long orgId) throws Exception {
-    String html = renderSalarySlip(salarySlipId, orgId);
+        String html = renderSalarySlip(salarySlipId, orgId);
 
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try {
-        PdfRendererBuilder builder = new PdfRendererBuilder();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
 
-        builder.useFastMode();
-        builder.withHtmlContent(html,  "file:///" + new File("uploads").getAbsolutePath() + "/"); // base URI optional, useful for relative image paths
-        builder.toStream(baos);
-        builder.run();
+            builder.useFastMode();
+            builder.withHtmlContent(html, "file:///" + new File("uploads").getAbsolutePath() + "/"); // base URI
+                                                                                                     // optional, useful
+                                                                                                     // for relative
+                                                                                                     // image paths
+            builder.toStream(baos);
+            builder.run();
 
-        return baos.toByteArray();
-    } catch (Exception e) {
-        log.error("Error generating styled PDF: {}", e.getMessage(), e);
-        throw new Exception("Failed to generate PDF: " + e.getMessage());
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.error("Error generating styled PDF: {}", e.getMessage(), e);
+            throw new Exception("Failed to generate PDF: " + e.getMessage());
+        }
     }
-}
-
 
     private String renderTemplateWithData(String templateHtml, Map<String, Object> data) {
-    try {
-        Configuration cfg = new Configuration(Configuration.VERSION_2_3_32);
-        cfg.setDefaultEncoding("UTF-8");
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        try {
+            Configuration cfg = new Configuration(Configuration.VERSION_2_3_32);
+            cfg.setDefaultEncoding("UTF-8");
+            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
 
-        // Load the HTML string into FreeMarker
-        StringTemplateLoader loader = new StringTemplateLoader();
-        loader.putTemplate("salarySlipTemplate", templateHtml);
-        cfg.setTemplateLoader(loader);
+            // Load the HTML string into FreeMarker
+            StringTemplateLoader loader = new StringTemplateLoader();
+            loader.putTemplate("salarySlipTemplate", templateHtml);
+            cfg.setTemplateLoader(loader);
 
-        Template template = cfg.getTemplate("salarySlipTemplate");
+            Template template = cfg.getTemplate("salarySlipTemplate");
 
-        StringWriter out = new StringWriter();
-        template.process(data, out);
-        return out.toString();
+            StringWriter out = new StringWriter();
+            template.process(data, out);
+            return out.toString();
 
-    } catch (Exception e) {
-        log.error("Error rendering FreeMarker template: {}", e.getMessage(), e);
-        throw new RuntimeException("Failed to render template: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Error rendering FreeMarker template: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to render template: " + e.getMessage());
+        }
     }
-}
-
-
-
-
-
-
 
     // Helper methods
     private String replacePlaceholders(String template, Map<String, Object> data) {
         String result = template;
-        
+
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            
+
             if (value instanceof Map) {
                 @SuppressWarnings("unchecked")
                 Map<String, String> nestedMap = (Map<String, String>) value;
@@ -460,13 +449,13 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
                 result = result.replace(placeholder, replacement);
             }
         }
-        
+
         return result;
     }
 
     private Map<String, Object> buildRealData(SalarySlip salarySlip) {
         Map<String, Object> data = new HashMap<>();
-        
+
         // Load organisation
         Organisation org = organisationRepository.findById(salarySlip.getOrganisation().getId()).orElse(null);
         if (org != null) {
@@ -478,7 +467,7 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
             orgData.put("logoUrl", org.getLogoUrl());
             data.put("organisation", orgData);
         }
-        
+
         // Load employee
         Employee emp = employeeRepository.findById(salarySlip.getEmployee().getId()).orElse(null);
         if (emp != null) {
@@ -490,30 +479,34 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
             empData.put("phone", emp.getPhone());
             empData.put("department", emp.getDepartment() != null ? emp.getDepartment().getName() : "");
             empData.put("designation", emp.getDesignation() != null ? emp.getDesignation().getTitle() : "");
-            empData.put("joiningDate", emp.getDateOfJoining() != null ? 
-            emp.getDateOfJoining().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) : "");
+            empData.put("joiningDate",
+                    emp.getDateOfJoining() != null
+                            ? emp.getDateOfJoining().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"))
+                            : "");
             data.put("employee", empData);
-            
+
             // Load bank details
             EmployeeBank bank = employeeBankRepository.findByEmployeeIdAndIsPrimaryAccountTrue(emp.getId());
             Map<String, String> bankData = new HashMap<>();
-                bankData.put("bankName", bank != null ? bank.getBankName() : "");
-                bankData.put("accountNumber", bank != null ? bank.getAccountNumber() : "");
-                bankData.put("ifscCode", bank != null ? bank.getIfscCode() : "");
-                data.put("bank", bankData);
-            
+            bankData.put("bankName", bank != null ? bank.getBankName() : "");
+            bankData.put("accountNumber", bank != null ? bank.getAccountNumber() : "");
+            bankData.put("ifscCode", bank != null ? bank.getIfscCode() : "");
+            data.put("bank", bankData);
+
         }
-        
+
         // Load PayRun
         Map<String, String> payRunData = new HashMap<>();
         PayRun payRun = salarySlip.getPayRun();
         payRunData.put("month", String.valueOf(payRun.getMonth()));
         payRunData.put("year", String.valueOf(payRun.getYear()));
         payRunData.put("payPeriod", salarySlip.getPayRun().getPeriodLabel());
-        payRunData.put("payDate", salarySlip.getGeneratedAt() != null ?
-            salarySlip.getGeneratedAt().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) : "");
+        payRunData.put("payDate",
+                salarySlip.getGeneratedAt() != null
+                        ? salarySlip.getGeneratedAt().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"))
+                        : "");
         data.put("payRun", payRunData);
-        
+
         // Load components
         List<SalarySlipComponent> components = salarySlipComponentRepository.findBySalarySlip_Id(salarySlip.getId());
         List<Map<String, Object>> earnings = new ArrayList<>();
@@ -524,31 +517,30 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
         basePay.put("name", "Base pay");
         basePay.put("amount", salarySlip.getAssignment().getBasePay());
         earnings.add(basePay);
-        
-        
+
         for (SalarySlipComponent comp : components) {
             Map<String, Object> compData = toComponentData(comp);
             if ("EARNING".equalsIgnoreCase(comp.getComponentType())) {
-             earnings.add(compData);
+                earnings.add(compData);
             } else if ("DEDUCTION".equalsIgnoreCase(comp.getComponentType())) {
-            deductions.add(compData);
+                deductions.add(compData);
             }
         }
 
-        
         data.put("earnings", earnings);
         data.put("deductions", deductions);
-        
+
         // Summary
         Map<String, String> summary = new HashMap<>();
         // include basepay later for proper pay breakdown
-        //summary.put("Base Pay", formatAmount(salarySlip.getBasePay() != null ? salarySlip.getBasePay(): "Base Pay"));
+        // summary.put("Base Pay", formatAmount(salarySlip.getBasePay() != null ?
+        // salarySlip.getBasePay(): "Base Pay"));
         summary.put("totalEarnings", formatAmount(salarySlip.getGrossPay()));
         summary.put("totalDeductions", formatAmount(salarySlip.getTotalDeductions()));
         summary.put("netPay", formatAmount(salarySlip.getNetPay()));
         summary.put("netPayInWords", convertToWords(salarySlip.getNetPay()));
         data.put("summary", summary);
-        
+
         return data;
 
     }
@@ -561,19 +553,20 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
     }
 
     private Map<String, Object> toComponentData(SalarySlipComponent comp) {
-    String name = Optional.ofNullable(comp.getComponentName())
-            .orElseGet(() -> {
-                if (comp.getComponent() != null) return comp.getComponent().getName();
-                if (comp.getStatutoryComponent() != null) return comp.getStatutoryComponent().getName();
-                return "Unknown Component";
-            });
+        String name = Optional.ofNullable(comp.getComponentName())
+                .orElseGet(() -> {
+                    if (comp.getComponent() != null)
+                        return comp.getComponent().getName();
+                    if (comp.getStatutoryComponent() != null)
+                        return comp.getStatutoryComponent().getName();
+                    return "Unknown Component";
+                });
 
-    Map<String, Object> data = new HashMap<>();
-    data.put("name", name);
-    data.put("amount", comp.getAmount());
-    return data;
-}
-
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", name);
+        data.put("amount", comp.getAmount());
+        return data;
+    }
 
     private Map<String, String> createField(String key, String label) {
         Map<String, String> field = new HashMap<>();
@@ -583,14 +576,16 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
     }
 
     private String formatAmount(Double amount) {
-        if (amount == null) return "₹0.00";
+        if (amount == null)
+            return "₹0.00";
         return String.format("₹%,.2f", amount);
     }
 
     private String convertToWords(Double amount) {
         // Simplified number to words conversion
         // You can enhance this with a proper library
-        if (amount == null) return "Zero Rupees Only";
+        if (amount == null)
+            return "Zero Rupees Only";
         long rupees = amount.longValue();
         return "Rupees " + rupees + " Only"; // Placeholder - implement full conversion
     }

@@ -1,58 +1,63 @@
 // dashboard.js
-$(document).ready(function() {
-    loadDashboardData();
+$(document).ready(function () {
+  loadDashboardData();
 });
 
 async function loadDashboardData() {
-    try {
-        const data = await dashboardAPI.getMyWork(window.APP.ORG_ID, window.APP.EMPLOYEE_ID);
-        
-        // Update statistics
-        updateStats(data);
-        
-        // Render sections
-        renderActiveProjects(data.activeProjects || []);
-        renderAssignedTasks(data.assignedTasks || []);
-        renderMyTickets(data.assignedTickets || []);
-        
-    } catch (error) {
-        console.error('Failed to load dashboard:', error);
-        showToast('Failed to load dashboard data', 'error');
-    }
+  try {
+    const data = await dashboardAPI.getMyWork(
+      window.APP.ORG_ID,
+      window.APP.EMPLOYEE_ID,
+    );
+    console.log("work dash data :", data);
+    // Update statistics
+    updateStats(data);
+
+    // Render sections
+    renderActiveProjects(data.activeProjects || []);
+    renderAssignedTasks(data.assignedTasks || []);
+    renderMyTickets(data.assignedTickets || []);
+    renderUpcomingReminders(data.upcomingDeadlines || []);
+  } catch (error) {
+    console.error("Failed to load dashboard:", error);
+    showToast("error", "Failed to load dashboard data");
+  }
 }
 
 function updateStats(data) {
-    const activeProjects = data.activeProjects?.length || 0;
-    const pendingTasks = data.assignedTasks?.filter(t => t.status !== 'COMPLETED').length || 0;
-    const openTickets = data.assignedTickets?.filter(t => t.status === 'OPEN').length || 0;
-    const completedToday = data.completedToday || 0;
+  const stats = data.stats || {};
 
-    $('#activeProjectsCount').text(activeProjects);
-    $('#pendingTasksCount').text(pendingTasks);
-    $('#openTicketsCount').text(openTickets);
-    $('#completedTodayCount').text(completedToday);
+  $("#activeProjectsCount").text(
+    stats.totalProjects || data.activeProjects?.length || 0,
+  );
+  $("#pendingTasksCount").text(stats.pendingTasks || 0);
+  $("#openTicketsCount").text(stats.activeTickets || 0);
+  $("#completedTodayCount").text(stats.completedTasks || 0);
 }
 
 function renderActiveProjects(projects) {
-    const container = $('#activeProjectsList');
-    
-    if (projects.length === 0) {
-        container.html(`
+  const container = $("#activeProjectsList");
+
+  if (projects.length === 0) {
+    container.html(`
             <div class="text-center text-muted py-4">
                 <i class="fas fa-folder-open fa-3x mb-3 opacity-50"></i>
                 <p>No active projects</p>
             </div>
         `);
-        return;
-    }
+    return;
+  }
 
-    const html = projects.slice(0, 5).map(project => `
+  const html = projects
+    .slice(0, 5)
+    .map(
+      (project) => `
         <a href="${window.APP.CONTEXT_PATH}/work/projects/${project.id}" 
            class="list-group-item list-group-item-action border-0 py-3">
             <div class="d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
                     <h6 class="mb-1">${project.name}</h6>
-                    <p class="text-muted mb-1 small">${project.description || 'No description'}</p>
+                    <p class="text-muted mb-1 small">${project.description || "No description"}</p>
                     <div class="d-flex gap-2 align-items-center">
                         ${getStatusBadge(project.status)}
                         <small class="text-muted">
@@ -63,25 +68,30 @@ function renderActiveProjects(projects) {
                 <i class="fas fa-chevron-right text-muted"></i>
             </div>
         </a>
-    `).join('');
+    `,
+    )
+    .join("");
 
-    container.html(html);
+  container.html(html);
 }
 
 function renderAssignedTasks(tasks) {
-    const container = $('#assignedTasksList');
-    
-    if (tasks.length === 0) {
-        container.html(`
+  const container = $("#assignedTasksList");
+
+  if (tasks.length === 0) {
+    container.html(`
             <div class="text-center text-muted py-4">
                 <i class="fas fa-tasks fa-3x mb-3 opacity-50"></i>
                 <p>No assigned tasks</p>
             </div>
         `);
-        return;
-    }
+    return;
+  }
 
-    const html = tasks.slice(0, 5).map(task => `
+  const html = tasks
+    .slice(0, 5)
+    .map(
+      (task) => `
         <a href="${window.APP.CONTEXT_PATH}/work/tasks/${task.id}" 
            class="list-group-item list-group-item-action border-0 py-3">
             <div class="d-flex justify-content-between align-items-start">
@@ -98,16 +108,18 @@ function renderAssignedTasks(tasks) {
                 <i class="fas fa-chevron-right text-muted"></i>
             </div>
         </a>
-    `).join('');
+    `,
+    )
+    .join("");
 
-    container.html(html);
+  container.html(html);
 }
 
 function renderMyTickets(tickets) {
-    const tbody = $('#ticketsTable tbody');
-    
-    if (tickets.length === 0) {
-        tbody.html(`
+  const tbody = $("#ticketsTable tbody");
+
+  if (tickets.length === 0) {
+    tbody.html(`
             <tr>
                 <td colspan="6" class="text-center text-muted py-4">
                     <i class="fas fa-ticket-alt fa-3x mb-3 opacity-50"></i>
@@ -115,10 +127,13 @@ function renderMyTickets(tickets) {
                 </td>
             </tr>
         `);
-        return;
-    }
+    return;
+  }
 
-    const html = tickets.slice(0, 5).map(ticket => `
+  const html = tickets
+    .slice(0, 5)
+    .map(
+      (ticket) => `
         <tr>
             <td><strong>#${ticket.id}</strong></td>
             <td>
@@ -137,28 +152,37 @@ function renderMyTickets(tickets) {
                 </a>
             </td>
         </tr>
-    `).join('');
+    `,
+    )
+    .join("");
 
-    tbody.html(html);
+  tbody.html(html);
 }
 
 async function loadUpcomingReminders() {
-    try {
-        const reminders = await dashboardAPI.getUpcomingReminders(window.APP.ORG_ID, window.APP.EMPLOYEE_ID, 3);
+  try {
+    const reminders = await dashboardAPI.getUpcomingReminders(
+      window.APP.ORG_ID,
+      window.APP.EMPLOYEE_ID,
+      3,
+    );
 
-        const container = $('#upcomingRemindersList');
+    const container = $("#upcomingRemindersList");
 
-        if (!reminders || reminders.length === 0) {
-            container.html(`
+    if (!reminders || reminders.length === 0) {
+      container.html(`
                 <div class="text-center text-muted py-4">
                     <i class="fas fa-bell fa-3x mb-3 opacity-50"></i>
                     <p>No upcoming reminders in next 3 days</p>
                 </div>
             `);
-            return;
-        }
+      return;
+    }
 
-        const html = reminders.slice(0, 5).map(task => `
+    const html = reminders
+      .slice(0, 5)
+      .map(
+        (task) => `
             <a href="${window.APP.CONTEXT_PATH}/work/tasks/${task.id}" 
                class="list-group-item list-group-item-action border-0 py-3">
                 <div class="d-flex justify-content-between align-items-start">
@@ -175,20 +199,20 @@ async function loadUpcomingReminders() {
                     <i class="fas fa-chevron-right text-muted"></i>
                 </div>
             </a>
-        `).join('');
+        `,
+      )
+      .join("");
 
-        container.html(html);
-
-    } catch (error) {
-        console.error('Failed to load upcoming reminders:', error);
-        $('#upcomingRemindersList').html(`
+    container.html(html);
+  } catch (error) {
+    console.error("Failed to load upcoming reminders:", error);
+    $("#upcomingRemindersList").html(`
             <div class="text-center text-danger py-4">
                 <p>Error loading reminders</p>
             </div>
         `);
-    }
+  }
 }
-
 
 // $(document).ready(function () {
 //   loadTicketsDashboard();
@@ -205,9 +229,11 @@ async function loadUpcomingReminders() {
 
 function renderTicketDashboard(tickets) {
   // Clear old containers
-  $("#notStartedContainer, #inProgressContainer, #onHoldContainer, #completedContainer, #delayedContainer").empty();
+  $(
+    "#notStartedContainer, #inProgressContainer, #onHoldContainer, #completedContainer, #delayedContainer",
+  ).empty();
 
-  tickets.forEach(ticket => {
+  tickets.forEach((ticket) => {
     const card = buildTicketCard(ticket);
 
     const today = new Date();
@@ -230,15 +256,23 @@ function renderTicketDashboard(tickets) {
     }
 
     // Delayed detection
-    if (ticket.status !== "COMPLETED" && ticket.endDate && new Date(ticket.endDate) < today) {
+    if (
+      ticket.status !== "COMPLETED" &&
+      ticket.endDate &&
+      new Date(ticket.endDate) < today
+    ) {
       $("#delayedContainer").append(card);
     }
   });
 }
 
 function buildTicketCard(ticket) {
-  const start = ticket.actualStartDate ? `Started: ${ticket.actualStartDate}` : "";
-  const end = ticket.actualCompletionDate ? `Completed: ${ticket.actualCompletionDate}` : "";
+  const start = ticket.actualStartDate
+    ? `Started: ${ticket.actualStartDate}`
+    : "";
+  const end = ticket.actualCompletionDate
+    ? `Completed: ${ticket.actualCompletionDate}`
+    : "";
 
   return `
     <div class="border p-2 mb-2 rounded small shadow-sm">
@@ -251,4 +285,42 @@ function buildTicketCard(ticket) {
       <small>${end}</small>
     </div>
   `;
+}
+
+function renderUpcomingReminders(reminders) {
+  const container = $("#upcomingRemindersList");
+  if (!reminders.length) {
+    container.html(`
+      <div class="text-center text-muted py-4">
+        <i class="fas fa-bell fa-3x mb-3 opacity-50"></i>
+        <p>No upcoming reminders</p>
+      </div>
+    `);
+    return;
+  }
+
+  const html = reminders
+    .map(
+      (r) => `
+    <a href="${window.APP.CONTEXT_PATH}/work/${r.type.toLowerCase()}s/${r.id}" 
+       class="list-group-item list-group-item-action border-0 py-3">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="flex-grow-1">
+          <h6 class="mb-1">${r.title}</h6>
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            ${getStatusBadge(r.status)}
+            ${getPriorityBadge(r.priority)}
+            <small class="text-muted">
+              <i class="fas fa-clock me-1"></i>Due: ${formatDateTime(r.dueAt)}
+            </small>
+          </div>
+        </div>
+        <i class="fas fa-chevron-right text-muted"></i>
+      </div>
+    </a>
+  `,
+    )
+    .join("");
+
+  container.html(html);
 }

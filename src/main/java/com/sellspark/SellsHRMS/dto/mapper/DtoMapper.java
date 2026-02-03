@@ -22,6 +22,7 @@ public class DtoMapper {
         org.setName(dto.getName());
         org.setDomain(dto.getDomain());
         org.setLogoUrl(dto.getLogoUrl());
+        org.setEmpPrefix(dto.getPrefix());
         org.setContactEmail(dto.getContactEmail());
         org.setContactPhone(dto.getContactPhone());
         org.setAddress(dto.getAddress());
@@ -44,6 +45,7 @@ public class DtoMapper {
         dto.setMaxEmployees(org.getMaxEmployees());
         dto.setIsActive(org.getIsActive());
         dto.setValidity(org.getValidity());
+        dto.setPrefix(org.getEmpPrefix());
 
         if (org.getOrgAdmin() != null) {
             dto.setAdminName(org.getOrgAdmin().getFullName());
@@ -59,6 +61,7 @@ public class DtoMapper {
         dto.setId(org.getId());
         dto.setName(org.getName());
         dto.setDomain(org.getDomain());
+        dto.setPrefix(org.getEmpPrefix());
         dto.setLogoUrl(org.getLogoUrl());
         dto.setIsActive(org.getIsActive());
         dto.setContactEmail(org.getContactEmail());
@@ -97,7 +100,6 @@ public class DtoMapper {
         return dto;
     }
 
-
     // ==================== EMPLOYEE =====================
 
     public EmployeeListDTO toEmployeeList(Employee e) {
@@ -116,5 +118,4 @@ public class DtoMapper {
         return dto;
     }
 
-   
 }

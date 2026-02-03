@@ -1,13 +1,14 @@
 package com.sellspark.SellsHRMS.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.apache.tomcat.util.openssl.pem_password_cb;
 import org.springframework.stereotype.Service;
 
 import com.sellspark.SellsHRMS.dto.organisation.OrganisationPolicyDTO;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationPolicy;
+import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.OrganisationPolicyRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.OrganisationPolicyService;
@@ -26,62 +27,113 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
     @Override
     public OrganisationPolicy createOrUpdatePolicy(Long orgId, OrganisationPolicyDTO policyDTO) {
         Organisation org = organisationRepository.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
 
         OrganisationPolicy policy = organisationPolicyRepository.findByOrganisation(org)
                 .orElse(new OrganisationPolicy());
 
+        // 🔹 Use mapper helper
+        mapDtoToEntity(policyDTO, policy);
         policy.setOrganisation(org);
-        policy.setFinancialYearStartDay(policyDTO.getFinancialYearStartDay());
-        policy.setFinancialYearStartMonth(policyDTO.getFinancialYearStartMonth());
-        policy.setLeaveYearStartDay(policyDTO.getLeaveYearStartDay());
-        policy.setLeaveYearStartMonth(policyDTO.getLeaveYearStartMonth());
-        policy.setStandardDailyHours(policyDTO.getStandardDailyHours());
-        policy.setWeeklyHours(policyDTO.getWeeklyHours());
-        policy.setAutoPunchTime(policyDTO.getAutoPunchTime());
-        policy.setLateGraceMinutes(policyDTO.getLateGraceMinutes());
-        policy.setEarlyOutGraceMinutes(policyDTO.getEarlyOutGraceMinutes());
-        policy.setOvertimeAllowed(policyDTO.getOvertimeAllowed());
-        policy.setOvertimeMultiplier(policyDTO.getOvertimeMultiplier());
-        policy.setMinMonthlyHours(policyDTO.getMinMonthlyHours());
-        policy.setFlexibleHourModelEnabled(policyDTO.getFlexibleHourModelEnabled());
-        policy.setCarryForwardEnabled(policyDTO.getCarryForwardEnabled());
-        policy.setEncashmentEnabled(policyDTO.getEncashmentEnabled());
-        policy.setAdditionalNotes(policyDTO.getAdditionalNotes());
 
-        if(policy.getId() == null) {
-            policy.setCreatedAt(java.time.LocalDateTime.now());
+        if (policy.getId() == null) {
+            policy.setCreatedAt(LocalDateTime.now());
         }
-        if(policy.getId() != null) {
-            policy.setUpdatedAt(java.time.LocalDateTime.now());
-        }
+        policy.setUpdatedAt(LocalDateTime.now());
 
         return organisationPolicyRepository.save(policy);
-       
     }
 
     @Override
     public Optional<OrganisationPolicy> getPolicyForOrg(Long orgId) {
         Organisation org = organisationRepository.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation not found"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
         return organisationPolicyRepository.findByOrganisation(org);
     }
 
     @Override
     public OrganisationPolicyDTO getOrganisationPolicyByOrgId(Long orgId) {
         OrganisationPolicy policy = getPolicyForOrg(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation policy not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation policy not found"));
+        return mapEntityToDto(policy);
+    }
+
+    @Override
+    public int getAutoPunchOutAfterHours(Long orgId) {
+        OrganisationPolicy policy = getPolicyForOrg(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation policy not found"));
+        return policy.getAutoPunchTime() != null ? policy.getAutoPunchTime().getHour() : 0;
+    }
+
+    @Override
+    public boolean isLeaveEncashmentEnabled(Long orgId) {
+        OrganisationPolicy policy = getPolicyForOrg(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation policy not found"));
+        return Boolean.TRUE.equals(policy.getEncashmentEnabled());
+    }
+
+    /*
+     * -------------------------------------------------------------------
+     * 🔹 Private Mapper Utility Methods (Null-safe)
+     * -------------------------------------------------------------------
+     */
+
+    private void mapDtoToEntity(OrganisationPolicyDTO dto, OrganisationPolicy entity) {
+        if (dto == null || entity == null)
+            return;
+
+        if (dto.getFinancialYearStartDay() != null)
+            entity.setFinancialYearStartDay(dto.getFinancialYearStartDay());
+        if (dto.getFinancialYearStartMonth() != null)
+            entity.setFinancialYearStartMonth(dto.getFinancialYearStartMonth());
+        if (dto.getLeaveYearStartDay() != null)
+            entity.setLeaveYearStartDay(dto.getLeaveYearStartDay());
+        if (dto.getLeaveYearStartMonth() != null)
+            entity.setLeaveYearStartMonth(dto.getLeaveYearStartMonth());
+        if (dto.getStandardDailyHours() != null)
+            entity.setStandardDailyHours(dto.getStandardDailyHours());
+        if (dto.getOfficeStart() != null)
+            entity.setOfficeStart(dto.getOfficeStart());
+        if (dto.getOfficeClosed() != null)
+            entity.setOfficeClosed(dto.getOfficeClosed());
+        if (dto.getWeeklyHours() != null)
+            entity.setWeeklyHours(dto.getWeeklyHours());
+        if (dto.getAutoPunchTime() != null)
+            entity.setAutoPunchTime(dto.getAutoPunchTime());
+        if (dto.getLateGraceMinutes() != null)
+            entity.setLateGraceMinutes(dto.getLateGraceMinutes());
+        if (dto.getEarlyOutGraceMinutes() != null)
+            entity.setEarlyOutGraceMinutes(dto.getEarlyOutGraceMinutes());
+        if (dto.getOvertimeAllowed() != null)
+            entity.setOvertimeAllowed(dto.getOvertimeAllowed());
+        if (dto.getOvertimeMultiplier() != null)
+            entity.setOvertimeMultiplier(dto.getOvertimeMultiplier());
+        if (dto.getMinMonthlyHours() != null)
+            entity.setMinMonthlyHours(dto.getMinMonthlyHours());
+        if (dto.getFlexibleHourModelEnabled() != null)
+            entity.setFlexibleHourModelEnabled(dto.getFlexibleHourModelEnabled());
+        if (dto.getCarryForwardEnabled() != null)
+            entity.setCarryForwardEnabled(dto.getCarryForwardEnabled());
+        if (dto.getEncashmentEnabled() != null)
+            entity.setEncashmentEnabled(dto.getEncashmentEnabled());
+        if (dto.getAdditionalNotes() != null)
+            entity.setAdditionalNotes(dto.getAdditionalNotes());
+    }
+
+    private OrganisationPolicyDTO mapEntityToDto(OrganisationPolicy policy) {
+        if (policy == null)
+            return null;
 
         OrganisationPolicyDTO dto = new OrganisationPolicyDTO();
-
         dto.setId(policy.getId());
-        dto.setOrganisationId(policy.getOrganisation().getId());
+        dto.setOrganisationId(policy.getOrganisation() != null ? policy.getOrganisation().getId() : null);
         dto.setFinancialYearStartDay(policy.getFinancialYearStartDay());
         dto.setFinancialYearStartMonth(policy.getFinancialYearStartMonth());
         dto.setLeaveYearStartDay(policy.getLeaveYearStartDay());
         dto.setLeaveYearStartMonth(policy.getLeaveYearStartMonth());
         dto.setStandardDailyHours(policy.getStandardDailyHours());
+        dto.setOfficeClosed(policy.getOfficeClosed());
+        dto.setOfficeStart(policy.getOfficeStart());
         dto.setWeeklyHours(policy.getWeeklyHours());
         dto.setAutoPunchTime(policy.getAutoPunchTime());
         dto.setLateGraceMinutes(policy.getLateGraceMinutes());
@@ -93,27 +145,9 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         dto.setCarryForwardEnabled(policy.getCarryForwardEnabled());
         dto.setEncashmentEnabled(policy.getEncashmentEnabled());
         dto.setAdditionalNotes(policy.getAdditionalNotes());
+        dto.setCreatedAt(policy.getCreatedAt());
         dto.setUpdatedAt(policy.getUpdatedAt());
+
         return dto;
     }
-
-    @Override
-    public int getAutoPunchOutAfterHours(Long orgId) {
-        OrganisationPolicy policy = getPolicyForOrg(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation policy not found"));
-
-        return policy.getAutoPunchTime() != null ? policy.getAutoPunchTime().getHour() : 0;
-    }
-
-     
-   
-    @Override
-    public boolean isLeaveEncashmentEnabled(Long orgId) {
-        OrganisationPolicy policy = getPolicyForOrg(orgId)
-                .orElseThrow(() -> new RuntimeException("Organisation policy not found"));
-
-        return policy.getEncashmentEnabled() != null ? policy.getEncashmentEnabled() : false;
-    }
-
-    
 }

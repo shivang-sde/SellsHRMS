@@ -1,11 +1,13 @@
 package com.sellspark.SellsHRMS.service.impl;
 
+import com.sellspark.SellsHRMS.config.UserPrincipal;
 import com.sellspark.SellsHRMS.entity.User;
 import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.service.AccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
@@ -18,31 +20,36 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final AccessService accessService;
+        private final UserRepository userRepository;
+        private final AccessService accessService;
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User u = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        @Override
+        public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                User u = userRepository.findByEmail(username)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        Set<String> perms = accessService.getPermissionsForUser(u.getId()); // implement in AccessService
-        var authorities = perms.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
+                Set<String> perms = accessService.getPermissionsForUser(u.getId()); // implement in AccessService
+                var authorities = perms.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
 
-        log.info("authorites {}", authorities.toArray().toString());
+                log.info("Authorities: {}", authorities.stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .toList());
 
-         log.info("User: " + u.getEmail());
-        log.info("Authorities: " + authorities.stream()
-            .map(SimpleGrantedAuthority::getAuthority)
-            .toList());
+                log.info("User: " + u.getEmail());
+                log.info("Authorities: {} ", authorities.stream()
+                                .map(SimpleGrantedAuthority::getAuthority)
+                                .toList());
 
-        
-
-        return new org.springframework.security.core.userdetails.User(
-                u.getEmail(),
-                u.getPasswordHash(),
-                u.getIsActive() != null && u.getIsActive(),
-                true, true, true,
-                authorities);
-    }
+                return UserPrincipal.builder()
+                                .id(u.getId())
+                                .email(u.getEmail())
+                                .password(u.getPasswordHash())
+                                .active(Boolean.TRUE.equals(u.getIsActive()))
+                                .organisationId(u.getOrganisation() != null ? u.getOrganisation().getId() : null)
+                                .systemRole(u.getSystemRole().name())
+                                .orgRole(u.getOrgRole() != null ? u.getOrgRole().getName() : null)
+                                .authorities(authorities)
+                                .permissions(perms)
+                                .build();
+        }
 }

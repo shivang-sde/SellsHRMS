@@ -31,7 +31,7 @@
 </div>
 
 
-    <div class="col-lg-8 col-md-6">
+    <!-- <div class="col-lg-8 mx-2 col-md-6">
       <div class="card shadow-sm border-0 p-3 h-100">
         <h6 class="fw-semibold mb-3"><i class="fa fa-bullhorn text-primary me-2"></i>Company Announcements</h6>
         <ul id="announcementList" class="list-unstyled small mb-0">
@@ -41,7 +41,7 @@
         </ul>
       </div>
     </div>
-  </div>
+  </div> -->
 
  
 </div>

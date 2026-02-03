@@ -17,6 +17,7 @@ public class OrganisationDTO {
     private Long id;
     private String name;
     private String domain;
+    private String prefix;
     private String contactEmail;
     private String contactPhone;
     private String address;

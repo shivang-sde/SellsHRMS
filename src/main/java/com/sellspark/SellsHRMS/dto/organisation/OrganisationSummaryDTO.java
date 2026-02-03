@@ -10,6 +10,7 @@ public class OrganisationSummaryDTO {
     private Long id;
     private String name;
     private String domain;
+    private String prefix;
     private Boolean isActive;
     private LocalDate validity;
     private Integer maxEmployees;

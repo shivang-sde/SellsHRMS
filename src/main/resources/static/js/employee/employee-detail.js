@@ -64,6 +64,7 @@ console.log("Resolved Employee ID:", employeeId);
         $('#employeeCode').text(data.employeeCode);
         $('#workEmail').text(data.workEmail || data.email);
         $('#phone').text(data.phone || 'N/A');
+        $('#employeePhoto').attr('src', data.photoUrl || '/images/default-avatar.png');
         
         // Status badge
         const statusClass = getStatusClass(data.status);

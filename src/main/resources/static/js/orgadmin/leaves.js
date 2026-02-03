@@ -111,6 +111,25 @@ $(document).ready(function() {
     }
 
     leaves.forEach(leave => {
+
+      let actionButtons = `
+    <button class="btn btn-sm btn-outline-primary action-btn ms-1" onclick="viewLeaveDetails(${leave.id})">
+      <i class="fa fa-eye"></i>
+    </button>
+  `;
+      
+      if (APP.hasPermission("LEAVE_APPROVE")) {
+        actionButtons = `
+      <button  class="btn btn-sm btn-success action-btn" onclick="openApproveModal(${leave.id})">
+        <i class="fa fa-check"></i> Approve
+      </button>
+      <button class="btn btn-sm btn-danger action-btn ms-1" onclick="openRejectModal(${leave.id})">
+        <i class="fa fa-times"></i> Reject
+      </button>
+      ${actionButtons}
+    `;
+      }
+
       const row = `
         <tr data-employee="${leave.employeeName.toLowerCase()}">
           <td>
@@ -132,15 +151,7 @@ $(document).ready(function() {
             <small>${truncate(leave.reason, 50)}</small>
           </td>
           <td>
-            <button class="btn btn-sm btn-success action-btn" onclick="openApproveModal(${leave.id})">
-              <i class="fa fa-check"></i> Approve
-            </button>
-            <button class="btn btn-sm btn-danger action-btn ms-1" onclick="openRejectModal(${leave.id})">
-              <i class="fa fa-times"></i> Reject
-            </button>
-            <button class="btn btn-sm btn-outline-primary action-btn ms-1" onclick="viewLeaveDetails(${leave.id})">
-              <i class="fa fa-eye"></i>
-            </button>
+            ${actionButtons}
           </td>
         </tr>
       `;

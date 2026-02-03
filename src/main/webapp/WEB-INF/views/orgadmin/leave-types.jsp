@@ -18,6 +18,45 @@
     </div>
   </div>
 
+  <div class="alert alert-info border-0 shadow-sm mb-4">
+    <h6 class="fw-bold"><i class="fa fa-lightbulb me-2"></i>How Leave Accrual & Balance Work</h6>
+    <ul class="mb-0 small">
+      <li>
+        <strong>Accrual Method</strong> defines <em>when</em> leaves are credited:
+        <ul>
+          <li><b>Monthly</b> – Employee earns leave each month (e.g. 2 per month = 24 per year).</li>
+          <li><b>Annual</b> – All leave is credited at the start of the leave year.</li>
+          <li><b>Pro-Rata</b> – Leave is calculated based on joining date or service period.</li>
+          <li><b>None</b> – Used for special types like Comp-Off or Unpaid Leave.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Accrual Rate</strong> is the number of leave days earned per accrual cycle (usually monthly).
+      </li>
+      <li>
+        Even without a cron job, the system automatically calculates leave earned <b>till the current month</b>
+        when applying for or approving leave.
+      </li>
+      <li>
+        <strong>Carry Forward</strong> applies only to <b>Monthly Accrual</b> types.
+        Limit must not exceed monthly accrual rate.
+      </li>
+      <li>
+        <strong>Annual Limit</strong> is the total leave allowed in a full year.
+        For monthly accrual, it’s usually <code>12 × Accrual Rate</code>.
+      </li>
+      <li>
+        <strong>Max Consecutive Days</strong> restricts how many continuous days can be taken at once,
+        even if the employee has more balance.
+      </li>
+      <li>
+        <strong>Validity Days</strong> apply only for <b>None</b> accrual types
+        (like Comp-Off) and expire after the given number of days.
+      </li>
+    </ul>
+  </div>
+
+
   <!-- Leave Types Grid -->
   <div class="row" id="leaveTypesGrid">
     <div class="col-12 text-center py-5">
@@ -44,8 +83,8 @@
               <input type="text" class="form-control" name="name" required>
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Annual Limit (Days)</label>
-              <input type="number" class="form-control" name="annualLimit" min="0">
+              <label class="form-label">Annual Limit (Days) <span class="text-danger">*</span></label>
+              <input type="number" required class="form-control" name="annualLimit" min="0"  >
             </div>
           </div>
 
@@ -56,21 +95,27 @@
 
           <div class="row">
             <div class="col-md-4 mb-3">
-              <label class="form-label">Accrual Method</label>
-              <select class="form-select" name="accrualMethod">
+              <label class="form-label">Accrual Method <span class="text-danger">*</span></label> 
+              <select class="form-select" required name="accrualMethod">
                 <option value="NONE">None</option>
                 <option value="MONTHLY">Monthly</option>
                 <option value="ANNUAL">Annual</option>
                 <option value="PRO_RATA">Pro Rata</option>
               </select>
+              <small class="text-muted d-block" id="accrualHint"></small>
             </div>
             <div class="col-md-4 mb-3">
-              <label class="form-label">Accrual Rate (per month)</label>
+              <label class="form-label">
+                Accrual Rate (per month)
+                <i class="fa fa-info-circle text-muted"
+                  title="Number of leave days earned per month. Only applicable for Monthly accrual."></i>
+              </label>
+
               <input type="number" step="0.5" class="form-control" name="accrualRate" min="0">
             </div>
             <div class="col-md-4 mb-3">
-              <label class="form-label">Applicable Gender</label>
-              <select class="form-select" name="applicableGender">
+              <label class="form-label">Applicable Gender <span class="text-danger">*</span></label>
+              <select class="form-select" required name="applicableGender">
                 <option value="ALL">All</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
@@ -107,6 +152,7 @@
               <label class="form-label">Carry Forward Limit</label>
               <input type="number" class="form-control" name="carryForwardLimit" min="0">
             </div>
+            <small class="text-muted d-block" id="carryForwardHint"></small>
           </div>
 
           <div class="row">
@@ -153,8 +199,14 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Validity Days (for special leaves)</label>
+            <label class="form-label">
+              Validity Days (for special leaves)
+              <i class="fa fa-info-circle text-muted"
+                title="Used for comp-off or time-sensitive leave. Only applicable when Accrual Method = None."></i>
+            </label>
+
             <input type="number" class="form-control" name="validityDays" min="0">
+            <small class="text-muted d-block" id="validityHint"></small>
           </div>
         </div>
         <div class="modal-footer">
@@ -171,8 +223,10 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
+       <sec:authorize access="hasAuthority('ORG_ADMIN')">
         <h5 class="modal-title">Edit Leave Type</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </sec:authorize>
       </div>
       <form id="editLeaveTypeForm">
         <input type="hidden" id="editLeaveTypeId">
@@ -184,8 +238,8 @@
               <input type="text" class="form-control" name="name" id="editName" required>
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Annual Limit (Days)</label>
-              <input type="number" class="form-control" name="annualLimit" id="editAnnualLimit" min="0">
+              <label class="form-label">Annual Limit (Days) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" required name="annualLimit" id="editAnnualLimit" min="0">
             </div>
           </div>
 
@@ -196,21 +250,22 @@
 
           <div class="row">
             <div class="col-md-4 mb-3">
-              <label class="form-label">Accrual Method</label>
-              <select class="form-select" name="accrualMethod" id="editAccrualMethod">
+              <label class="form-label">Accrual Method <span class="text-danger">*</span></label>
+              <select class="form-select" name="accrualMethod" required id="editAccrualMethod">
                 <option value="NONE">None</option>
                 <option value="MONTHLY">Monthly</option>
                 <option value="ANNUAL">Annual</option>
                 <option value="PRO_RATA">Pro Rata</option>
               </select>
+              <small class="text-muted d-block" id="accrualHint"></small>
             </div>
             <div class="col-md-4 mb-3">
               <label class="form-label">Accrual Rate</label>
               <input type="number" step="0.5" class="form-control" name="accrualRate" id="editAccrualRate" min="0">
             </div>
             <div class="col-md-4 mb-3">
-              <label class="form-label">Applicable Gender</label>
-              <select class="form-select" name="applicableGender" id="editApplicableGender">
+              <label class="form-label">Applicable Gender <span class="text-danger">*</span></label>
+              <select class="form-select" name="applicableGender" required id="editApplicableGender">
                 <option value="ALL">All</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
@@ -247,6 +302,7 @@
               <label class="form-label">Carry Forward Limit</label>
               <input type="number" class="form-control" name="carryForwardLimit" id="editCarryForwardLimit" min="0">
             </div>
+            <small class="text-muted d-block" id="carryForwardHint"></small>
           </div>
 
           <div class="row">
@@ -295,6 +351,7 @@
           <div class="mb-3">
             <label class="form-label">Validity Days</label>
             <input type="number" class="form-control" name="validityDays" id="editValidityDays" min="0">
+          <small class="text-muted d-block" id="validityHint"></small>
           </div>
         </div>
         <div class="modal-footer">

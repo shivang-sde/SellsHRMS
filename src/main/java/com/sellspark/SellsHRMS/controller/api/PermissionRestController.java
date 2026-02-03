@@ -23,4 +23,9 @@ public class PermissionRestController {
     public Permission create(@RequestBody Permission permission) {
         return permissionService.createPermission(permission);
     }
+
+    @PutMapping("/{id}/toggle")
+    public Permission toggleActive(@PathVariable Long id) {
+        return permissionService.toggleActive(id);
+    }
 }

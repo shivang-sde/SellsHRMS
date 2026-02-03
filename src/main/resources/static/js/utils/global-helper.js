@@ -14,6 +14,33 @@ function showToast(type, message) {
     container.removeChild(container.firstChild);
   }
 
+  // Parse the permissions string "[PERM1, PERM2]" → ["PERM1", "PERM2"]
+  window.APP.getPermissions = function () {
+    const raw = window.APP.PERMISSIONS || "";
+    return raw
+      .replace(/[\[\]\s]/g, "")
+      .split(",")
+      .filter(Boolean);
+  };
+
+  // Check if the user has a specific permission
+  window.APP.hasPermission = function (permission) {
+    return window.APP.getPermissions().includes(permission);
+  };
+
+  // (optional) check any-of-multiple
+  window.APP.hasAnyPermission = function (...perms) {
+    const userPerms = window.APP.getPermissions();
+    return perms.some((p) => userPerms.includes(p));
+  };
+
+  document.querySelectorAll("[data-permission]").forEach((el) => {
+    const required = el.dataset.permission;
+    if (!APP.hasPermission(required)) {
+      el.style.display = "none";
+    }
+  });
+
   const icons = {
     success: "fa-circle-check text-success",
     error: "fa-circle-xmark text-danger",
@@ -105,8 +132,7 @@ function showIntervention(config) {
   iconWrap.innerHTML = `<i class="fa-solid ${
     config.icon || "fa-circle-info"
   }"></i>`;
-  iconWrap.style.color =
-    config.severity === "critical" ? "#ef4444" : "#f59e0b";
+  iconWrap.style.color = config.severity === "critical" ? "#ef4444" : "#f59e0b";
 
   modal.style.display = "flex";
 
@@ -152,25 +178,101 @@ $(document).ajaxError(function (event, jqxhr) {
         },
       });
     } else if (code === "ACCESS_DENIED" || jqxhr.status === 403) {
-      showToast("error", "Access Denied: You do not have permission for this action.");
+      showToast(
+        "error",
+        "Access Denied: You do not have permission for this action.",
+      );
     } else if (jqxhr.status === 401) {
       showToast("info", "Session expired. Redirecting to login...");
       setTimeout(
         () => (window.location.href = window.APP.CONTEXT_PATH + "/login"),
-        1500
+        1500,
       );
     } else {
-      showToast("error", res.message || "An unexpected system error occurred.");
+      console.error("AJAX Error:", res);
+      // showToast("error", res.message || "An unexpected system error occurred.");
     }
   } catch (e) {
     showToast("error", "Communication error with the server.");
   }
 });
 
+async function validateImage(
+  file,
+  { minW = 100, minH = 100, maxW = 600, maxH = 600, maxSizeMB = 2 } = {},
+) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject("No file selected.");
+      return;
+    }
+
+    // ---- Basic checks ----
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/svg+xml",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      reject("Please upload a PNG, JPG, WEBP or SVG logo.");
+      return;
+    }
+
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      reject(`Logo size must be under ${maxSizeMB} MB.`);
+      return;
+    }
+
+    // ---- Dimension check (skip for SVG) ----
+    if (file.type === "image/svg+xml") {
+      resolve(true); // SVG has no pixel dimensions
+      return;
+    }
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+
+      if (width < minW || height < minH) {
+        reject(
+          `Logo too small (${width}×${height}). Minimum ${minW}×${minH}px required.`,
+        );
+        return;
+      }
+
+      if (width > maxW || height > maxH) {
+        reject(
+          `Logo too large (${width}×${height}). Maximum ${maxW}×${maxH}px allowed.`,
+        );
+        return;
+      }
+
+      const ratio = width / height;
+      if (ratio < 0.5 || ratio > 2) {
+        console.warn("Aspect ratio warning:", ratio);
+        showToast(
+          "warning",
+          "Please upload a more square logo for best appearance.",
+        );
+      }
+
+      resolve(true);
+    };
+
+    img.onerror = () => reject("Invalid image file.");
+  });
+}
+
 // ---------- Expose globally ----------
 window.showToast = showToast;
 window.showConfirmation = showConfirmation;
 window.showIntervention = showIntervention;
+window.validateImage = validateImage;
 
 // Allow modal to close on background click
 document.addEventListener("click", (e) => {

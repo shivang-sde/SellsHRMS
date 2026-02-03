@@ -6,7 +6,7 @@
 
   <!-- Store Project ID in global JS -->
   <script>
-    window.projectId = `${projectId}`;
+    window.projectId = "${projectId}";
   </script>
 
   <!-- PROJECT HEADER -->
@@ -32,6 +32,50 @@
       </div>
     </div>
   </div>
+
+
+<div class="mt-4">
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="mb-0">📎 Project Attachments / Resources</h6>
+  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#attachmentModal">
+    <i class="fas fa-plus me-1"></i> Add Attachment
+  </button>
+
+</div>
+
+<!-- Attachment List -->
+<div id="attachmentList" class="list-group mb-3"></div>
+
+<!-- 
+  Drag & Drop Area -->
+  <!-- <div id="uploadArea" class="border border-2 border-dashed rounded p-4 text-center bg-light">
+    <p class="mb-1"><i class="fas fa-upload"></i> Drag & drop files here or</p>
+    <input type="file" id="attachmentFile" multiple hidden />
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="$('#attachmentFile').click()">Browse
+      Files</button>
+  </div> -->
+
+  <!-- Upload Progress -->
+  <!-- <div id="uploadProgressContainer" class="mt-3" style="display:none;">
+    <div class="progress">
+      <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+        style="width: 0%">0%</div>
+    </div>
+  </div> -->
+
+  <!-- Add External Link -->
+  <!-- <div class="input-group mt-3">
+    <input type="text" class="form-control" id="attachmentTitle" placeholder="Title">
+    <input type="url" class="form-control" id="attachmentUrl" placeholder="Paste external link (YouTube, Drive, etc.)">
+    <select class="form-select" id="attachmentType">
+      <option value="VIDEO_LINK">Video</option>
+      <option value="DOCUMENT_LINK">Document</option>
+      <option value="OTHER">Other</option>
+    </select>
+    <button class="btn btn-primary" onclick="addExternalLink()">Add Link</button>
+  </div>
+</div> -->
+
 
   <!-- PROJECT MEMBERS -->
   <div class="card shadow-sm mb-4">
@@ -129,13 +173,13 @@
             <select multiple class="form-select" id="ticketAssigneesSelect" name="assigneeIds"></select>
           </div>
 
-          <div class="col-md-12">
+          <!-- <div class="col-md-12">
             <label class="form-label">Attachments</label>
             <input type="file" class="form-control" id="ticketAttachments" name="attachments" multiple>
             <div class="form-text">You can upload multiple files.</div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -166,6 +210,68 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-primary" onclick="saveMembers()">Add Selected</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+<!-- ADD ATTACHMENT MODAL -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="attachmentForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Attachment / Resource</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="mb-3">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-control" id="attachmentTitle" placeholder="Enter title">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" id="attachmentDescription" rows="2" placeholder="Optional"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Type</label>
+          <select class="form-select" id="attachmentType">
+            <option value="FILE">File Upload</option>
+            <option value="VIDEO_LINK">Video Link</option>
+            <option value="DOCUMENT_LINK">Document Link</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <!-- File input (shown only if type=FILE) -->
+        <div id="fileInputContainer" class="mb-3">
+          <label class="form-label">Choose File(s)</label>
+          <input type="file" class="form-control" id="attachmentFiles" multiple>
+        </div>
+
+        <!-- Link input (shown only if type != FILE) -->
+        <div id="linkInputContainer" class="mb-3" style="display:none;">
+          <label class="form-label">Resource URL</label>
+          <input type="url" class="form-control" id="attachmentUrl"
+            placeholder="Paste external link (YouTube, Drive, etc.)">
+        </div>
+
+        <div id="uploadProgressContainer" class="mt-2" style="display:none;">
+          <div class="progress">
+            <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar" style="width: 0%">0%</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveAttachment()">Save</button>
       </div>
     </form>
   </div>

@@ -38,7 +38,7 @@ async function loadTasks() {
         renderTasks(allTasks);
     } catch (error) {
         console.error('Failed to load tasks:', error);
-        showToast('Failed to load tasks', 'error');
+        showToast('error', 'Failed to load tasks');
     } finally {
         loadingUtils.hide();
     }

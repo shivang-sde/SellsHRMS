@@ -16,15 +16,21 @@ import lombok.Setter;
 public class OrganisationPolicyDTO {
     private Long id;
     private Long organisationId;
+
     private Integer financialYearStartMonth;
     private Integer financialYearStartDay;
+
     private Integer leaveYearStartMonth;
     private Integer leaveYearStartDay;
+
+    private LocalTime officeStart;
+    private LocalTime officeClosed;
     private Double standardDailyHours;
     private Double weeklyHours;
     private LocalTime autoPunchTime;
     private Integer lateGraceMinutes;
     private Integer earlyOutGraceMinutes;
+
     private Boolean overtimeAllowed;
     private Double overtimeMultiplier;
     private Double minMonthlyHours;

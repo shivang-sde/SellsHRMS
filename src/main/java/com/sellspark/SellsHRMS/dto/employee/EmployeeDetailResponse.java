@@ -17,6 +17,7 @@ public class EmployeeDetailResponse {
     private String phone;
     private String alternatePhone;
     private String personalEmail;
+    private String photoUrl;
 
     private String gender;
     private String dob;
@@ -29,12 +30,16 @@ public class EmployeeDetailResponse {
     private String dateOfExit;
 
     private String department;
+    private Long departmentId;
     private String designation;
+    private Long designationId;
+
     private String organisation;
 
     private String role;
 
     private String reportingToName;
+    private Long reportingToId;
 
     private AddressDTO localAddress;
     private AddressDTO permanentAddress;
@@ -54,4 +59,3 @@ public class EmployeeDetailResponse {
     // Flags
     private boolean deleted;
 }
-

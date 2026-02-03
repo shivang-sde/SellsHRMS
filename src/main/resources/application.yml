@@ -23,10 +23,16 @@ spring:
   devtools:
     add-properties: false
     restart:
-      enabled: true     # ✅ Prevents RestartClassLoader issues (caused your PDF errors)
+      enabled: true # ✅ Prevents RestartClassLoader issues (caused your PDF errors)
       additional-paths:
         - src/main/resources
-        - src/main/java   # ✅ fixed comma placement + correct directory
+        - src/main/java # ✅ fixed comma placement + correct directory
+        - src/main/webapp
+
+  web:
+    resources:
+      cache:
+        period: 0 # Disables static resource caching (JS/CSS/Images)
 
   session:
     store-type: jdbc
@@ -43,7 +49,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update     # change to 'validate' in production
+      ddl-auto: update # change to 'validate' in production
     properties:
       hibernate:
         format_sql: true
@@ -62,15 +68,20 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    jsp:
+      init-parameters:
+        development: true
+        check-interval: 0
   error:
     whitelabel:
       enabled: false
 
 logging:
   level:
-    '[org.springframework]': INFO
-    '[com.sellspark.SellsHRMS]': DEBUG
-    '[com.sellspark.SellsHRMS.controller.api]': DEBUG
+    "[org.springframework]": INFO
+    "[com.sellspark.SellsHRMS]": DEBUG
+    "[com.sellspark.SellsHRMS.controller.api]": DEBUG
     # '[org.hibernate.SQL]': DEBUG
     # '[org.springframework.security.web.FilterChainProxy]': INFO
     # '[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]': ERROR

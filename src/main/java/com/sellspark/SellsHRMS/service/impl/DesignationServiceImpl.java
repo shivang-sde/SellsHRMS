@@ -1,24 +1,36 @@
 package com.sellspark.SellsHRMS.service.impl;
 
+import com.sellspark.SellsHRMS.aop.TranslateDbException;
 import com.sellspark.SellsHRMS.dto.organisation.DesignationDTO;
 import com.sellspark.SellsHRMS.entity.Department;
 import com.sellspark.SellsHRMS.entity.Designation;
+import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.Role;
+import com.sellspark.SellsHRMS.entity.User;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.core.DbExceptionTranslator;
 import com.sellspark.SellsHRMS.repository.DepartmentRepository;
 import com.sellspark.SellsHRMS.repository.DesignationRepository;
+import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.RoleRepository;
+import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.service.DesignationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,7 +42,11 @@ public class DesignationServiceImpl implements DesignationService {
     private final DesignationRepository designationRepo;
     private final DepartmentRepository departmentRepo;
     private final RoleRepository roleRepo;
+    private final UserRepository userRepo;
+    private final EmployeeRepository employeeRepo;
     private final OrganisationRepository organisationRepo;
+
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
     public DesignationDTO createDesignation(DesignationDTO dto) {
@@ -89,11 +105,11 @@ public class DesignationServiceImpl implements DesignationService {
     @Override
     @Transactional(readOnly = true)
     public List<DesignationDTO> getDesignationsByDeptId(Long deptId) {
-    return designationRepo.findByDepartmentId(deptId)
-            .stream()
-            .map(this::mapToDTO)
-            .collect(Collectors.toList());
-}
+        return designationRepo.findByDepartmentId(deptId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public DesignationDTO patchUpdateDesignation(Long id, DesignationDTO dto) {
@@ -123,15 +139,36 @@ public class DesignationServiceImpl implements DesignationService {
         }
 
         Designation updated = designationRepo.save(existing);
+        // Update all users whose employee has this designation
+        List<Employee> employees = employeeRepo.findByDesignation(updated);
+        for (Employee emp : employees) {
+            Optional<User> userOpt = userRepo.findByEmployeeId(emp.getId());
+            userOpt.ifPresent(user -> {
+                user.setOrgRole(updated.getRole());
+                userRepo.save(user);
+
+                // Refresh auth if this user is the logged-in user
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName().equalsIgnoreCase(user.getEmail())) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+                    UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(userDetails,
+                            auth.getCredentials(), userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(newAuth);
+                    log.debug("Refreshed authorities for logged-in user {}", user.getEmail());
+                }
+            });
+
+        }
+
         return mapToDTO(updated);
     }
 
     @Override
+    @Transactional
     public void deleteDesignation(Long id) {
         Designation designation = designationRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Designation", "id", id));
 
-        // Break relation before delete (avoid constraint violation)
         if (designation.getRole() != null) {
             Role linkedRole = designation.getRole();
             linkedRole.setDesignation(null);
@@ -140,7 +177,6 @@ public class DesignationServiceImpl implements DesignationService {
         }
 
         designationRepo.delete(designation);
-        log.info("Deleted designation with ID {}", id);
     }
 
     // Utility mappers

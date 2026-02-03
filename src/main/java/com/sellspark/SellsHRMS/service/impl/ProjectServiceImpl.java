@@ -65,8 +65,6 @@ public class ProjectServiceImpl implements ProjectService {
             manager = creator; // Default if not selected
         }
 
-
-
         Employee teamLead = null;
         if (dto.getProjectTeamLeadId() != null) {
             teamLead = employeeRepo.findById(dto.getProjectTeamLeadId())
@@ -80,17 +78,35 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project saved = projectRepo.save(project);
 
+        // avoiding the scenarios in which manager or team lead is same as creator
 
-
-
-        // Auto-add creator as Project Manager and member
+        // Auto-add creator as member
         ProjectMember pm = new ProjectMember();
         pm.setProject(saved);
         pm.setEmployee(creator);
         pm.setOrganisation(org);
-        // pm.setRole("PROJECT_MANAGER");
         pm.setIsActive(true);
         memberRepo.save(pm);
+
+        // Add manager if different from creator
+        if (manager != null && !creator.getId().equals(manager.getId())) {
+            ProjectMember mpm = new ProjectMember();
+            mpm.setProject(saved);
+            mpm.setEmployee(manager);
+            mpm.setOrganisation(org);
+            mpm.setIsActive(true);
+            memberRepo.save(mpm);
+        }
+
+        // Add team lead if different from creator
+        if (teamLead != null && !creator.getId().equals(teamLead.getId())) {
+            ProjectMember tmpm = new ProjectMember();
+            tmpm.setProject(saved);
+            tmpm.setEmployee(teamLead);
+            tmpm.setOrganisation(org);
+            tmpm.setIsActive(true);
+            memberRepo.save(tmpm);
+        }
 
         return ProjectMapper.toDTO(saved, createdByEmpId);
     }
@@ -107,13 +123,20 @@ public class ProjectServiceImpl implements ProjectService {
         if (!canEditProject(employeeId, project))
             throw new UnauthorizedActionException("You are not authorized to update this project.");
 
-        if (dto.getName() != null) project.setName(dto.getName());
-        if (dto.getDescription() != null) project.setDescription(dto.getDescription());
-        if (dto.getPriority() != null) project.setPriority(Priority.valueOf(dto.getPriority()));
-        if (dto.getStatus() != null) project.setStatus(ProjectStatus.valueOf(dto.getStatus()));
-        if (dto.getStartDate() != null) project.setStartDate(dto.getStartDate());
-        if (dto.getEndDate() != null) project.setEndDate(dto.getEndDate());
-        if (dto.getActualEndDate() != null) project.setActualEndDate(dto.getActualEndDate());
+        if (dto.getName() != null)
+            project.setName(dto.getName());
+        if (dto.getDescription() != null)
+            project.setDescription(dto.getDescription());
+        if (dto.getPriority() != null)
+            project.setPriority(Priority.valueOf(dto.getPriority()));
+        if (dto.getStatus() != null)
+            project.setStatus(ProjectStatus.valueOf(dto.getStatus()));
+        if (dto.getStartDate() != null)
+            project.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null)
+            project.setEndDate(dto.getEndDate());
+        if (dto.getActualEndDate() != null)
+            project.setActualEndDate(dto.getActualEndDate());
 
         if (dto.getProjectManagerId() != null) {
             Employee manager = employeeRepo.findById(dto.getProjectManagerId())
@@ -132,70 +155,67 @@ public class ProjectServiceImpl implements ProjectService {
         return ProjectMapper.toDTO(project, employeeId);
     }
 
-    public void addProjectMember(Long projectId, Long empId){
-        
+    public void addProjectMember(Long projectId, Long empId) {
+
     }
 
     // ================================================================
-// 🟢 ADD MEMBERS TO PROJECT
-// ================================================================
-@Transactional
-public void addMembers(Long projectId, List<Long> empIds, Long organisationId, Long addedById) {
+    // 🟢 ADD MEMBERS TO PROJECT
+    // ================================================================
+    @Transactional
+    public void addMembers(Long projectId, List<Long> empIds, Long organisationId, Long addedById) {
 
-    Project project = findActiveProject(projectId, organisationId);
-    if (!canEditProject(addedById, project)) {
-        throw new UnauthorizedActionException("You are not authorized to add members to this project.");
+        Project project = findActiveProject(projectId, organisationId);
+        if (!canEditProject(addedById, project)) {
+            throw new UnauthorizedActionException("You are not authorized to add members to this project.");
+        }
+
+        Organisation org = project.getOrganisation();
+        List<Employee> employees = employeeRepo.findAllById(empIds);
+
+        for (Employee emp : employees) {
+
+            boolean alreadyExists = memberRepo.existsByProjectIdAndEmployeeIdAndIsActiveTrue(projectId, emp.getId());
+            if (alreadyExists)
+                continue; // skip duplicates
+
+            ProjectMember member = new ProjectMember();
+            member.setProject(project);
+            member.setEmployee(emp);
+            member.setOrganisation(org);
+            member.setJoinedAt(LocalDateTime.now());
+            member.setIsActive(true);
+            member.setAllocationPercentage(BigDecimal.valueOf(100)); // default 100%
+
+            // Optional: assign default project role (e.g., "MEMBER")
+            ProjectRole defaultRole = projectRoleRepo.findByNameIgnoreCase("MEMBER")
+                    .orElse(null);
+            member.setRole(defaultRole);
+
+            memberRepo.save(member);
+        }
     }
-
-    Organisation org = project.getOrganisation();
-    List<Employee> employees = employeeRepo.findAllById(empIds);
-
-    for (Employee emp : employees) {
-
-        boolean alreadyExists = memberRepo.existsByProjectIdAndEmployeeIdAndIsActiveTrue(projectId, emp.getId());
-        if (alreadyExists) continue; // skip duplicates
-
-        ProjectMember member = new ProjectMember();
-        member.setProject(project);
-        member.setEmployee(emp);
-        member.setOrganisation(org);
-        member.setJoinedAt(LocalDateTime.now());
-        member.setIsActive(true);
-        member.setAllocationPercentage(BigDecimal.valueOf(100)); // default 100%
-
-        // Optional: assign default project role (e.g., "MEMBER")
-        ProjectRole defaultRole = projectRoleRepo.findByNameIgnoreCase("MEMBER")
-                .orElse(null);
-        member.setRole(defaultRole);
-
-        memberRepo.save(member);
-    }
-}
-
-
 
     @Transactional
-public void removeMember(Long projectId, Long empId, Long orgId, Long actorId) {
-    Project project = findActiveProject(projectId, orgId);
-    if (!canEditProject(actorId, project))
-        throw new UnauthorizedActionException("You are not authorized to remove members.");
+    public void removeMember(Long projectId, Long empId, Long orgId, Long actorId) {
+        Project project = findActiveProject(projectId, orgId);
+        if (!canEditProject(actorId, project))
+            throw new UnauthorizedActionException("You are not authorized to remove members.");
 
-    // prevent removing core roles
-    if (empId.equals(project.getCreatedBy().getId()) ||
-        (project.getProjectManager() != null && empId.equals(project.getProjectManager().getId())) ||
-        (project.getProjectTeamLead() != null && empId.equals(project.getProjectTeamLead().getId()))) {
-        throw new InvalidOperationException("You cannot remove core project roles.");
+        // prevent removing core roles
+        if (empId.equals(project.getCreatedBy().getId()) ||
+                (project.getProjectManager() != null && empId.equals(project.getProjectManager().getId())) ||
+                (project.getProjectTeamLead() != null && empId.equals(project.getProjectTeamLead().getId()))) {
+            throw new InvalidOperationException("You cannot remove core project roles.");
+        }
+
+        ProjectMember member = memberRepo
+                .findByProjectIdAndEmployeeId(projectId, empId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+
+        member.setIsActive(false);
+        memberRepo.save(member);
     }
-
-    ProjectMember member = memberRepo
-        .findByProjectIdAndEmployeeId(projectId, empId)
-        .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
-
-    member.setIsActive(false);
-    memberRepo.save(member);
-}
-
-
 
     // --------------------------------------------------------------------
     // 🔵 GET PROJECT DETAILS
@@ -285,7 +305,8 @@ public void removeMember(Long projectId, Long empId, Long orgId, Long actorId) {
             throw new UnauthorizedActionException("You are not authorized to update completion status.");
 
         List<Task> tasks = taskRepo.findByProjectId(projectId);
-        if (tasks.isEmpty()) throw new InvalidOperationException("No tasks found for this project.");
+        if (tasks.isEmpty())
+            throw new InvalidOperationException("No tasks found for this project.");
 
         long completed = tasks.stream().filter(t -> t.getStatus() == Task.TaskStatus.DONE).count();
         long total = tasks.size();
@@ -308,8 +329,7 @@ public void removeMember(Long projectId, Long empId, Long orgId, Long actorId) {
     // --------------------------------------------------------------------
     private Project findActiveProject(Long id, Long orgId) {
         return projectRepo.findByIdAndOrganisationId(id, orgId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found for organisation"))
-                ;
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found for organisation"));
     }
 
     private boolean canEditProject(Long empId, Project project) {

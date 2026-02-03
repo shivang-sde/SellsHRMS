@@ -2,32 +2,31 @@ package com.sellspark.SellsHRMS.service.payroll;
 
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.entity.Employee;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 
 import lombok.RequiredArgsConstructor;
 
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipComponentDTO;
 import org.springframework.stereotype.Service;
-import com.lowagie.text.Document; 
-import com.lowagie.text.PageSize; 
-import com.lowagie.text.Paragraph; 
-import com.lowagie.text.Phrase; 
-import com.lowagie.text.Font; 
-import com.lowagie.text.FontFactory; 
-import com.lowagie.text.Chunk; 
-import com.lowagie.text.Rectangle; 
-import com.lowagie.text.Element; 
-import com.lowagie.text.pdf.PdfWriter; 
-import com.lowagie.text.pdf.PdfPTable; 
-import com.lowagie.text.pdf.PdfPCell; 
-import com.lowagie.text.pdf.ColumnText; 
+import com.lowagie.text.Document;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.Element;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.ColumnText;
 import com.lowagie.text.pdf.PdfPageEventHelper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.awt.Color;
-
 
 @Service
 @RequiredArgsConstructor
@@ -36,10 +35,10 @@ public class PayslipPdfService {
     private final EmployeeRepository employeeRepository;
 
     public ByteArrayInputStream generatePayslipPDF(SalarySlipDTO slip) {
-        
+
         Employee emp = employeeRepository.findById(slip.getEmployeeId())
-        .orElseThrow(() ->  new EmployeeNotFoundException(slip.getEmployeeId()));
-        
+                .orElseThrow(() -> new EmployeeNotFoundException(slip.getEmployeeId()));
+
         Document document = new Document(PageSize.A4, 36, 36, 72, 36);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -141,12 +140,14 @@ public class PayslipPdfService {
     private String toWords(long n) {
         // Simple converter for Indian format
         String[] units = { "", "Thousand", "Lakh", "Crore" };
-        if (n == 0) return "Zero Rupees";
+        if (n == 0)
+            return "Zero Rupees";
         StringBuilder sb = new StringBuilder();
         int unitIndex = 0;
         while (n > 0 && unitIndex < units.length) {
             int part = (int) (n % 1000);
-            if (part > 0) sb.insert(0, part + " " + units[unitIndex] + " ");
+            if (part > 0)
+                sb.insert(0, part + " " + units[unitIndex] + " ");
             n /= 1000;
             unitIndex++;
         }
@@ -158,7 +159,10 @@ public class PayslipPdfService {
     // ───────────────────────────────────────────────
     private static class PayslipWatermarkEvent extends PdfPageEventHelper {
         private final String watermark;
-        public PayslipWatermarkEvent(String watermark) { this.watermark = watermark; }
+
+        public PayslipWatermarkEvent(String watermark) {
+            this.watermark = watermark;
+        }
 
         @Override
         public void onEndPage(PdfWriter writer, Document document) {

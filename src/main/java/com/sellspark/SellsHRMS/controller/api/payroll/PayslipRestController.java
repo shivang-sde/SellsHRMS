@@ -4,7 +4,7 @@ import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.entity.payroll.SalarySlip;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.payroll.SalarySlipRepository;
-import com.sellspark.SellsHRMS.service.FileStorageService;
+import com.sellspark.SellsHRMS.service.files.FileStorageService;
 import com.sellspark.SellsHRMS.service.impl.payroll.SalarySlipServiceImpl;
 import lombok.RequiredArgsConstructor;
 
@@ -42,66 +42,57 @@ public class PayslipRestController {
     }
 
     @PostMapping("/{id}/generate-pdf")
-public ResponseEntity<?> generatePdf(@PathVariable Long id, @RequestParam Long orgId) {
-    try {
-        SalarySlip slip = slipService.generatePdfForSlip(id, orgId);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Payslip PDF generated successfully",
-                "pdfUrl", slip.getPdfUrl()
-        ));
-    } catch (Exception e) {
-        return ResponseEntity.status(500).body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-        ));
+    public ResponseEntity<?> generatePdf(@PathVariable Long id, @RequestParam Long orgId) {
+        try {
+            SalarySlip slip = slipService.generatePdfForSlip(id, orgId);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Payslip PDF generated successfully",
+                    "pdfUrl", slip.getPdfUrl()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()));
+        }
     }
-}
-
-
-
 
     // ✅ Download payslip PDF stored in file system
     // ✅ Download payslip PDF stored in file system
     @GetMapping("/{id}/pdf")
     public ResponseEntity<Resource> downloadPayslipPdf(@PathVariable Long id) throws Exception {
-    SalarySlip slip = slipRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Payslip not found"));
+        SalarySlip slip = slipRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payslip not found"));
 
-    if (slip.getPdfPath() == null || slip.getPdfPath().isBlank()) {
-        throw new ResourceNotFoundException("Payslip PDF not generated yet for ID " + id);
+        if (slip.getPdfPath() == null || slip.getPdfPath().isBlank()) {
+            throw new ResourceNotFoundException("Payslip PDF not generated yet for ID " + id);
+        }
+
+        // Resolve filesystem path
+        Path filePath = Paths.get(uploadBaseDir).resolve(slip.getPdfPath()).normalize();
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (!resource.exists()) {
+            throw new ResourceNotFoundException("Payslip file missing from storage");
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filePath.getFileName().toString() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(resource);
     }
-
-    // Resolve filesystem path
-    Path filePath = Paths.get(uploadBaseDir).resolve(slip.getPdfPath()).normalize();
-    Resource resource = new UrlResource(filePath.toUri());
-
-    if (!resource.exists()) {
-        throw new ResourceNotFoundException("Payslip file missing from storage");
-    }
-
-    return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + filePath.getFileName().toString() + "\"")
-            .contentType(MediaType.APPLICATION_PDF)
-            .body(resource);
-}
-
-
 
     @GetMapping("/employee/{empId}")
     public ResponseEntity<?> getAllForEmployee(@PathVariable Long empId) {
         try {
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "data", slipService.getAllByEmployee(empId)
-            ));
+                    "data", slipService.getAllByEmployee(empId)));
         } catch (Exception e) {
-        return ResponseEntity.status(500).body(Map.of(
-                "success", false,
-                "message", "Failed to fetch salary slips"
-        ));
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "Failed to fetch salary slips"));
+        }
     }
-}
 
 }

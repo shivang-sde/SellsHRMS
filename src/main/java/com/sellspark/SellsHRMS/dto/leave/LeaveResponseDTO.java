@@ -27,10 +27,7 @@ public class LeaveResponseDTO {
     private String approverRemarks;
     private LocalDate appliedOn;
     private LocalDate approvedOn;
-    
+
+    private Boolean canApprove; // New field to indicate if the viewer can approve this leave
+
 }
-
-
-
-
-

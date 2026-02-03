@@ -1,0 +1,144 @@
+
+/* Modern CSS Utilities */
+.punch-card-refined {
+    background: #ffffff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ls-1 {
+    letter-spacing: 1px;
+}
+
+.x-small {
+    font-size: 0.75rem;
+}
+
+/* Status Soft Colors */
+.bg-soft-secondary {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.bg-soft-primary {
+    background-color: #e7f1ff;
+}
+
+.bg-soft-success {
+    background-color: #e6fffa;
+    color: #319795;
+}
+
+/* Glow Effect */
+.status-indicator-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #6c757d;
+    /* Default gray */
+    transition: background 0.5s ease;
+}
+
+/* State Classes (Apply via JS) */
+.card-state-active .status-indicator-glow {
+    background: #28a745;
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4);
+}
+
+.card-state-active .btn-primary {
+    display: none;
+}
+
+.transition-all:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+
+
+/* Icon Shapes for Summary Cards */
+.icon-shape {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Subtle Hover Effect */
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+
+
+/* Responsive Logic & Expert Styling */
+.punch-card-refined {
+    min-height: 400px;
+}
+
+/* Icon Shapes for Summary Cards */
+.icon-shape {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Soft Backgrounds */
+.bg-soft-primary {
+    background-color: #eef2ff;
+}
+
+.bg-soft-danger {
+    background-color: #fff1f2;
+}
+
+.bg-soft-success {
+    background-color: #f0fdf4;
+}
+
+.bg-soft-info {
+    background-color: #ecfeff;
+}
+
+/* Subtle Hover Effect */
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Responsive Font Scaling */
+@media (max-width: 768px) {
+    #currentTime {
+        font-size: calc(1.3rem + 1.5vw);
+    }
+
+    .summary-card h4 {
+        font-size: 1.1rem;
+    }
+
+}
+
+/* Flex Reverse Logic specifically for Desktop */
+@media (min-width: 992px) {
+    .flex-lg-row-reverse {
+        flex-direction: row-reverse !important;
+    }
+    .summary-card h4 {
+        font-size: 1.5rem;
+    }
+
+    .summary-card p-3 {
+        padding: 1.5rem !important;
+    }
+     .x-small {
+        font-size: 0.7rem;
+    }
+}
+

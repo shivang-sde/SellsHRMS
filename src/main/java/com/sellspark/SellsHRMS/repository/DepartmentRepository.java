@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.sellspark.SellsHRMS.entity.Department;
 
 import java.util.List;
+import com.sellspark.SellsHRMS.entity.Organisation;
 
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
@@ -12,6 +13,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     void deleteById(Long id);
 
-    
+    Long countByOrganisation(Organisation organisation);
 
 }

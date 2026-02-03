@@ -19,6 +19,14 @@ public class LeavePageController {
         return "layout/main-layout";
     }
 
+    @GetMapping("/employee/leaves")
+    public String employeeLeaves(Model model) {
+        model.addAttribute("pageTitle", "Leave Management");
+        model.addAttribute("contentPage", "orgadmin/leaves");
+        model.addAttribute("pageScript", "orgadmin/leaves");
+        return "layout/main-layout";
+    }
+
     // ====================================
     // Org Admin Leave Pages
     // ====================================

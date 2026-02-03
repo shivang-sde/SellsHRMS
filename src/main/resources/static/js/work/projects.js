@@ -1,6 +1,7 @@
 let allProjects = [];
 let allEmployees = [];
 let editingProjectId = null;
+const empId = window.APP.EMPLOYEE_ID;
 
 $(document).ready(async function() {
     await loadProjects();
@@ -12,11 +13,11 @@ $(document).ready(async function() {
 async function loadProjects() {
     try {
         loadingUtils.show('#projectsTable tbody');
-        allProjects = await projectAPI.getByOrganisation();
+        allProjects = await projectAPI.getByEmployee();
         renderProjects(allProjects);
     } catch (error) {
         console.error('Failed to load projects:', error);
-        showToast('Failed to load projects', 'error');
+        showToast('error', error.message || "faild to load projects");
     } finally {
         loadingUtils.hide();
     }

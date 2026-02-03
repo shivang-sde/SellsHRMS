@@ -65,7 +65,7 @@ document.addEventListener('click', function (e) {
                 loadOrgs();
                 const modalInstance = bootstrap.Modal.getInstance(document.getElementById('orgEditModal'));
                 if (modalInstance) modalInstance.hide();
-                showToast('Organisation updated', 'success');
+                showToast('success', 'Organisation updated');
             } catch (e) {
                 alert('Network error');
                 console.error(e);
@@ -80,7 +80,7 @@ async function removeOrg(id) {
         const res = await fetch(`/api/superadmin/organisation/${id}`, { method: 'DELETE' });
         if (!res.ok) { alert('Delete failed'); return; }
         loadOrgs();
-        showToast('Organisation deleted', 'warning');
+        showToast('success', 'Organisation deleted');
     } catch (e) {
         alert('Network error');
     }

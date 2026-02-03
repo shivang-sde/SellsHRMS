@@ -29,6 +29,7 @@ public class EmployeeCreateRequest {
 
     // PHOTO UPLOAD
     private MultipartFile photo;
+    private String photoUrl;
 
     // COMPANY
     private String employeeCode;
@@ -45,9 +46,7 @@ public class EmployeeCreateRequest {
 
     // private Long roleId;
 
-
     // private String dataVisibility; // "SELF", "TEAM", or "ORG"
-
 
     // ACCOUNT (LOGIN)
     private String workEmail;

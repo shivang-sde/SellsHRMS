@@ -10,23 +10,27 @@ $(document).ready(function () {
   loadSelfTasks();
 
   // Toggle Reminder field dynamically
-  $('#taskStatusSelect').on('change', function () {
+  $("#taskStatusSelect").on("change", function () {
     const status = $(this).val();
-    if (status === 'REMINDER') {
-      $('#reminderGroup').show();
-      $('[name="reminderAt"]').attr('required', true);
+    if (status === "REMINDER") {
+      $("#reminderGroup").show();
+      $('[name="reminderAt"]').attr("required", true);
     } else {
-      $('#reminderGroup').hide();
-      $('[name="reminderAt"]').removeAttr('required').val('');
+      $("#reminderGroup").hide();
+      $('[name="reminderAt"]').removeAttr("required").val("");
     }
   });
 
   // Show new attachments preview
-  $('[name="attachments"]').on('change', function () {
+  $('[name="attachments"]').on("change", function () {
     const files = Array.from(this.files);
-    const preview = $('#newAttachmentsPreview');
+    const preview = $("#newAttachmentsPreview");
     if (files.length) {
-      preview.html(files.map(f => `<div><i class="fas fa-file me-2"></i>${f.name}</div>`).join(''));
+      preview.html(
+        files
+          .map((f) => `<div><i class="fas fa-file me-2"></i>${f.name}</div>`)
+          .join(""),
+      );
     } else {
       preview.empty();
     }
@@ -38,14 +42,14 @@ $(document).ready(function () {
 // --------------------------------------------
 async function loadSelfTasks() {
   try {
-    loadingUtils.show('#selfTasksTable tbody');
+    loadingUtils.show("#selfTasksTable tbody");
     const res = await taskAPI.getMyTasks(window.APP.EMPLOYEE_ID);
     const data = res?.data || res;
     selfTasks = Array.isArray(data) ? data : [];
     renderSelfTasks(selfTasks);
   } catch (error) {
-    console.error('Failed to load self tasks', error);
-    showToast('Failed to load tasks', 'error');
+    console.error("Failed to load self tasks", error);
+    showToast("error", "Failed to load tasks");
   } finally {
     loadingUtils.hide();
   }
@@ -55,7 +59,7 @@ async function loadSelfTasks() {
 // RENDER TASKS TABLE
 // --------------------------------------------
 function renderSelfTasks(tasks) {
-  const tbody = $('#selfTasksTable tbody');
+  const tbody = $("#selfTasksTable tbody");
   if (!tasks.length) {
     tbody.html(`
       <tr>
@@ -68,7 +72,9 @@ function renderSelfTasks(tasks) {
     return;
   }
 
-  const html = tasks.map(task => `
+  const html = tasks
+    .map(
+      (task) => `
     <tr>
       <td>${task.title}</td>
       <td>${getStatusBadge(task.status)}</td>
@@ -81,7 +87,9 @@ function renderSelfTasks(tasks) {
         </div>
       </td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 
   tbody.html(html);
 }
@@ -94,12 +102,12 @@ function openSelfTaskModal() {
   removedAttachmentIds = [];
   existingAttachments = [];
 
-  $('#selfTaskModalTitle').text('Add Task / Reminder');
-  modalUtils.resetForm('selfTaskModal');
-  $('#existingAttachments').empty();
-  $('#newAttachmentsPreview').empty();
-  $('[name="status"]').val('TO_DO');
-  modalUtils.open('selfTaskModal');
+  $("#selfTaskModalTitle").text("Add Task / Reminder");
+  modalUtils.resetForm("selfTaskModal");
+  $("#existingAttachments").empty();
+  $("#newAttachmentsPreview").empty();
+  $('[name="status"]').val("TO_DO");
+  modalUtils.open("selfTaskModal");
 }
 
 // --------------------------------------------
@@ -109,7 +117,7 @@ function openSelfTaskModal() {
 // SAVE OR UPDATE SELF TASK / REMINDER
 // --------------------------------------------
 async function saveSelfTask() {
-  const form = document.getElementById('selfTaskForm');
+  const form = document.getElementById("selfTaskForm");
   if (!form.checkValidity()) {
     form.reportValidity();
     return;
@@ -122,32 +130,39 @@ async function saveSelfTask() {
     createdById: window.APP.EMPLOYEE_ID,
     reporterId: window.APP.EMPLOYEE_ID,
     isSelfTask: true,
-    title: formFields.title || '',
-    description: formFields.description || '',
-    status: formFields.status || 'TO_DO',
+    title: formFields.title || "",
+    description: formFields.description || "",
+    status: formFields.status || "TO_DO",
     reminderAt: formFields.reminderAt || null,
-    reminderEnabled: formFields.status === 'REMINDER'
+    reminderEnabled: formFields.status === "REMINDER",
   };
 
   // 2️⃣ Build FormData
   const formData = new FormData();
-  formData.append('task', new Blob([JSON.stringify(taskData)], { type: 'application/json' }));
+  formData.append(
+    "task",
+    new Blob([JSON.stringify(taskData)], { type: "application/json" }),
+  );
 
   // 3️⃣ Append new attachments with their descriptions
-  const attachmentRows = document.querySelectorAll('#attachmentRows .attachment-row');
+  const attachmentRows = document.querySelectorAll(
+    "#attachmentRows .attachment-row",
+  );
   attachmentRows.forEach((row, i) => {
     const fileInput = row.querySelector('input[name="attachments"]');
     const descInput = row.querySelector('input[name="attachmentDescriptions"]');
 
     if (fileInput?.files.length) {
-      formData.append('attachments', fileInput.files[0]); // file
-      formData.append('descriptions', descInput?.value?.trim() || ''); // description
+      formData.append("attachments", fileInput.files[0]); // file
+      formData.append("descriptions", descInput?.value?.trim() || ""); // description
     }
   });
 
   // 4️⃣ Append removed attachment IDs (edit mode)
   if (Array.isArray(removedAttachmentIds) && removedAttachmentIds.length) {
-    removedAttachmentIds.forEach(id => formData.append('removeAttachmentIds', id));
+    removedAttachmentIds.forEach((id) =>
+      formData.append("removeAttachmentIds", id),
+    );
   }
 
   try {
@@ -158,20 +173,20 @@ async function saveSelfTask() {
       ? `${window.APP.CONTEXT_PATH}/api/tasks/${editingTaskId}?organisationId=${organisationId}&employeeId=${employeeId}`
       : `${window.APP.CONTEXT_PATH}/api/tasks?organisationId=${organisationId}&reporterId=${employeeId}`;
 
-    const method = editingTaskId ? 'PUT' : 'POST';
+    const method = editingTaskId ? "PUT" : "POST";
 
     // 6️⃣ Send multipart request
     const response = await fetch(url, {
       method,
-      body: formData
+      body: formData,
     });
 
     const result = await response.json();
 
-    if (!response.ok) throw new Error(result?.message || 'Failed to save task');
+    if (!response.ok) throw new Error(result?.message || "Failed to save task");
 
-    showToast('Task saved successfully', 'success');
-    modalUtils.close('selfTaskModal');
+    showToast("success", "Task saved successfully");
+    modalUtils.close("selfTaskModal");
 
     // Refresh tasks table
     loadSelfTasks();
@@ -180,18 +195,16 @@ async function saveSelfTask() {
     editingTaskId = null;
     removedAttachmentIds = [];
     existingAttachments = [];
-    $('#attachmentRows').empty();
+    $("#attachmentRows").empty();
     addAttachmentRow(); // initial blank row
-    $('#newAttachmentsPreview').empty();
-
+    $("#newAttachmentsPreview").empty();
   } catch (error) {
-    console.error('Error saving task:', error);
-    showToast(error.message || 'Failed to save task', 'error');
+    console.error("Error saving task:", error);
+    showToast("error", error.message || "Failed to save task");
   } finally {
     loadingUtils.hide();
   }
 }
-
 
 // --------------------------------------------
 // EDIT EXISTING TASK
@@ -206,22 +219,34 @@ async function editSelfTask(taskId) {
     const task = res?.data?.data || res?.data || res;
 
     // 2️⃣ Reset form
-    modalUtils.resetForm('selfTaskModal');
+    modalUtils.resetForm("selfTaskModal");
 
     // 3️⃣ Populate basic fields
-    Object.keys(task).forEach(key => {
+    Object.keys(task).forEach((key) => {
       const input = $(`[name="${key}"]`);
       if (input.length) {
-        if (input.attr('type') === 'datetime-local' && task[key]) {
-          // Convert to 'YYYY-MM-DDTHH:mm' format for input
+        const type = input.attr("type");
+
+        if (type === "file") {
+          // ❌ Do not set .val() on file inputs
+          // Instead, show the filename elsewhere if needed
+          return;
+        }
+
+        if (type === "datetime-local" && task[key]) {
           input.val(task[key].slice(0, 16));
-        } else if (input.is('select')) {
+        } else if (input.is("select")) {
           input.val(task[key]);
         } else {
-          input.val(task[key] ?? '');
+          input.val(task[key] ?? "");
         }
       }
     });
+
+    $("#currentAttachment").html(
+      task.attachments?.map((a) => `<div>${a.filename}</div>`).join("") ||
+        "No files uploaded",
+    );
 
     // 4️⃣ Fetch existing attachments
     const attachRes = await taskAPI.getAttachments(taskId);
@@ -229,25 +254,23 @@ async function editSelfTask(taskId) {
     renderExistingAttachments(existingAttachments);
 
     // 5️⃣ Reset new attachment rows
-    $('#attachmentRows').empty();
+    $("#attachmentRows").empty();
     addAttachmentRow(); // Add initial empty row
 
     // 6️⃣ Show modal
-    $('#selfTaskModalTitle').text('Edit Task / Reminder');
-    modalUtils.open('selfTaskModal');
-
+    $("#selfTaskModalTitle").text("Edit Task / Reminder");
+    modalUtils.open("selfTaskModal");
   } catch (error) {
-    console.error('Edit task error:', error);
-    showToast('Failed to load task details', 'error');
+    console.error("Edit task error:", error);
+    showToast("error", "Failed to load task details");
   }
 }
-
 
 // --------------------------------------------
 // RENDER EXISTING ATTACHMENTS
 // --------------------------------------------
 function renderExistingAttachments(attachments) {
-  const container = $('#existingAttachments');
+  const container = $("#existingAttachments");
   container.empty();
 
   if (!attachments.length) {
@@ -255,7 +278,9 @@ function renderExistingAttachments(attachments) {
     return;
   }
 
-  const html = attachments.map(a => `
+  const html = attachments
+    .map(
+      (a) => `
     <div class="attachment-item d-flex justify-content-between align-items-center border rounded p-2 mb-2">
       <a href="${window.APP.CONTEXT_PATH}${a.fileUrl}" target="_blank">
         <i class="fas fa-paperclip me-2"></i>${a.fileName}
@@ -264,7 +289,9 @@ function renderExistingAttachments(attachments) {
         <i class="fas fa-times"></i>
       </button>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 
   container.html(html);
 }
@@ -274,28 +301,32 @@ function removeAttachment(id) {
   removedAttachmentIds.push(id);
 
   // Remove from DOM
-  $(`button[onclick="removeAttachment(${id})"]`).closest('.attachment-item').remove();
+  $(`button[onclick="removeAttachment(${id})"]`)
+    .closest(".attachment-item")
+    .remove();
 }
-
 
 // --------------------------------------------
 // DELETE TASK
 // --------------------------------------------
 async function deleteSelfTask(id) {
-  modalUtils.confirm('Delete Task', 'Are you sure you want to delete this task?', async () => {
-    try {
-      await taskAPI.delete(id);
-      showToast('Task deleted successfully', 'success');
-      loadSelfTasks();
-    } catch (error) {
-      showToast('Failed to delete task', 'error');
-    }
-  });
+  modalUtils.confirm(
+    "Delete Task",
+    "Are you sure you want to delete this task?",
+    async () => {
+      try {
+        await taskAPI.delete(id);
+        showToast("success", "Task deleted successfully");
+        loadSelfTasks();
+      } catch (error) {
+        showToast("error", "Failed to delete task");
+      }
+    },
+  );
 }
 
-
 function addAttachmentRow() {
-  $('#attachmentRows').append(`
+  $("#attachmentRows").append(`
     <div class="attachment-row d-flex align-items-center mb-2">
       <input type="file" class="form-control me-2" name="attachments">
       <input type="text" class="form-control" name="attachmentDescriptions"
@@ -307,4 +338,3 @@ function addAttachmentRow() {
     </div>
   `);
 }
-

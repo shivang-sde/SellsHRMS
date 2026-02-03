@@ -63,4 +63,5 @@ public class SuperAdminServiceImpl implements SuperAdminService {
     public void delete(Long id) {
         superAdminRepository.deleteById(id);
     }
+
 }

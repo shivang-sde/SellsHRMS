@@ -4,7 +4,8 @@ import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Task;
 import com.sellspark.SellsHRMS.entity.TaskAttachment;
 import com.sellspark.SellsHRMS.repository.TaskAttachmentRepository;
-import com.sellspark.SellsHRMS.service.FileStorageService;
+import com.sellspark.SellsHRMS.service.files.FileStorageService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * A generic, reusable file upload helper for any entity type (task, comment, HR docs, etc.)
+ * A generic, reusable file upload helper for any entity type (task, comment, HR
+ * docs, etc.)
  */
 @Component
 @RequiredArgsConstructor
@@ -28,11 +30,13 @@ public class FileUploadHelper {
     /**
      * Uploads and optionally saves attachments for a given business context.
      *
-     * @param files         files to upload
-     * @param baseFolder    logical folder (e.g. "tasks", "employee-documents", "org-policies")
-     * @param entityFolder  additional subfolder context (e.g. "task-12", "comment-45")
-     * @param uploader      employee performing the upload
-     * @param task          optional task to associate attachments
+     * @param files        files to upload
+     * @param baseFolder   logical folder (e.g. "tasks", "employee-documents",
+     *                     "org-policies")
+     * @param entityFolder additional subfolder context (e.g. "task-12",
+     *                     "comment-45")
+     * @param uploader     employee performing the upload
+     * @param task         optional task to associate attachments
      * @return list of uploaded file metadata or saved TaskAttachment entities
      */
     @Async("fileProcessingExecutor")
@@ -41,10 +45,10 @@ public class FileUploadHelper {
             String baseFolder,
             String entityFolder,
             Employee uploader,
-            Task task
-    ) throws Exception {
+            Task task) throws Exception {
 
-        if (files == null || files.isEmpty()) return List.of();
+        if (files == null || files.isEmpty())
+            return List.of();
 
         List<TaskAttachment> attachments = new ArrayList<>();
 
@@ -98,7 +102,8 @@ public class FileUploadHelper {
      */
     public String buildFolderPath(Long organisationId, String moduleName, Long entityId) {
         String base = "org-" + organisationId + "/" + moduleName;
-        if (entityId != null) base += "/" + moduleName + "-" + entityId;
+        if (entityId != null)
+            base += "/" + moduleName + "-" + entityId;
         return base;
     }
 }

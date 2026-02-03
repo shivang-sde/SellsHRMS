@@ -14,14 +14,21 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_department")
-@Getter @Setter @AllArgsConstructor @NoArgsConstructor @Builder
+@Table(name = "tbl_department", uniqueConstraints = { @UniqueConstraint(columnNames = { "organisation_id", "name" }) }
+
+)
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class Department {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +41,6 @@ public class Department {
     @JoinColumn(name = "organisation_id", nullable = false)
     private Organisation organisation;
 
-    
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     @Builder.Default
     private List<Designation> designations = new ArrayList<>();

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Ensures that Org Admins or Employees can perform actions only
@@ -32,10 +33,9 @@ import java.time.LocalDate;
 @Component
 public class OrganisationAccessFilter extends OncePerRequestFilter {
 
-
     private final UserRepository userRepo;
 
-    public OrganisationAccessFilter( UserRepository userRepo) {
+    public OrganisationAccessFilter(UserRepository userRepo) {
         this.userRepo = userRepo;
     }
 
@@ -46,16 +46,53 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
     private static final String BLUE = "\u001B[34m";
     private static final String RESET = "\u001B[0m";
 
+    private static final List<String> EXCLUDED_PATHS = List.of(
+            "/api/auth",
+            "/api/superadmin",
+            "/superadmin",
+            "/login",
+            "/new-login",
+            "/register",
+            "/css",
+            "/plugins",
+            "/bundles",
+
+            "/js",
+            "/images",
+            "/img",
+
+            "/error",
+            "/favicon");
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
-            filterChain.doFilter(request, response);
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            // 🔍 Detect API or normal request
+            String path = request.getRequestURI();
+            boolean isAjax = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+            boolean isApi = path.startsWith("/api/");
+
+            log.warn("{}[SESSION_EXPIRED_DETECTED]{} Path={} | isApi={} | isAjax={}",
+                    YELLOW, RESET, path, isApi, isAjax);
+
+            if (isAjax || isApi) {
+                // Return JSON for API calls
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(
+                        "{\"errorCode\":\"SESSION_EXPIRED\",\"message\":\"Your session has expired. Please log in again.\"}");
+            } else {
+                // Redirect to login page for normal users
+                String redirectUrl = request.getContextPath() + "/new-login?session=expired";
+                log.info("{}[SESSION_EXPIRED_REDIRECT]{} -> {}", BLUE, RESET, redirectUrl);
+                response.sendRedirect(redirectUrl);
+            }
             return;
         }
 
@@ -76,6 +113,15 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
 
         User user = userRepo.findByEmailWithOrganisation(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        if (user == null || Boolean.FALSE.equals(user.getIsActive())) {
+            SecurityContextHolder.clearContext();
+            request.getSession().invalidate();
+
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("User account is deactivated.");
+            return;
+        }
 
         // Super Admin bypass
         if (user.getSystemRole() == User.SystemRole.SUPER_ADMIN) {
@@ -130,25 +176,16 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        
+
         String path = request.getRequestURI();
-        return path.startsWith("/api/auth")
-                || path.startsWith("/api/superadmin")
-                || path.startsWith("/superadmin")
-                || path.startsWith("/login")
-                || path.startsWith("/css")
-                || path.startsWith("/js")
-                || path.startsWith("/images")
-                || path.startsWith("/error")
-                || path.startsWith("/favicon")
-                || path.contains("/WEB-INF/views/");
+        return EXCLUDED_PATHS.stream().anyMatch(path::startsWith) || path.contains("/WEB-INF/views/");
     }
 
     /**
      * Unified handler — returns JSON for API/AJAX and redirects for JSP requests.
      */
     private void handleOrgError(HttpServletRequest request, HttpServletResponse response,
-                                String message, String code) throws IOException {
+            String message, String code) throws IOException {
 
         String path = request.getRequestURI();
         boolean isAjax = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
@@ -163,8 +200,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write(String.format(
                     "{\"errorCode\":\"%s\",\"message\":\"%s\"}",
-                    code, message
-            ));
+                    code, message));
             log.error("{}[ORG_ACCESS_DENIED_JSON]{} -> {} : {}", RED, RESET, code, message);
         } else {
             // ✅ For normal page requests → redirect to error JSP

@@ -174,15 +174,12 @@
         </div>
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label" for="employeeCode">Employee Code <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="employeeCode" name="employeeCode" required>
-                </div>
+            
                 <div class="col-md-4">
                     <label class="form-label" for="dateOfJoining">Date of Joining <span class="text-danger">*</span></label>
                     <input type="date" class="form-control" id="dateOfJoining" name="dateOfJoining" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" id="doeId">
                     <label class="form-label" for="dateOfExit">Date of Exit</label>
                     <input type="date" class="form-control" id="dateOfExit" name="dateOfExit">
                 </div>
@@ -204,9 +201,11 @@
         <option value="">Select</option>
         <option value="ACTIVE">Active</option>
         <option value="INACTIVE">Inactive</option>
-        <option value="ONLEAVE">On Leave</option>
-        <option value="SUSPENDED">Suspended</option>
+        <option id="exitStatusVal" value="EXIT">Exit</option>
+        <!-- <option value="ONLEAVE">On Leave</option> -->
+        <!-- <option value="SUSPENDED">Suspended</option> -->
         <option value="TERMINATED">Terminated</option>
+        
     </select>
 </div>
 <div class="col-md-4">

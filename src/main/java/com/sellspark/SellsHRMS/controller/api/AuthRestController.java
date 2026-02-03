@@ -3,7 +3,7 @@ package com.sellspark.SellsHRMS.controller.api;
 import com.sellspark.SellsHRMS.dto.LoginRequest;
 import com.sellspark.SellsHRMS.dto.LoginResponse;
 import com.sellspark.SellsHRMS.entity.User;
-import com.sellspark.SellsHRMS.exception.HRMSException;
+import com.sellspark.SellsHRMS.exception.core.HRMSException;
 import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.service.AuthService;
 import com.sellspark.SellsHRMS.service.SuperAdminService;
@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,14 +59,18 @@ public class AuthRestController {
             return ResponseEntity.status(401)
                     .body(Map.of("error", "Invalid email or password"));
         }
-        
-        User user = userRepo.findById(principal.getId()).orElseThrow(() ->  new HRMSException("User not found with id " + principal.getId() + " .", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        User user = userRepo.findById(principal.getId())
+                .orElseThrow(() -> new HRMSException("User not found with id " + principal.getId() + " .",
+                        "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (user.getIsActive() == Boolean.FALSE) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("error", "User account is deactivated. Please contact administrator."));
+        }
 
         user.setLastLogin(LocalDateTime.now());
 
         userRepo.save(user);
-        
-    
 
         LoginResponse response = LoginResponse.builder()
                 .id(principal.getId())
@@ -81,7 +87,6 @@ public class AuthRestController {
         session.setAttribute("SYSTEM_ROLE", principal.getSystemRole());
         session.setAttribute("OrgId", principal.getOrganisationId());
 
-    
         return ResponseEntity.ok(response);
     }
 
@@ -114,4 +119,20 @@ public class AuthRestController {
                         "permissions", session.getAttribute("PERMISSIONS"),
                         "modules", session.getAttribute("MODULES")));
     }
+
+    @GetMapping("/check-session")
+    @ResponseBody
+    public Map<String, Object> checkSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        SecurityContext context = SecurityContextHolder.getContext();
+
+        return Map.of(
+                "sessionExists", session != null,
+                "sessionId", session != null ? session.getId() : null,
+                "authPrincipal",
+                context.getAuthentication() != null ? context.getAuthentication().getPrincipal() : null,
+                "authorities",
+                context.getAuthentication() != null ? context.getAuthentication().getAuthorities() : null);
+    }
+
 }

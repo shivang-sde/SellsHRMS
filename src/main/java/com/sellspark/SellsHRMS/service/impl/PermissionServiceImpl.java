@@ -24,6 +24,16 @@ public class PermissionServiceImpl implements PermissionService {
         if (permissionRepo.findByCode(permission.getCode()).isPresent()) {
             throw new IllegalArgumentException("Permission with code already exists: " + permission.getCode());
         }
+        permission.setActive(true);
+        return permissionRepo.save(permission);
+    }
+
+    @Override
+    public Permission toggleActive(Long id) {
+        Permission permission = permissionRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Permission not found with ID: " + id));
+
+        permission.setActive(!permission.getActive());
         return permissionRepo.save(permission);
     }
 }

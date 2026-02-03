@@ -288,3 +288,14 @@
 .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+#uploadArea.dragover {
+    background-color: #e9f7ff;
+    border-color: #007bff;
+}
+
+.attachment-icon {
+    font-size: 1.5rem;
+    width: 30px;
+    text-align: center;
+}

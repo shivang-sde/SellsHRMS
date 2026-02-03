@@ -12,9 +12,9 @@
                 <a href="/org/leaves/pending" class="btn btn-warning">
                     <i class="fas fa-tasks me-2"></i>Pending Approvals
                 </a>
-                <a href="/org/leaves/reports" class="btn btn-primary">
+                <!-- <a href="/org/leaves/reports" class="btn btn-primary">
                     <i class="fas fa-chart-bar me-2"></i>Reports
-                </a>
+                </a> -->
             </div>
         </div>
     </div>

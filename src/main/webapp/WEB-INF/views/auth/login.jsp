@@ -64,6 +64,7 @@
                         url: "/api/auth/login",
                         contentType: "application/json",
                         data: JSON.stringify({ email: email, password: password }),
+                        xhrFields: { withCredentials: true },
                         success: function (response) {
                             messageDiv.html('<div class="alert alert-success">Login successful! Redirecting...</div>');
 

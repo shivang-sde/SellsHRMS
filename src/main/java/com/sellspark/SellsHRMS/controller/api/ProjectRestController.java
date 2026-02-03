@@ -1,9 +1,11 @@
 package com.sellspark.SellsHRMS.controller.api;
 
 import com.sellspark.SellsHRMS.dto.dashboard.ProjectDTO;
+import com.sellspark.SellsHRMS.dto.project.ProjectAttachmentDTO;
 import com.sellspark.SellsHRMS.entity.Project.ProjectStatus;
 import com.sellspark.SellsHRMS.entity.Project.ProjectType;
 import com.sellspark.SellsHRMS.payload.ApiResponse;
+import com.sellspark.SellsHRMS.service.ProjectAttachmentService;
 import com.sellspark.SellsHRMS.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class ProjectRestController {
 
     private final ProjectService projectService;
+    private final ProjectAttachmentService attachmentService;
 
     // ----------------------------------------------------------------
     // CREATE PROJECT
@@ -62,6 +65,32 @@ public class ProjectRestController {
         return ResponseEntity.ok(ApiResponse.ok("Project retrieved successfully", project));
     }
 
+    @PostMapping("/{projectId}/attachments")
+    public ResponseEntity<ApiResponse<ProjectAttachmentDTO>> addAttachment(
+            @PathVariable Long projectId,
+            @RequestParam Long employeeId,
+            @RequestBody ProjectAttachmentDTO dto) {
+
+        ProjectAttachmentDTO saved = attachmentService.addAttachment(projectId, employeeId, dto);
+        return ResponseEntity.ok(ApiResponse.ok("Attachment added successfully", saved));
+    }
+
+    @GetMapping("/{projectId}/attachments")
+    public ResponseEntity<ApiResponse<List<ProjectAttachmentDTO>>> getAttachments(
+            @PathVariable Long projectId) {
+
+        List<ProjectAttachmentDTO> attachments = attachmentService.getAttachments(projectId);
+        return ResponseEntity.ok(ApiResponse.ok("Attachments fetched successfully", attachments));
+    }
+
+    @GetMapping("/{projectId}/attachments/link")
+    public ResponseEntity<ApiResponse<List<ProjectAttachmentDTO>>> getAttachmentsLink(
+            @PathVariable Long projectId) {
+
+        List<ProjectAttachmentDTO> attachments = attachmentService.getAttachments(projectId);
+        return ResponseEntity.ok(ApiResponse.ok("Attachments fetched successfully", attachments));
+    }
+
     // ----------------------------------------------------------------
     // DELETE PROJECT
     // ----------------------------------------------------------------
@@ -77,26 +106,24 @@ public class ProjectRestController {
 
     @PostMapping("/{projectId}/members")
     public ResponseEntity<ApiResponse<Void>> addMembers(
-        @PathVariable Long projectId,
-        @RequestBody Map<String, List<Long>> body,
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId) {
-    List<Long> employeeIds = body.get("employeeIds");
-    projectService.addMembers(projectId, employeeIds, organisationId, employeeId);
-    return ResponseEntity.ok(ApiResponse.ok("Members added successfully", null));
-}
+            @PathVariable Long projectId,
+            @RequestBody Map<String, List<Long>> body,
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
+        List<Long> employeeIds = body.get("employeeIds");
+        projectService.addMembers(projectId, employeeIds, organisationId, employeeId);
+        return ResponseEntity.ok(ApiResponse.ok("Members added successfully", null));
+    }
 
- @DeleteMapping("/{projectId}/members/{memberId}")
-public ResponseEntity<ApiResponse<Void>> removeMember(
-        @PathVariable Long projectId,
-        @PathVariable Long memberId,
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId) {
-    projectService.removeMember(projectId, memberId, organisationId, employeeId);
-    return ResponseEntity.ok(ApiResponse.ok("Member removed successfully", null));
-}
-
-
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> removeMember(
+            @PathVariable Long projectId,
+            @PathVariable Long memberId,
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
+        projectService.removeMember(projectId, memberId, organisationId, employeeId);
+        return ResponseEntity.ok(ApiResponse.ok("Member removed successfully", null));
+    }
 
     // ----------------------------------------------------------------
     // MARK PROJECT COMPLETION

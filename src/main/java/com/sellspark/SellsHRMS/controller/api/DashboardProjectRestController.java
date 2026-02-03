@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.controller.api;
 
+import com.sellspark.SellsHRMS.dto.common.ApiResponse;
 import com.sellspark.SellsHRMS.dto.dashboard.MyWorkSummaryDTO;
 import com.sellspark.SellsHRMS.service.DashboardProjectService;
 
@@ -15,8 +16,12 @@ public class DashboardProjectRestController {
     private final DashboardProjectService dashboardService;
 
     @GetMapping("/my-work")
-    public ResponseEntity<MyWorkSummaryDTO> getMyDashboard(@RequestParam Long organisationId,
-                                                           @RequestParam Long employeeId) {
-        return ResponseEntity.ok(dashboardService.getEmployeeDashboard(organisationId, employeeId));
+    public ResponseEntity<ApiResponse<MyWorkSummaryDTO>> getMyDashboard(
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
+
+        MyWorkSummaryDTO dashboardData = dashboardService.getEmployeeDashboard(organisationId, employeeId);
+        return ResponseEntity.ok(ApiResponse.ok("Dashboard data fetched successfully", dashboardData));
     }
+
 }

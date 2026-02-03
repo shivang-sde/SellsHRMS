@@ -94,6 +94,7 @@
   <div id="attachmentRows" class="p-3 border rounded">
     <div class="attachment-row d-flex align-items-center mb-2">
       <input type="file" class="form-control me-2" name="attachments">
+      <span id="currentAttachment"></span>
       <input type="text" class="form-control" name="attachmentDescriptions"
              placeholder="Add note or description (optional)">
       <button type="button" class="btn btn-outline-danger ms-2"

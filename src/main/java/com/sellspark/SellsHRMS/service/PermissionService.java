@@ -5,5 +5,8 @@ import java.util.List;
 
 public interface PermissionService {
     List<Permission> getAllPermissions();
+
     Permission createPermission(Permission permission);
+
+    Permission toggleActive(Long id);
 }

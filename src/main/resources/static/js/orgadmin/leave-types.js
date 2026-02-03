@@ -2,6 +2,12 @@ $(document).ready(function() {
   let leaveTypes = [];
   const orgId = window.APP.ORG_ID;
 
+  const methodSelect = $('[name="accrualMethod"]');
+  const cfAllowed = $('[name="carryForwardAllowed"]');
+  const cfLimit = $('[name="carryForwardLimit"]');
+  const accrualRate = $('[name="accrualRate"]');
+  const validityDays = $('[name="validityDays"]');
+
   // Initialize
   init();
 
@@ -11,9 +17,72 @@ $(document).ready(function() {
   }
 
   function setupEventListeners() {
+
     $('#createLeaveTypeForm').on('submit', handleCreateLeaveType);
     $('#editLeaveTypeForm').on('submit', handleEditLeaveType);
+
+    // For create form
+$('#createLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(false));
+$('#createLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(false));
+
+// For edit form
+$('#editLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(true));
+$('#editLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(true));
+
   }
+
+
+function updateFormState(isEdit = false) {
+  const prefix = isEdit ? '#edit' : '';
+  const method = $(`${prefix}AccrualMethod`).val();
+  const accrualRate = $(`${prefix}AccrualRate`);
+  const annualLimit = $(`${prefix}AnnualLimit`);
+  const cfAllowed = $(`${prefix}CarryForwardAllowed`);
+  const cfLimit = $(`${prefix}CarryForwardLimit`);
+  const validityDays = $(`${prefix}ValidityDays`);
+
+  // ---- Reset validation hints ----
+  cfLimit.removeClass('is-invalid');
+  annualLimit.removeClass('is-invalid');
+
+  // ---- Accrual Rate ----
+  accrualRate.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
+  if (method === 'NONE' || method === 'PRO_RATA') accrualRate.val('');
+
+  // ---- Annual Limit ----
+  const annualRequired = (method === 'ANNUAL');
+  annualLimit.prop('required', annualRequired);
+  annualLimit.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
+  if (!annualRequired && !annualLimit.val()) annualLimit.val('');
+
+  // ---- Carry Forward ----
+  const cfEnabled = (method === 'MONTHLY');
+  cfAllowed.prop('disabled', !cfEnabled);
+  if (!cfEnabled) {
+    cfAllowed.prop('checked', false);
+    cfLimit.prop('disabled', true).val('');
+  } else {
+    cfLimit.prop('disabled', !cfAllowed.is(':checked'));
+  }
+
+  // ---- Validity Days ----
+  const validEnabled = (method === 'NONE');
+  validityDays.prop('disabled', !validEnabled);
+  if (!validEnabled) validityDays.val('');
+
+  // ---- Inline logical warnings ----
+  const accrualVal = parseFloat(accrualRate.val() || 0);
+  const cfVal = parseFloat(cfLimit.val() || 0);
+  if (cfAllowed.is(':checked') && cfVal > accrualVal && cfEnabled) {
+    cfLimit.addClass('is-invalid');
+    showToast('warning', 'Carry forward limit cannot exceed monthly accrual rate.');
+  }
+
+  if (annualRequired && (!annualLimit.val() || annualLimit.val() <= 0)) {
+    annualLimit.addClass('is-invalid');
+  }
+}
+
 
   // Load all leave types
   function loadLeaveTypes() {
@@ -67,11 +136,17 @@ $(document).ready(function() {
   function createLeaveTypeCard(type) {
     const features = [];
     
+    console.log("type ", type);
     if (type.isPaid) features.push('<span class="feature-badge">Paid</span>');
     if (type.carryForwardAllowed) features.push('<span class="feature-badge">Carry Forward</span>');
     if (type.encashable) features.push('<span class="feature-badge">Encashable</span>');
     if (type.allowHalfDay) features.push('<span class="feature-badge">Half Day</span>');
     if (type.requiresApproval) features.push('<span class="feature-badge">Requires Approval</span>');
+
+    if(type.isActive === false) {
+      features.push('<span class="feature-badge text-lg bg-secondary">Inactive</span>');
+    }
+    
 
     return `
       <div class="col-md-4 mb-4">
@@ -137,6 +212,8 @@ $(document).ready(function() {
   // Create leave type
   function handleCreateLeaveType(e) {
     e.preventDefault();
+
+    if (!validateLeaveTypeForm('#createLeaveTypeForm')) return;
     
     const formData = getFormData('#createLeaveTypeForm');
     formData.orgId = parseInt(orgId);
@@ -186,10 +263,14 @@ $(document).ready(function() {
     $('#editVisibleToEmployees').prop('checked', type.visibleToEmployees);
 
     $('#editLeaveTypeModal').modal('show');
+     setTimeout(() => updateFormState(true), 200);
   };
 
   function handleEditLeaveType(e) {
     e.preventDefault();
+
+    if (!validateLeaveTypeForm('#editLeaveTypeForm')) return;
+
     
     const leaveTypeId = $('#editLeaveTypeId').val();
     const formData = getFormData('#editLeaveTypeForm');
@@ -262,3 +343,37 @@ $(document).ready(function() {
     return data;
   }
 });
+
+
+function validateLeaveTypeForm(formSelector) {
+  const form = $(formSelector);
+  const method = form.find('[name="accrualMethod"]').val();
+  const accrualRate = parseFloat(form.find('[name="accrualRate"]').val() || 0);
+  const carryForwardAllowed = form.find('[name="carryForwardAllowed"]').is(':checked');
+  const carryForwardLimit = parseFloat(form.find('[name="carryForwardLimit"]').val() || 0);
+  const annualLimit = parseFloat(form.find('[name="annualLimit"]').val() || 0);
+  const validityDays = parseFloat(form.find('[name="validityDays"]').val() || 0);
+  const maxConsecutive = parseFloat(form.find('[name="maxConsecutiveDays"]').val() || 0);
+
+  if (method === 'ANNUAL' && annualLimit <= 0) {
+    showToast('error', 'Annual limit is required for annual accrual method.');
+    return false;
+  }
+  if (method !== 'MONTHLY' && carryForwardAllowed) {
+    showToast('error', 'Carry forward only applies for monthly accrual.');
+    return false;
+  }
+  if (annualLimit && maxConsecutive && maxConsecutive > annualLimit) {
+  showToast('error', 'Max consecutive days cannot exceed annual limit.');
+  return false;
+}
+  if (carryForwardAllowed && carryForwardLimit > accrualRate) {
+    showToast('error', 'Carry forward limit cannot exceed monthly accrual rate.');
+    return false;
+  }
+  if (validityDays > 0 && method !== 'NONE') {
+    showToast('error', 'Validity days only apply for special (NONE accrual) leaves.');
+    return false;
+  }
+  return true;
+}

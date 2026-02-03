@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,13 +15,13 @@ import com.sellspark.SellsHRMS.dto.employee.EmployeeDocumentRequest;
 import com.sellspark.SellsHRMS.dto.employee.EmployeeDocumentResponse;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.EmployeeDocument;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.exception.FileUploadException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeDocumentRepository;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.service.EmployeeDocumentService;
-import com.sellspark.SellsHRMS.service.FileStorageService;
+import com.sellspark.SellsHRMS.service.files.FileStorageService;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
@@ -33,44 +32,44 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
-    
+
     private final EmployeeRepository employeeRepo;
     private final EmployeeDocumentRepository docRepo;
     private final FileStorageService storage;
 
     @Override
-    public List<EmployeeDocumentResponse> getByEmployee(Long empId){
+    public List<EmployeeDocumentResponse> getByEmployee(Long empId) {
         return docRepo.findByEmployeeId(empId)
-            .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
-
 
     @Override
     @Transactional
     public EmployeeDocumentResponse uploadFile(Long empId, String docType, MultipartFile file) throws Exception {
-        
-        Employee emp = employeeRepo.findById(empId)
-        .orElseThrow(() -> new EmployeeNotFoundException(empId));
 
-        // If an entry for this type exists, we update it (replace file), else insert new.
+        Employee emp = employeeRepo.findById(empId)
+                .orElseThrow(() -> new EmployeeNotFoundException(empId));
+
+        // If an entry for this type exists, we update it (replace file), else insert
+        // new.
         Optional<EmployeeDocument> existingDocOpt = docRepo.findByEmployeeIdAndDocumentType(empId, docType);
 
-        //store file into disk
+        // store file into disk
         String relativeFolder = String.valueOf(empId); // store under folder with empid
         String publicUrl = storage.store(file, relativeFolder);
 
         EmployeeDocument doc = existingDocOpt.orElseGet(() -> EmployeeDocument.builder()
-            .employee(emp).documentType(docType).build());
+                .employee(emp).documentType(docType).build());
 
         // if existed previous fileurl, try to delete old file (best-effort)
 
-        try{
-            if(doc.getFileUrl() != null && !doc.getFileUrl().isBlank()){
+        try {
+            if (doc.getFileUrl() != null && !doc.getFileUrl().isBlank()) {
                 storage.delete(doc.getFileUrl());
             }
 
-        }catch(Exception ignored) {
-            
+        } catch (Exception ignored) {
+
         }
 
         doc.setFileUrl(publicUrl);
@@ -81,7 +80,8 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
 
         EmployeeDocument saved = docRepo.save(doc);
 
-        // kick background processing: e.g. virus scan, generate thumbnail, push to S3, OCR, etc.
+        // kick background processing: e.g. virus scan, generate thumbnail, push to S3,
+        // OCR, etc.
         postUploadBackgroundProcessing(saved);
         return toResponse(saved);
 
@@ -91,20 +91,23 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
     @Transactional
     public EmployeeDocumentResponse saveLink(EmployeeDocumentRequest req) {
         Employee emp = employeeRepo.findById(req.getEmployeeId())
-            .orElseThrow(() -> new EmployeeNotFoundException(req.getEmployeeId()));
+                .orElseThrow(() -> new EmployeeNotFoundException(req.getEmployeeId()));
 
-        Optional<EmployeeDocument> existingOpt = docRepo.findByEmployeeIdAndDocumentType(req.getEmployeeId(), req.getDocumentType());
+        Optional<EmployeeDocument> existingOpt = docRepo.findByEmployeeIdAndDocumentType(req.getEmployeeId(),
+                req.getDocumentType());
 
         EmployeeDocument doc = existingOpt.orElseGet(() -> EmployeeDocument.builder()
-            .employee(emp)
-            .documentType(req.getDocumentType())
-            .build());
+                .employee(emp)
+                .documentType(req.getDocumentType())
+                .build());
 
-        if(req.isRemoveFile()) {
+        if (req.isRemoveFile()) {
             try {
-                if (doc.getFileUrl() != null) storage.delete(doc.getFileUrl());
-                
-            } catch (Exception ignored) {}
+                if (doc.getFileUrl() != null)
+                    storage.delete(doc.getFileUrl());
+
+            } catch (Exception ignored) {
+            }
             doc.setFileUrl(null);
         }
         doc.setExternalUrl(req.getExternalUrl());
@@ -119,14 +122,13 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
     @Transactional
     public void delete(Long documentId) throws Exception {
         EmployeeDocument doc = docRepo.findById(documentId)
-            .orElseThrow(() -> new ResourceNotFoundException("EmployeeDocument", "id", documentId));
-        
-        
+                .orElseThrow(() -> new ResourceNotFoundException("EmployeeDocument", "id", documentId));
+
         // delete file if stored
-        if(doc.getFileUrl() != null) {
-            try{
+        if (doc.getFileUrl() != null) {
+            try {
                 storage.delete(doc.getFileUrl());
-            } catch(Exception ignored) {
+            } catch (Exception ignored) {
                 log.warn("Failed to delete old file", ignored);
                 throw new FileUploadException("Failed to upload/delete file", ignored);
             }
@@ -136,28 +138,29 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
 
     private EmployeeDocumentResponse toResponse(EmployeeDocument d) {
         String name = null;
-        if(d.getEmployee() != null) {
+        if (d.getEmployee() != null) {
             String f = d.getEmployee().getFirstName() == null ? "" : d.getEmployee().getFirstName();
-            String l = d.getEmployee().getLastName() ==  null ? "" : d.getEmployee().getLastName();
+            String l = d.getEmployee().getLastName() == null ? "" : d.getEmployee().getLastName();
             name = (f + " " + l).trim();
         }
 
         return EmployeeDocumentResponse.builder()
-            .id(d.getId())
-            .employeeId(d.getEmployee() != null ? d.getEmployee().getId() : null)
-            .employeeName(name)
-            .documentType(d.getDocumentType())
-            .fileUrl(d.getFileUrl())
-            .externalUrl(d.getExternalUrl())
-            .originalFilename(d.getOriginalFilename())
-            .contentType(d.getContentType())
-            .uploadedAt(d.getUploadedAt())
-            .verified(d.getVerified())
-            .build();
+                .id(d.getId())
+                .employeeId(d.getEmployee() != null ? d.getEmployee().getId() : null)
+                .employeeName(name)
+                .documentType(d.getDocumentType())
+                .fileUrl(d.getFileUrl())
+                .externalUrl(d.getExternalUrl())
+                .originalFilename(d.getOriginalFilename())
+                .contentType(d.getContentType())
+                .uploadedAt(d.getUploadedAt())
+                .verified(d.getVerified())
+                .build();
     }
 
     /**
-     * Background processing hook. This method is called AFTER storing metadata and file.
+     * Background processing hook. This method is called AFTER storing metadata and
+     * file.
      * Marked @Async to run on executor (fileProcessingExecutor).
      */
     @Async("fileProcessingExecutor")
@@ -178,6 +181,8 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
         }
     }
 
-    // Background job uses @Async("fileProcessingExecutor"). Configure executor sizes in application.properties.
-    // If you add heavy processing (OCR, PDF conversions), do it here and push to S3/cdn inside this method.
+    // Background job uses @Async("fileProcessingExecutor"). Configure executor
+    // sizes in application.properties.
+    // If you add heavy processing (OCR, PDF conversions), do it here and push to
+    // S3/cdn inside this method.
 }

@@ -1,15 +1,17 @@
 package com.sellspark.SellsHRMS.service.impl;
 
+import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
+import com.sellspark.SellsHRMS.utils.LeaveBalanceCalculator;
 import com.sellspark.SellsHRMS.dto.leave.*;
 import com.sellspark.SellsHRMS.entity.*;
-import com.sellspark.SellsHRMS.entity.Leave.LeaveStatus;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
-import com.sellspark.SellsHRMS.exception.InsufficientLeaveBalanceException;
 import com.sellspark.SellsHRMS.exception.InvalidDateRangeException;
 import com.sellspark.SellsHRMS.exception.InvalidOperationException;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
-import com.sellspark.SellsHRMS.exception.OverlappingLeaveException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.exception.leave.InsufficientLeaveBalanceException;
+import com.sellspark.SellsHRMS.exception.leave.LeaveTypeNotFoundException;
+import com.sellspark.SellsHRMS.exception.leave.OverlappingLeaveException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.LeaveService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,8 @@ public class LeaveServiceImpl implements LeaveService {
     private final OrganisationRepository organisationRepository;
     private final OrganisationPolicyRepository organisationPolicyRepository;
     private final EmployeeLeaveBalanceRepository balanceRepository;
+    private final LeaveBalanceCalculator leaveBalanceCalculator;
+    private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
     @Override
     public LeaveResponseDTO applyLeave(Long orgId, Long employeeId, LeaveRequestDTO request) {
@@ -55,58 +59,61 @@ public class LeaveServiceImpl implements LeaveService {
                 .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId));
 
         double days = calculateLeaveDays(request, orgId, leaveType);
+
         validateLeaveAgainstTypePolicy(emp, leaveType, request, days, policy);
 
-       boolean overlapExists = leaveRepository.existsOverlappingLeave(
-    employeeId,
-    request.getStartDate(),
-    request.getEndDate(),
-    List.of(Leave.LeaveStatus.PENDING, Leave.LeaveStatus.APPROVE)
-);
+        String leaveYear = getCurrentLeaveYear(orgId);
+        LocalDate leaveYearStart = getLeaveYearStartDate(orgId);
 
-if (overlapExists) {
-    // Load overlapping leaves only if broad overlap detected
-    List<Leave> overlaps = leaveRepository.findOverlappingLeaves(
-        employeeId,
-        request.getStartDate(),
-        request.getEndDate()
-    );
+        log.info("Validating leave balance for emp={}, type={}, leaveYear={}", emp.getId(), leaveType.getId(),
+                leaveYear);
 
-    boolean conflict = overlaps.stream().anyMatch(existing -> {
-        // Case 1: exact same single-day range
-        if (existing.getStartDate().equals(request.getStartDate()) &&
-            existing.getEndDate().equals(request.getEndDate())) {
+        // Use dynamic calculator
+        leaveBalanceCalculator.validateLeaveRequest(emp, leaveType, days, leaveYear, leaveYearStart);
 
-            // Both are half-day → check halves
-            if (request.getStartDayBreakdown() != null && existing.getStartDayBreakdown() != null) {
-                // Allow only opposite halves on the same day
-                Leave.DayBreakdown requestBreakdown = Leave.DayBreakdown.valueOf(request.getStartDayBreakdown());
-                return !(
-                    !requestBreakdown.equals(existing.getStartDayBreakdown())
-                    && requestBreakdown != Leave.DayBreakdown.FULL_DAY
-                    && existing.getStartDayBreakdown() != Leave.DayBreakdown.FULL_DAY
-                );
+        boolean overlapExists = leaveRepository.existsOverlappingLeave(
+                employeeId,
+                request.getStartDate(),
+                request.getEndDate(),
+                List.of(Leave.LeaveStatus.PENDING, Leave.LeaveStatus.APPROVE));
+
+        if (overlapExists) {
+            // Load overlapping leaves only if broad overlap detected
+            List<Leave> overlaps = leaveRepository.findOverlappingLeaves(
+                    employeeId,
+                    request.getStartDate(),
+                    request.getEndDate());
+
+            boolean conflict = overlaps.stream().anyMatch(existing -> {
+                // Case 1: exact same single-day range
+                if (existing.getStartDate().equals(request.getStartDate()) &&
+                        existing.getEndDate().equals(request.getEndDate())) {
+
+                    // Both are half-day → check halves
+                    if (request.getStartDayBreakdown() != null && existing.getStartDayBreakdown() != null) {
+                        // Allow only opposite halves on the same day
+                        Leave.DayBreakdown requestBreakdown = Leave.DayBreakdown
+                                .valueOf(request.getStartDayBreakdown());
+                        return !(!requestBreakdown.equals(existing.getStartDayBreakdown())
+                                && requestBreakdown != Leave.DayBreakdown.FULL_DAY
+                                && existing.getStartDayBreakdown() != Leave.DayBreakdown.FULL_DAY);
+                    }
+                    // If either is full day, it’s an overlap
+                    return true;
+                }
+
+                // Case 2: multi-day overlap (any range intersection)
+                return !(request.getEndDate().isBefore(existing.getStartDate()) ||
+                        request.getStartDate().isAfter(existing.getEndDate()));
+            });
+
+            if (conflict) {
+                // throw new RuntimeException(
+                // "You already have a leave applied during this period (including half-day)."
+                // );
+                throw new OverlappingLeaveException();
             }
-            // If either is full day, it’s an overlap
-            return true;
         }
-
-        // Case 2: multi-day overlap (any range intersection)
-        return !(request.getEndDate().isBefore(existing.getStartDate()) ||
-                 request.getStartDate().isAfter(existing.getEndDate()));
-    });
-
-    if (conflict) {
-        // throw new RuntimeException(
-        //     "You already have a leave applied during this period (including half-day)."
-        // );
-        throw new OverlappingLeaveException();
-    }
-}
-
-       log.info("Checking leave balance for emp={}, type={}, leaveYear={}", emp.getId(), leaveType.getId(), getCurrentLeaveYear(orgId));
-
-        checkLeaveBalance(emp, leaveType, days, getCurrentLeaveYear(orgId));
 
         Leave leave = Leave.builder()
                 .organisation(org)
@@ -129,77 +136,82 @@ if (overlapExists) {
 
     @Override
     public LeaveResponseDTO updateLeave(Long leaveId, LeaveRequestDTO leave, Long employeeId, Long orgId) {
-    Leave existingLeave = leaveRepository.findById(leaveId)
-            .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
+        Leave existingLeave = leaveRepository.findById(leaveId)
+                .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
 
-    boolean overlapExists = leaveRepository.existsOverlappingLeave(
-        employeeId,
-        leave.getStartDate(),
-        leave.getEndDate(),
-        List.of(Leave.LeaveStatus.PENDING, Leave.LeaveStatus.APPROVE)
-    );
+        boolean overlapExists = leaveRepository.existsOverlappingLeave(
+                employeeId,
+                leave.getStartDate(),
+                leave.getEndDate(),
+                List.of(Leave.LeaveStatus.PENDING, Leave.LeaveStatus.APPROVE));
 
-    if (overlapExists) {
-        List<Leave> overlaps = leaveRepository.findOverlappingLeaves(
-            employeeId,
-            leave.getStartDate(),
-            leave.getEndDate()
-        );
+        if (overlapExists) {
+            List<Leave> overlaps = leaveRepository.findOverlappingLeaves(
+                    employeeId,
+                    leave.getStartDate(),
+                    leave.getEndDate());
 
-        boolean conflict = overlaps.stream()
-            .filter(l -> !l.getId().equals(leaveId)) //  exclude same leave
-            .anyMatch(existing -> {
-                // Case 1: exact same single-day range
-                if (existing.getStartDate().equals(leave.getStartDate()) &&
-                    existing.getEndDate().equals(leave.getEndDate())) {
+            boolean conflict = overlaps.stream()
+                    .filter(l -> !l.getId().equals(leaveId)) // exclude same leave
+                    .anyMatch(existing -> {
+                        // Case 1: exact same single-day range
+                        if (existing.getStartDate().equals(leave.getStartDate()) &&
+                                existing.getEndDate().equals(leave.getEndDate())) {
 
-                    if (leave.getStartDayBreakdown() != null && existing.getStartDayBreakdown() != null) {
-                        Leave.DayBreakdown requestBreakdown = Leave.DayBreakdown.valueOf(leave.getStartDayBreakdown());
-                        return !(
-                            !requestBreakdown.equals(existing.getStartDayBreakdown())
-                            && requestBreakdown != Leave.DayBreakdown.FULL_DAY
-                            && existing.getStartDayBreakdown() != Leave.DayBreakdown.FULL_DAY
-                        );
-                    }
-                    return true;
-                }
+                            if (leave.getStartDayBreakdown() != null && existing.getStartDayBreakdown() != null) {
+                                Leave.DayBreakdown requestBreakdown = Leave.DayBreakdown
+                                        .valueOf(leave.getStartDayBreakdown());
+                                return !(!requestBreakdown.equals(existing.getStartDayBreakdown())
+                                        && requestBreakdown != Leave.DayBreakdown.FULL_DAY
+                                        && existing.getStartDayBreakdown() != Leave.DayBreakdown.FULL_DAY);
+                            }
+                            return true;
+                        }
 
-                // Case 2: multi-day overlap
-                return !(leave.getEndDate().isBefore(existing.getStartDate()) ||
-                         leave.getStartDate().isAfter(existing.getEndDate()));
-            });
+                        // Case 2: multi-day overlap
+                        return !(leave.getEndDate().isBefore(existing.getStartDate()) ||
+                                leave.getStartDate().isAfter(existing.getEndDate()));
+                    });
 
-        if (conflict) {
-            throw new OverlappingLeaveException();
+            if (conflict) {
+                throw new OverlappingLeaveException();
+            }
         }
+
+        double leaveDays = calculateLeaveDays(leave, orgId, existingLeave.getLeaveType());
+        validateLeaveAgainstTypePolicy(existingLeave.getEmployee(), existingLeave.getLeaveType(), leave, leaveDays,
+                organisationPolicyRepository.findByOrganisationId(orgId)
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId)));
+
+        String leaveYear = getCurrentLeaveYear(orgId);
+        LocalDate leaveYearStart = getLeaveYearStartDate(orgId);
+        leaveBalanceCalculator.validateLeaveRequest(
+                existingLeave.getEmployee(),
+                existingLeave.getLeaveType(),
+                leaveDays,
+                leaveYear,
+                leaveYearStart);
+
+        // Proceed with updating fields
+        existingLeave.setStartDate(leave.getStartDate());
+        existingLeave.setStartDayBreakdown(Leave.DayBreakdown.valueOf(leave.getStartDayBreakdown()));
+        existingLeave.setEndDate(leave.getEndDate());
+        existingLeave.setEndDayBreakdown(Leave.DayBreakdown.valueOf(leave.getEndDayBreakdown()));
+        existingLeave.setReason(leave.getReason());
+        existingLeave.setLeaveDays(leaveDays);
+        existingLeave.setUpdatedAt(LocalDateTime.now());
+
+        leaveRepository.save(existingLeave);
+        return toResponseDTO(existingLeave);
     }
-
-    double leaveDays = calculateLeaveDays(leave, orgId, existingLeave.getLeaveType());
-    validateLeaveAgainstTypePolicy(existingLeave.getEmployee(), existingLeave.getLeaveType(), leave, leaveDays, 
-        organisationPolicyRepository.findByOrganisationId(orgId)
-            .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId))
-    );
-
-    //  Proceed with updating fields
-    existingLeave.setStartDate(leave.getStartDate());
-    existingLeave.setStartDayBreakdown(Leave.DayBreakdown.valueOf(leave.getStartDayBreakdown()));
-    existingLeave.setEndDate(leave.getEndDate());
-    existingLeave.setEndDayBreakdown(Leave.DayBreakdown.valueOf(leave.getEndDayBreakdown()));
-    existingLeave.setReason(leave.getReason());
-    existingLeave.setLeaveDays(leaveDays);
-    existingLeave.setUpdatedAt(LocalDateTime.now());
-    
-    leaveRepository.save(existingLeave);
-    return toResponseDTO(existingLeave);
-}
-
 
     @Override
     public void cancelLeave(Long leaveId, Long employeeId, Long orgId) {
         Leave leave = leaveRepository.findById(leaveId)
-                .orElseThrow(() -> new  ResourceNotFoundException("Leave", "id", leaveId));
+                .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
         if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
-           throw new InvalidOperationException("Only pending leaves can be canceled.");
+            throw new InvalidOperationException("Only pending leaves can be canceled.");
 
         leave.setLeaveStatus(Leave.LeaveStatus.CANCELED);
         leaveRepository.save(leave);
@@ -207,10 +219,12 @@ if (overlapExists) {
 
     @Override
     public LeaveResponseDTO approveLeave(Long leaveId, Long approverId, String remarks, Long orgId) {
-        log.info("Approving leave for leaveId: {}, approverId: {}, remarks: {}, orgId: {}", leaveId, approverId, remarks, orgId);
+        log.info("Approving leave for leaveId: {}, approverId: {}, remarks: {}, orgId: {}", leaveId, approverId,
+                remarks, orgId);
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
-        if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)  throw new InvalidOperationException("Only pending leaves can be approved.");
+        if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
+            throw new InvalidOperationException("Only pending leaves can be approved.");
 
         Employee approver = employeeRepository.findById(approverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
@@ -221,6 +235,15 @@ if (overlapExists) {
         leave.setApproverRemarks(remarks);
 
         leaveRepository.save(leave);
+        String leaveYear = getCurrentLeaveYear(orgId);
+        LocalDate leaveYearStart = getLeaveYearStartDate(orgId);
+        leaveBalanceCalculator.validateLeaveRequest(
+                leave.getEmployee(),
+                leave.getLeaveType(),
+                leave.getLeaveDays(),
+                leaveYear,
+                leaveYearStart);
+
         updateBalanceOnApproval(leave);
         return toResponseDTO(leave);
     }
@@ -230,7 +253,7 @@ if (overlapExists) {
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
         if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
-          throw new InvalidOperationException("Only pending leaves can be rejected.");
+            throw new InvalidOperationException("Only pending leaves can be rejected.");
 
         Employee approver = employeeRepository.findById(approverId)
                 .orElseThrow(() -> new EmployeeNotFoundException(approverId));
@@ -247,8 +270,24 @@ if (overlapExists) {
     @Override
     public LeaveResponseDTO getLeaveById(Long id, Long orgId) {
         Leave leave = leaveRepository.findById(id)
-                  .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", id)); 
+                .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", id));
         return toResponseDTO(leave);
+    }
+
+    public List<LeaveResponseDTO> findVisibleLeaves(Long orgId, Long empId) {
+        // Get subordinates recursively
+        Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
+
+        // Exclude self (cannot see or approve own leaves)
+        subordinateIds.remove(empId);
+
+        List<Leave> leaves = leaveRepository.findByOrganisationIdAndEmployeeIdIn(orgId, subordinateIds);
+
+        return leaves.stream().map(leave -> {
+            LeaveResponseDTO dto = toResponseDTO(leave);
+            dto.setCanApprove(true); // ✅ always true since they’re subordinates
+            return dto;
+        }).toList();
     }
 
     @Override
@@ -261,7 +300,10 @@ if (overlapExists) {
     public List<LeaveResponseDTO> getEmployeeLeaves(Long employeeId, String leaveYear) {
         Employee emp = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
-        List<Leave> leaves = leaveRepository.findByEmployeeAndLeaveYear(emp, leaveYear);
+        LocalDate start = getLeaveYearStartDate(emp.getOrganisation().getId());
+        LocalDate end = getLeaveYearEndDate(emp.getOrganisation().getId());
+
+        List<Leave> leaves = leaveRepository.findByEmployeeAndDateRange(emp.getId(), start, end);
         return leaves.stream().map(this::toResponseDTO).toList();
     }
 
@@ -285,245 +327,251 @@ if (overlapExists) {
     @Override
     public List<LeaveResponseDTO> getLeavesBetweenDates(Long orgId, LocalDate from, LocalDate to) {
         Organisation org = organisationRepository.findById(orgId)
-                .orElseThrow(() ->new OrganisationNotFoundException(orgId));
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
         return leaveRepository.findLeavesBetweenDates(org, from, to)
                 .stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
 
     @Override
     public EmployeeLeaveBalance getEmployeeLeaveBalance(Long employeeId, Long leaveTypeId, String ly) {
-        Employee emp = employeeRepository.findById(employeeId).orElseThrow(() -> new RuntimeException("Employee not found"));
-        LeaveType type = leaveTypeRepository.findById(leaveTypeId).orElseThrow(() -> new RuntimeException("LeaveType not found"));
+        Employee emp = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        LeaveType type = leaveTypeRepository.findById(leaveTypeId)
+                .orElseThrow(() -> new LeaveTypeNotFoundException(leaveTypeId));
         return balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(emp, type, ly)
-                .orElseThrow(() ->new ResourceNotFoundException("EmployeeLeaveBalance", "employeeId", employeeId));
+                .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employeeId", employeeId));
     }
 
-   @Override
+    @Override
     public List<EmployeeLeaveBalanceDTO> getEmployeeAllBalances(Long employeeId, String leaveYear) {
-    Employee emp = employeeRepository.findById(employeeId)
-            .orElseThrow(() ->new EmployeeNotFoundException(employeeId));
+        Employee emp = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
 
-    return balanceRepository.findByEmployeeAndLeaveYear(emp, leaveYear)
-            .stream()
-            .map(this::toDto)
-            .toList();
-}
-
+        return balanceRepository.findByEmployeeAndLeaveYear(emp, leaveYear)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
 
     @Override
-public List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId) {
-    return balanceRepository.findAll().stream()
-            .filter(b -> b.getOrganisation().getId().equals(orgId))
-            .map(b -> EmployeeLeaveBalanceDTO.builder()
-                    .id(b.getId())
-                    .employeeId(b.getEmployee().getId())
-                    .employeeName(b.getEmployee().getFirstName() + " " + b.getEmployee().getLastName())
-                    .employeeCode(b.getEmployee().getEmployeeCode())
-                    .departmentName(b.getEmployee().getDepartment() != null
-                            ? b.getEmployee().getDepartment().getName()
-                            : "-")
-                    .leaveTypeId(b.getLeaveType().getId())
-                    .leaveTypeName(b.getLeaveType().getName())
-                    .isPaid(b.getLeaveType().getIsPaid())
-                    .leaveYear(b.getLeaveYear())
-                    .openingBalance(b.getOpeningBalance())
-                    .accrued(b.getAccrued())
-                    .availed(b.getAvailed())
-                    .carriedForward(b.getCarriedForward())
-                    .encashed(b.getEncashed())
-                    .closingBalance(b.getClosingBalance())
-                    .build())
-            .toList();
-}
+    public List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId) {
+        return balanceRepository.findAll().stream()
+                .filter(b -> b.getOrganisation().getId().equals(orgId))
+                .map(b -> EmployeeLeaveBalanceDTO.builder()
+                        .id(b.getId())
+                        .employeeId(b.getEmployee().getId())
+                        .employeeName(b.getEmployee().getFirstName() + " " + b.getEmployee().getLastName())
+                        .employeeCode(b.getEmployee().getEmployeeCode())
+                        .departmentName(b.getEmployee().getDepartment() != null
+                                ? b.getEmployee().getDepartment().getName()
+                                : "-")
+                        .leaveTypeId(b.getLeaveType().getId())
+                        .leaveTypeName(b.getLeaveType().getName())
+                        .isPaid(b.getLeaveType().getIsPaid())
+                        .leaveYear(b.getLeaveYear())
+                        .openingBalance(b.getOpeningBalance())
+                        .accrued(b.getAccrued())
+                        .availed(b.getAvailed())
+                        .carriedForward(b.getCarriedForward())
+                        .encashed(b.getEncashed())
+                        .closingBalance(b.getClosingBalance())
+                        .build())
+                .toList();
+    }
 
-
-
-
-    
     @Override
     public void initializeLeaveBalancesForEmployee(Long employeeId, Long orgId, String leaveYear) {
-    Employee emp = employeeRepository.findById(employeeId)
-            .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
-    Organisation org = organisationRepository.findById(orgId)
-            .orElseThrow(() -> new OrganisationNotFoundException(orgId));
-    
-    List<LeaveType> leaveTypes = leaveTypeRepository.findByOrganisationAndIsActiveTrue(org);
-    if(leaveTypes == null) return;
+        Employee emp = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        Organisation org = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
 
-    OrganisationPolicy policy = organisationPolicyRepository.findByOrganisation(org)
-            .orElseThrow(() -> new OrganisationNotFoundException(orgId));
+        List<LeaveType> leaveTypes = leaveTypeRepository.findByOrganisationAndIsActiveTrue(org);
+        if (leaveTypes == null)
+            return;
 
-    for (LeaveType type : leaveTypes) {
-        if (emp.isOnProbation() && !type.getAvailableDuringProbation()) {
-            continue;
+        OrganisationPolicy policy = organisationPolicyRepository.findByOrganisation(org)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
+
+        for (LeaveType type : leaveTypes) {
+            if (emp.isOnProbation() && !type.getAvailableDuringProbation()) {
+                continue;
+            }
+
+            if (type.getApplicableGender() != LeaveType.ApplicableGender.ALL
+                    && !type.getApplicableGender().name().equalsIgnoreCase(emp.getGender().name())) {
+                continue;
+            }
+
+            balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(emp, type, leaveYear)
+                    .orElseGet(() -> {
+                        double opening = calculateProratedBalance(emp.getDateOfJoining(), type, policy);
+                        EmployeeLeaveBalance bal = EmployeeLeaveBalance.builder()
+                                .employee(emp)
+                                .organisation(org)
+                                .leaveType(type)
+                                .leaveYear(leaveYear)
+                                .openingBalance(opening)
+                                .closingBalance(opening)
+                                .lastUpdatedOn(LocalDateTime.now())
+                                .build();
+                        return balanceRepository.save(bal);
+                    });
         }
-
-        
-
-        if(type.getApplicableGender() != LeaveType.ApplicableGender.ALL && !type.getApplicableGender().name().equalsIgnoreCase(emp.getGender().name())){
-            continue;
-        }
-
-        balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(emp, type, leaveYear)
-                .orElseGet(() -> {
-                    double opening = calculateProratedBalance(emp.getDateOfJoining(), type, policy);
-                    EmployeeLeaveBalance bal = EmployeeLeaveBalance.builder()
-                            .employee(emp)
-                            .organisation(org)
-                            .leaveType(type)
-                            .leaveYear(leaveYear)
-                            .openingBalance(opening)
-                            .closingBalance(opening)
-                            .lastUpdatedOn(LocalDateTime.now())
-                            .build();
-                    return balanceRepository.save(bal);
-                });
     }
-}
-
 
     @Override
     public double calculateProratedBalance(LocalDate joiningDate, LeaveType type, OrganisationPolicy policy) {
-        if (type.getAnnualLimit() == null) return 0.0;
+        if (type.getAnnualLimit() == null)
+            return 0.0;
 
         LocalDate lyStart = getLeaveYearStartDate(policy.getOrganisation().getId());
-        if (joiningDate.isBefore(lyStart)) return type.getAnnualLimit();
+        if (joiningDate.isBefore(lyStart))
+            return type.getAnnualLimit();
 
         long monthsRemaining = ChronoUnit.MONTHS.between(
                 YearMonth.from(joiningDate),
-                YearMonth.from(lyStart.plusYears(1))
-        );
+                YearMonth.from(lyStart.plusYears(1)));
         monthsRemaining = Math.max(0, Math.min(12, monthsRemaining));
 
         return (type.getAnnualLimit() / 12.0) * monthsRemaining;
     }
 
     @Override
-public LocalDate getFYStartDate(Long orgId) {
-    OrganisationPolicy policy = organisationPolicyRepository.findByOrganisationId(orgId)
-            .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId));
+    public LocalDate getFYStartDate(Long orgId) {
+        OrganisationPolicy policy = organisationPolicyRepository.findByOrganisationId(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId));
 
-    // Default FY start month = April (4)
-    int startMonth = Optional.ofNullable(policy.getFinancialYearStartMonth()).orElse(4);
+        // Default FY start month = April (4)
+        int startMonth = Optional.ofNullable(policy.getFinancialYearStartMonth()).orElse(4);
 
-    LocalDate today = LocalDate.now();
-    int startYear = (today.getMonthValue() >= startMonth) ? today.getYear() : today.getYear() - 1;
+        LocalDate today = LocalDate.now();
+        int startYear = (today.getMonthValue() >= startMonth) ? today.getYear() : today.getYear() - 1;
 
-    return LocalDate.of(startYear, startMonth, 1);
-}
-
-
-@Override
-public LocalDate getFYEndDate(Long orgId) {
-    return getFYStartDate(orgId).plusYears(1).minusDays(1);
-}
-
-
-@Override
-public LocalDate getLeaveYearStartDate(Long orgId) {
-    OrganisationPolicy policy = organisationPolicyRepository.findByOrganisationId(orgId)
-            .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId));
-
-    log.info("Organisation Policy retrieved: {}", policy);
-
-    // Prefer leave-year start; fallback to FY start if null; default = April (4)
-    int startMonth = Optional.ofNullable(policy.getLeaveYearStartMonth())
-            .orElse(Optional.ofNullable(policy.getFinancialYearStartMonth()).orElse(4));
-
-    LocalDate today = LocalDate.now();
-    int startYear = (today.getMonthValue() >= startMonth) ? today.getYear() : today.getYear() - 1;
-
-    return LocalDate.of(startYear, startMonth, 1);
-}
-
-@Override
-public LocalDate getLeaveYearEndDate(Long orgId) {
-    return getLeaveYearStartDate(orgId).plusYears(1).minusDays(1);
-}
-
-
-@Override
-public void validateLeaveAgainstTypePolicy(Employee emp, LeaveType type, LeaveRequestDTO req, double days, OrganisationPolicy policy) {
-
-    // 1️⃣ Gender applicability
-    if (type.getApplicableGender() != LeaveType.ApplicableGender.ALL &&
-        !emp.getGender().toString().equalsIgnoreCase(type.getApplicableGender().name())) {
-        throw new InvalidOperationException("This leave type is not applicable to your gender.");
+        return LocalDate.of(startYear, startMonth, 1);
     }
 
-    // 2️⃣ Probation restriction
-    if (emp.isOnProbation() && !Boolean.TRUE.equals(type.getAvailableDuringProbation())) {
-        throw new InvalidOperationException("This leave type is not available during probation.");
+    @Override
+    public LocalDate getFYEndDate(Long orgId) {
+        return getFYStartDate(orgId).plusYears(1).minusDays(1);
     }
 
-    // 3️⃣ Notice period restriction
-    if (emp.getServiceStage() == Employee.ServiceStage.NOTICE && !Boolean.TRUE.equals(type.getAllowDuringNoticePeriod())) {
-        throw new InvalidOperationException("This leave type cannot be availed during notice period.");
+    @Override
+    public LocalDate getLeaveYearStartDate(Long orgId) {
+        OrganisationPolicy policy = organisationPolicyRepository.findByOrganisationId(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("OrganisationPolicy", "organisationId", orgId));
+
+        log.info("Organisation Policy retrieved: {}", policy);
+
+        // Prefer leave-year start; fallback to FY start if null; default = April (4)
+        int startMonth = Optional.ofNullable(policy.getLeaveYearStartMonth())
+                .orElse(Optional.ofNullable(policy.getFinancialYearStartMonth()).orElse(4));
+
+        LocalDate today = LocalDate.now();
+        int startYear = (today.getMonthValue() >= startMonth) ? today.getYear() : today.getYear() - 1;
+
+        return LocalDate.of(startYear, startMonth, 1);
     }
 
-    // 4️⃣ Half-day applicability
-    if (Boolean.TRUE.equals(req.getIsHalfDay()) && !Boolean.TRUE.equals(type.getAllowHalfDay())) {
-        throw new InvalidOperationException("Half-day leave not allowed for this type.");
+    @Override
+    public LocalDate getLeaveYearEndDate(Long orgId) {
+        return getLeaveYearStartDate(orgId).plusYears(1).minusDays(1);
     }
 
-    // 5️⃣ Consecutive day limit
-    if (type.getMaxConsecutiveDays() != null && days > type.getMaxConsecutiveDays()) {
-        throw new RuntimeException("You cannot apply more than " + type.getMaxConsecutiveDays() + " consecutive days.");
-    }
+    @Override
+    public void validateLeaveAgainstTypePolicy(Employee emp, LeaveType type, LeaveRequestDTO req, double days,
+            OrganisationPolicy policy) {
 
-    // 6️⃣ Requires approval or not
-    if (!Boolean.TRUE.equals(type.getRequiresApproval())) {
-        log.info("Auto-approval: Leave '{}' does not require manual approval", type.getName());
-    }
+        // 1️⃣ Gender applicability
+        if (type.getApplicableGender() != LeaveType.ApplicableGender.ALL &&
+                !emp.getGender().toString().equalsIgnoreCase(type.getApplicableGender().name())) {
+            throw new InvalidOperationException("This leave type is not applicable to your gender.");
+        }
 
-    // 7️⃣ Include / exclude holidays (handled during day calculation)
-    if (!Boolean.TRUE.equals(type.getIncludeHolidaysInLeave())) {
-        log.debug("Holidays excluded from leave duration for type: {}", type.getName());
-    }
+        if (Boolean.TRUE.equals(type.getAvailableDuringProbation())) {
+            // Disallow leave types like maternity/paternity if they exist
+            String lowerName = type.getName().toLowerCase();
+            if (lowerName.contains("maternity") || lowerName.contains("paternity")) {
+                throw new InvalidOperationException("Maternity/Paternity leaves cannot be available during probation.");
+            }
+        }
 
-    // 8️⃣ Validity days (for comp-off, special leaves)
-    if (type.getValidityDays() != null) {
-        LocalDate expiry = req.getStartDate().plusDays(type.getValidityDays());
-        if (LocalDate.now().isAfter(expiry)) {
-            throw new InvalidOperationException("This leave type expired after " + type.getValidityDays() + " days of accrual.");
+        // 2️⃣ Probation restriction
+        if (emp.isOnProbation() && !Boolean.TRUE.equals(type.getAvailableDuringProbation())) {
+            throw new InvalidOperationException("This leave type is not available during probation.");
+        }
+
+        // 3️⃣ Notice period restriction
+        if (emp.getServiceStage() == Employee.ServiceStage.NOTICE
+                && !Boolean.TRUE.equals(type.getAllowDuringNoticePeriod())) {
+            throw new InvalidOperationException("This leave type cannot be availed during notice period.");
+        }
+
+        // 4️⃣ Half-day applicability
+        if (Boolean.TRUE.equals(req.getIsHalfDay()) && !Boolean.TRUE.equals(type.getAllowHalfDay())) {
+            throw new InvalidOperationException("Half-day leave not allowed for this type.");
+        }
+
+        // 5️⃣ Consecutive day limit
+        if (type.getMaxConsecutiveDays() != null && days > type.getMaxConsecutiveDays()) {
+            throw new InvalidOperationException(
+                    "You cannot apply more than " + type.getMaxConsecutiveDays() + " consecutive days.");
+        }
+
+        // 6️⃣ Requires approval or not
+        if (!Boolean.TRUE.equals(type.getRequiresApproval())) {
+            log.info("Auto-approval: Leave '{}' does not require manual approval", type.getName());
+        }
+
+        // 7️⃣ Include / exclude holidays (handled during day calculation)
+        if (!Boolean.TRUE.equals(type.getIncludeHolidaysInLeave())) {
+            log.debug("Holidays excluded from leave duration for type: {}", type.getName());
+        }
+
+        // 8️⃣ Validity days (for comp-off, special leaves)
+        if (type.getValidityDays() != null) {
+            LocalDate expiry = req.getStartDate().plusDays(type.getValidityDays());
+            if (LocalDate.now().isAfter(expiry)) {
+                throw new InvalidOperationException(
+                        "This leave type expired after " + type.getValidityDays() + " days of accrual.");
+            }
         }
     }
-}
-
-
-
 
     // ========================
     // 2. LEAVE BALANCE MANAGEMENT
     // ========================
 
-
     @Override
     public void initializeNewLeaveTypeBalances(LeaveType leaveType, String leaveYear, Long orgId) {
-    List<Employee> employees = employeeRepository.findByOrganisationIdAndDeletedFalse(orgId);
+        List<Employee> employees = employeeRepository.findByOrganisationIdAndDeletedFalse(orgId);
 
-    for (Employee emp : employees) {
-        balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(emp, leaveType, leaveYear)
-                .orElseGet(() -> {
-                    EmployeeLeaveBalance bal = EmployeeLeaveBalance.builder()
-                            .employee(emp)
-                            .organisation(leaveType.getOrganisation())
-                            .leaveType(leaveType)
-                            .leaveYear(leaveYear)
-                            .openingBalance(leaveType.getAnnualLimit() != null ? leaveType.getAnnualLimit().doubleValue() : 0.0)
-                            .closingBalance(leaveType.getAnnualLimit() != null ? leaveType.getAnnualLimit().doubleValue() : 0.0)
-                            .lastUpdatedOn(LocalDateTime.now())
-                            .build();
-                    return balanceRepository.save(bal);
-                }); 
-            };
+        for (Employee emp : employees) {
+            balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(emp, leaveType, leaveYear)
+                    .orElseGet(() -> {
+                        EmployeeLeaveBalance bal = EmployeeLeaveBalance.builder()
+                                .employee(emp)
+                                .organisation(leaveType.getOrganisation())
+                                .leaveType(leaveType)
+                                .leaveYear(leaveYear)
+                                .openingBalance(
+                                        leaveType.getAnnualLimit() != null ? leaveType.getAnnualLimit().doubleValue()
+                                                : 0.0)
+                                .closingBalance(
+                                        leaveType.getAnnualLimit() != null ? leaveType.getAnnualLimit().doubleValue()
+                                                : 0.0)
+                                .lastUpdatedOn(LocalDateTime.now())
+                                .build();
+                        return balanceRepository.save(bal);
+                    });
+        }
+        ;
     }
-
-
 
     @Override
     public void accrueMonthlyLeaves(Long orgId, String leaveYear) {
-        Organisation org = organisationRepository.findById(orgId).orElseThrow(() -> new OrganisationNotFoundException(orgId));
+        Organisation org = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
         List<EmployeeLeaveBalance> balances = balanceRepository.findAll();
         for (EmployeeLeaveBalance bal : balances) {
             if (bal.getOrganisation().equals(org)) {
@@ -541,45 +589,57 @@ public void validateLeaveAgainstTypePolicy(Employee emp, LeaveType type, LeaveRe
     // ========================
 
     // @Override
-    // public Double calculateLeaveDays(LocalDate startDate, LocalDate endDate, Long orgId) {
-    //     long totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
-    //     return (double) totalDays;
+    // public Double calculateLeaveDays(LocalDate startDate, LocalDate endDate, Long
+    // orgId) {
+    // long totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+    // return (double) totalDays;
     // }
 
+    private boolean isHalf(String s) {
+        return s != null && (s.equalsIgnoreCase("FIRST_HALF") || s.equalsIgnoreCase("SECOND_HALF"));
+    }
 
     @Override
     public double calculateLeaveDays(LeaveRequestDTO req, Long orgId, LeaveType leaveType) {
-    long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+        long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+        Organisation org = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
+        List<Holiday> holidays = holidayRepository.findByOrganisationAndHolidayDateBetween(org, req.getStartDate(),
+                req.getEndDate());
+        if (!Boolean.TRUE.equals(leaveType.getIncludeHolidaysInLeave())) {
+            totalDays -= holidays.size();
+        }
 
-    // Exclude holidays if policy disallows
-    Organisation org = organisationRepository.findById(orgId)
-            .orElseThrow(() -> new OrganisationNotFoundException(orgId));
-    List<Holiday> holidays = holidayRepository.findByOrganisationAndHolidayDateBetween(org, req.getStartDate(), req.getEndDate());
-
-    if (!Boolean.TRUE.equals(leaveType.getIncludeHolidaysInLeave())) {
-        totalDays -= holidays.size();
-    }
-
-    // Adjust for half days
-    double adjustment = 0.0;
-    if ("FIRST_HALF".equalsIgnoreCase(req.getStartDayBreakdown()) || "SECOND_HALF".equalsIgnoreCase(req.getStartDayBreakdown()))
-        adjustment -= 0.5;
-    if ("FIRST_HALF".equalsIgnoreCase(req.getEndDayBreakdown()) || "SECOND_HALF".equalsIgnoreCase(req.getEndDayBreakdown()))
-        adjustment -= 0.5;
-
-    return Math.max(totalDays + adjustment, 0.5);
-}
-
-
-   @Override
-    public String getCurrentFinancialYear(Long orgId) {
-    LocalDate start = getFYStartDate(orgId);
-    LocalDate end = getFYEndDate(orgId);
-    return String.format("FY%d-%02d", start.getYear(), end.getYear() % 100);
+        // half-day handling:
+        if (req.getStartDate().equals(req.getEndDate())) {
+            // single day
+            if (isHalf(req.getStartDayBreakdown()) || isHalf(req.getEndDayBreakdown())) {
+                if (isHalf(req.getStartDayBreakdown()) && isHalf(req.getEndDayBreakdown())
+                        && !req.getStartDayBreakdown().equalsIgnoreCase(req.getEndDayBreakdown())) {
+                    return 1.0; // opposite halves = full day
+                }
+                return 0.5;
+            }
+            return Math.max(totalDays, 1.0);
+        } else {
+            double adjustment = 0.0;
+            if (isHalf(req.getStartDayBreakdown()))
+                adjustment -= 0.5;
+            if (isHalf(req.getEndDayBreakdown()))
+                adjustment -= 0.5;
+            return Math.max(totalDays + adjustment, 0.5);
+        }
     }
 
     @Override
-public String getCurrentLeaveYear(Long orgId) {
+    public String getCurrentFinancialYear(Long orgId) {
+        LocalDate start = getFYStartDate(orgId);
+        LocalDate end = getFYEndDate(orgId);
+        return String.format("FY%d-%02d", start.getYear(), end.getYear() % 100);
+    }
+
+    @Override
+    public String getCurrentLeaveYear(Long orgId) {
         LocalDate start = getLeaveYearStartDate(orgId);
         LocalDate end = getLeaveYearEndDate(orgId);
         return String.format("LY%d-%02d", start.getYear(), end.getYear() % 100);
@@ -587,7 +647,8 @@ public String getCurrentLeaveYear(Long orgId) {
 
     @Override
     public Map<String, Object> getLeaveStatistics(Long orgId) {
-        Organisation org = organisationRepository.findById(orgId).orElseThrow(() -> new OrganisationNotFoundException(orgId));
+        Organisation org = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
         List<Leave> leaves = leaveRepository.findByOrganisationId(orgId);
         Map<String, Long> stats = new HashMap<>();
         for (Leave.LeaveStatus status : Leave.LeaveStatus.values()) {
@@ -609,32 +670,43 @@ public String getCurrentLeaveYear(Long orgId) {
     // ====== Helper Methods ======
     @Override
     public void validateLeaveDates(LocalDate start, LocalDate end) {
-        if (start.isAfter(end)) throw new InvalidDateRangeException("Start date cannot be after end date.");
-        if (start.isBefore(LocalDate.now())) throw new InvalidDateRangeException("Cannot apply leave for past dates.");
+        if (start.isAfter(end))
+            throw new InvalidDateRangeException("Start date cannot be after end date.");
+        if (start.isBefore(LocalDate.now()))
+            throw new InvalidDateRangeException("Cannot apply leave for past dates.");
     }
 
-    private void checkLeaveBalance(Employee emp, LeaveType type, double requested, String ly) {
-        EmployeeLeaveBalance bal = balanceRepository
-        .findByEmployeeIdAndLeaveTypeIdAndLeaveYear(emp.getId(), type.getId(), ly)
-        .or(() -> balanceRepository.findTopByEmployeeIdAndLeaveTypeIdOrderByIdDesc(emp.getId(), type.getId()))
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Leave balance not found for emp=" + emp.getId() + ", type=" + type.getId() + ", year=" + ly
-        ));
-        double remaining = bal.getClosingBalance() - bal.getAvailed();
-        if (requested > remaining) throw new InsufficientLeaveBalanceException(requested, bal.getClosingBalance()); 
-    }
+    // private void checkLeaveBalance(Employee emp, LeaveType type, double
+    // requested, String ly) {
+    // EmployeeLeaveBalance bal = balanceRepository
+    // .findByEmployeeIdAndLeaveTypeIdAndLeaveYear(emp.getId(), type.getId(), ly)
+    // .or(() ->
+    // balanceRepository.findTopByEmployeeIdAndLeaveTypeIdOrderByIdDesc(emp.getId(),
+    // type.getId()))
+    // .orElseThrow(() -> new ResourceNotFoundException(
+    // "Leave balance not found for emp=" + emp.getId() + ", type=" + type.getId() +
+    // ", year=" + ly));
+    // double remaining = bal.getClosingBalance() - bal.getAvailed();
+    // if (requested > remaining)
+    // throw new InsufficientLeaveBalanceException(requested,
+    // bal.getClosingBalance());
+    // }
 
     private void updateBalanceOnApproval(Leave leave) {
         String ly = getCurrentLeaveYear(leave.getEmployee().getOrganisation().getId());
-        EmployeeLeaveBalance bal = balanceRepository.findByEmployeeAndLeaveTypeAndLeaveYear(leave.getEmployee(), leave.getLeaveType(), ly)
-                .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employeeId", leave.getEmployee().getId()));
+        EmployeeLeaveBalance bal = balanceRepository
+                .findByEmployeeAndLeaveTypeAndLeaveYear(leave.getEmployee(), leave.getLeaveType(), ly)
+                .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employeeId",
+                        leave.getEmployee().getId()));
         bal.setAvailed(bal.getAvailed() + leave.getLeaveDays());
         bal.setClosingBalance(bal.getClosingBalance() - leave.getLeaveDays());
         bal.setLastUpdatedOn(LocalDateTime.now());
         balanceRepository.save(bal);
     }
 
-    private LeaveResponseDTO toResponseDTO(Leave leave) {   
+    private LeaveResponseDTO toResponseDTO(Leave leave) {
+
+        log.info("leaves dto response approved by {},  by approved on{}", leave.getApprovedBy(), leave.getApprovedOn());
         return LeaveResponseDTO.builder()
                 .id(leave.getId())
                 .employeeId(leave.getEmployee().getId())
@@ -642,7 +714,8 @@ public String getCurrentLeaveYear(Long orgId) {
                 .leaveTypeId(leave.getLeaveType().getId())
                 .leaveTypeName(leave.getLeaveType().getName())
                 .startDate(leave.getStartDate())
-                .startDayBreakdown(leave.getStartDayBreakdown() != null ? leave.getStartDayBreakdown().toString() : null)
+                .startDayBreakdown(
+                        leave.getStartDayBreakdown() != null ? leave.getStartDayBreakdown().toString() : null)
                 .endDate(leave.getEndDate())
                 .endDayBreakdown(leave.getEndDayBreakdown() != null ? leave.getEndDayBreakdown().toString() : null)
                 .leaveDays(leave.getLeaveDays())
@@ -651,7 +724,9 @@ public String getCurrentLeaveYear(Long orgId) {
                 .appliedOn(leave.getAppliedOn())
                 .approvedOn(leave.getApprovedOn() != null ? leave.getApprovedOn() : null)
                 .approverById(leave.getApprovedBy() != null ? leave.getApprovedBy().getId() : null)
-                .approverName(leave.getApprovedBy() != null ? leave.getApprovedBy().getFirstName() + " " + leave.getApprovedBy().getLastName() : null)
+                .approverName(leave.getApprovedBy() != null
+                        ? leave.getApprovedBy().getFirstName() + " " + leave.getApprovedBy().getLastName()
+                        : null)
                 .approverRemarks(leave.getApproverRemarks())
                 .leaveYear(leave.getLeaveYear())
                 .build();
@@ -666,25 +741,24 @@ public String getCurrentLeaveYear(Long orgId) {
         return dto;
     }
 
-
     public EmployeeLeaveBalanceDTO toDto(EmployeeLeaveBalance balance) {
-    return EmployeeLeaveBalanceDTO.builder()
-            .id(balance.getId())
-            .employeeId(balance.getEmployee().getId())
-            .employeeName(balance.getEmployee().getFirstName())
-            .employeeCode(balance.getEmployee().getEmployeeCode()) // if exists
-            .departmentName(balance.getEmployee().getDepartment().getName()) // if exists
-            .leaveTypeId(balance.getLeaveType().getId())
-            .leaveTypeName(balance.getLeaveType().getName())
-            .isPaid(balance.getLeaveType().getIsPaid())
-            .leaveYear(balance.getLeaveYear())
-            .openingBalance(balance.getOpeningBalance())
-            .accrued(balance.getAccrued())
-            .availed(balance.getAvailed())
-            .carriedForward(balance.getCarriedForward())
-            .encashed(balance.getEncashed())
-            .closingBalance(balance.getClosingBalance())
-            .build();
-}
+        return EmployeeLeaveBalanceDTO.builder()
+                .id(balance.getId())
+                .employeeId(balance.getEmployee().getId())
+                .employeeName(balance.getEmployee().getFirstName())
+                .employeeCode(balance.getEmployee().getEmployeeCode()) // if exists
+                .departmentName(balance.getEmployee().getDepartment().getName()) // if exists
+                .leaveTypeId(balance.getLeaveType().getId())
+                .leaveTypeName(balance.getLeaveType().getName())
+                .isPaid(balance.getLeaveType().getIsPaid())
+                .leaveYear(balance.getLeaveYear())
+                .openingBalance(balance.getOpeningBalance())
+                .accrued(balance.getAccrued())
+                .availed(balance.getAvailed())
+                .carriedForward(balance.getCarriedForward())
+                .encashed(balance.getEncashed())
+                .closingBalance(balance.getClosingBalance())
+                .build();
+    }
 
 }

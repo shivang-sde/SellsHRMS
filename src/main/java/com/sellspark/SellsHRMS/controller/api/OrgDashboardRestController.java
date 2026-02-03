@@ -9,11 +9,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sellspark.SellsHRMS.dto.common.ApiResponse;
 import com.sellspark.SellsHRMS.dto.dashboard.DashboardDataDTO;
+import com.sellspark.SellsHRMS.dto.organisation.OrganisationDetailDTO;
+import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.AnnouncementService;
 import com.sellspark.SellsHRMS.service.EmployeeService;
 import com.sellspark.SellsHRMS.service.EventService;
 import com.sellspark.SellsHRMS.service.HolidayService;
+import com.sellspark.SellsHRMS.service.OrganisationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,16 +28,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OrgDashboardRestController {
 
+    private final OrganisationService organisationService;
     private final EmployeeService employeeService;
     private final EventService eventService;
     private final AnnouncementService announcementService;
-    private final HolidayService holidayService;  // if not present, we’ll create one
+    private final HolidayService holidayService; // if not present, we’ll create one
 
     @GetMapping("/org/{orgId}")
     public ResponseEntity<?> getDashboardData(@PathVariable Long orgId) {
-       
+
         if (orgId == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Organisation not found in session"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Organisation not found in session"));
         }
 
         log.info("Fetching dashboard data for organisation {}", orgId);
@@ -49,11 +55,18 @@ public class OrgDashboardRestController {
                 .build();
 
         log.info("dash...", dashboard);
-        
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", dashboard
-        ));
+                "data", dashboard));
     }
+
+    @GetMapping("/org/{orgId}/details")
+    public ResponseEntity<ApiResponse<OrganisationDetailDTO>> getOrgStats(@PathVariable Long orgId) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Organisation details fetched successfully",
+                organisationService.getOrganisationDetailsById(orgId)));
+    }
+
 }

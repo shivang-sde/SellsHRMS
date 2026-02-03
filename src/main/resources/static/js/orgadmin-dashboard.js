@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const orgId = localStorage.getItem("orgId");
+    const orgId = window.APP.ORG_ID || document.getElementById("globalOrgId")?.value;
     if (!orgId) return;
 
+    console.log("Loading org admin dashboard for orgId:", orgId);
     loadDashboardStats(orgId);
     loadRecentEmployees(orgId);
 });
@@ -10,22 +11,19 @@ document.addEventListener("DOMContentLoaded", () => {
    DASHBOARD STATS
 ---------------------- */
 async function loadDashboardStats(orgId) {
-    try {
-        const empRes = await fetch(`/api/employees/count/${orgId}`);
-        const depRes = await fetch(`/api/departments/count/${orgId}`);
-        const desRes = await fetch(`/api/designations/count/${orgId}`);
-        const orgRes = await fetch(`/api/organisations/${orgId}`);
+  console.log("Loading dashboard stats for orgId:", orgId);
+  try {
+    const org = await orgApi.getDetails(); // ✅ No .json()
+    console.log("Org details:", org);
 
-        document.getElementById("countEmployees").innerText = await empRes.text();
-        document.getElementById("countDepartments").innerText = await depRes.text();
-        document.getElementById("countDesignations").innerText = await desRes.text();
-
-        const org = await orgRes.json();
-        document.getElementById("maxEmpLimit").innerText = org.maxEmployees ?? "--";
-    } catch (err) {
-        console.error("Dashboard stats failed", err);
-    }
+    document.getElementById("countEmployees").innerText = org.totalEmployees;
+    document.getElementById("countDepartments").innerText = org.totalDepartments;
+    document.getElementById("maxEmpLimit").innerText = org.maxEmployees ?? "--";
+  } catch (err) {
+    console.error("Dashboard stats failed", err);
+  }
 }
+
 
 /* ---------------------
    RECENT EMPLOYEES

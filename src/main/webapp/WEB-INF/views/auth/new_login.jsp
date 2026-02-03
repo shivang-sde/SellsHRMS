@@ -20,9 +20,12 @@
 <div class="auth_left">
 <div class="card">
 <div class="text-center mb-2">
-<a class="header-brand" href="dashboard.jsp">
-    <img alt="Sellspark" src="/img/sellsparkLogo.png"  width="200" height="100" />
-</a>
+<c:if test="${not empty orgLogo}">
+    <a class="header-brand" href="dashboard.jsp">
+        <img alt="${orgName}" src="${orgLogo}" width="200" height="100" />
+    </a>
+</c:if>
+
 
 </div>
 <div class="card-body">
@@ -55,17 +58,17 @@
 <div class="carousel slide" data-ride="carousel" data-interval="3000">
 <div class="carousel-inner">
 <div class="carousel-item active">
-<img src="/images/3.png" class="img-fluid" alt="login page" />
+<img src="/images/loginpage-illustrate.png" class="img-fluid" alt="login page" />
 <div class="px-4 mt-4">
 </div>
 </div>
 <div class="carousel-item">
-<img src="/images/2.png" class="img-fluid" alt="login page" />
+<img src="/images/loginpage-illustrate.png" class="img-fluid" alt="login page" />
 <div class="px-4 mt-4">
 </div>
 </div>
 <div class="carousel-item">
-<img src="/img/avatars/avatar-3.jpg" class="img-fluid" alt="login page" />
+<img src="/img/avatars/loginpage-illustrate.png" class="img-fluid" alt="login page" />
 <div class="px-4 mt-4"></div>
 	<!-- <%-- <%
     HttpServletRequest httpRequest = (HttpServletRequest) request;

@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.dto.leave;
 
-
 import lombok.*;
 
 @Getter
@@ -28,5 +27,6 @@ public class LeaveTypeResponseDTO {
     private String resetCycle;
     private Double accrualRate;
     private Integer validityDays;
+    private Boolean isActive;
     private Long orgId;
 }

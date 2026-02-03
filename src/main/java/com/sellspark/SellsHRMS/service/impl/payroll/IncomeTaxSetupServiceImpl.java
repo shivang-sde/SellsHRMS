@@ -1,14 +1,12 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
-
 import com.sellspark.SellsHRMS.dto.payroll.IncomeTaxSlabDTO;
 import com.sellspark.SellsHRMS.dto.payroll.IncomeTaxRuleDTO;
 import com.sellspark.SellsHRMS.entity.payroll.IncomeTaxSlab;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.payroll.IncomeTaxRule;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.payroll.IncomeTaxSlabRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.payroll.IncomeTaxRuleRepository;
@@ -127,14 +125,18 @@ public class IncomeTaxSetupServiceImpl implements IncomeTaxSetupService {
 
     private void mapDtoToEntity(IncomeTaxSlabDTO d, IncomeTaxSlab e) {
         Organisation org = orgRepo.findById(d.getOrganisationId())
-        .orElseThrow(() -> new OrganisationNotFoundException(d.getOrganisationId()));
-        if (d.getName() != null) e.setName(d.getName());
-        if (d.getCountryCode() != null) e.setCountryCode(d.getCountryCode());
+                .orElseThrow(() -> new OrganisationNotFoundException(d.getOrganisationId()));
+        if (d.getName() != null)
+            e.setName(d.getName());
+        if (d.getCountryCode() != null)
+            e.setCountryCode(d.getCountryCode());
         e.setOrganisation(org);
         e.setEffectiveFrom(d.getEffectiveFrom());
         e.setEffectiveTo(d.getEffectiveTo());
-        if (d.getAllowTaxExemption() != null) e.setAllowTaxExemption(d.getAllowTaxExemption());
-        if (d.getStandardExemptionLimit() != null) e.setStandardExemptionLimit(d.getStandardExemptionLimit());
+        if (d.getAllowTaxExemption() != null)
+            e.setAllowTaxExemption(d.getAllowTaxExemption());
+        if (d.getStandardExemptionLimit() != null)
+            e.setStandardExemptionLimit(d.getStandardExemptionLimit());
     }
 
     private IncomeTaxRuleDTO mapEntityToDto(IncomeTaxRule e) {
@@ -149,9 +151,12 @@ public class IncomeTaxSetupServiceImpl implements IncomeTaxSetupService {
     }
 
     private void mapDtoToEntity(IncomeTaxRuleDTO d, IncomeTaxRule e) {
-        if (d.getMinIncome() != null) e.setMinIncome(d.getMinIncome());
-        if (d.getMaxIncome() != null) e.setMaxIncome(d.getMaxIncome());
-        if (d.getDeductionPercent() != null) e.setDeductionPercent(d.getDeductionPercent());
+        if (d.getMinIncome() != null)
+            e.setMinIncome(d.getMinIncome());
+        if (d.getMaxIncome() != null)
+            e.setMaxIncome(d.getMaxIncome());
+        if (d.getDeductionPercent() != null)
+            e.setDeductionPercent(d.getDeductionPercent());
         e.setCondition(d.getCondition());
     }
 }

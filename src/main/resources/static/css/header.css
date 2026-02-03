@@ -8,32 +8,14 @@
   --transition-speed: 0.25s;
 }
 
-/* Base Header */
-.hrms-header {
-  height: var(--header-height);
-  background: var(--header-bg);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--header-border);
-  position: sticky;
-  top: 0;
-  z-index: 1100;
-  transition: all var(--transition-speed) ease;
-  display: flex;
-  align-items: center;
-}
+
 
 /* Scroll shadow */
 .hrms-header.scrolled {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Container */
-.hrms-header .container-fluid {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-}
+
 
 /* Sidebar toggle button */
 #sidebarToggle {
@@ -49,12 +31,25 @@
 }
 
 /* Brand */
-.navbar-brand img {
-  max-height: 40px;
-  transition: transform var(--transition-speed);
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  transition: background var(--transition-speed);
 }
-.navbar-brand:hover img {
-  transform: scale(1.05);
+
+.brand-logo-wrap img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.brand-link:hover .brand-logo-wrap {
+  background: #e2e8f0;
 }
 
 /* Avatar dropdown */

@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.repository;
 
+import com.sellspark.SellsHRMS.entity.Designation;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Employee.EmployeeStatus;
 
@@ -13,60 +14,57 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    Optional<Employee> findByEmployeeCode(String employeeCode);
+        Optional<Employee> findByEmployeeCode(String employeeCode);
 
-    Optional<Employee> findByEmail(String email);
+        Optional<Employee> findByEmail(String email);
 
-    List<Employee> findByOrganisationIdAndDeletedFalse(Long orgId);
+        List<Employee> findByDesignation(Designation designation);
 
-    List<Employee> findByOrganisationIdAndDeletedFalseAndStatus(Long orgId, EmployeeStatus status );
+        List<Employee> findByOrganisationIdAndDeletedFalse(Long orgId);
 
-    Optional<Employee> findByIdAndOrganisationId(Long id, Long organisationId);
+        List<Employee> findByOrganisationIdAndDeletedFalseAndStatus(Long orgId, EmployeeStatus status);
 
-    List<Employee> findByReportingTo(Employee reportingTo);
+        Optional<Employee> findByIdAndOrganisationId(Long id, Long organisationId);
 
+        List<Employee> findByReportingTo(Employee reportingTo);
 
-     // Find all by organisation (excluding deleted)
-    List<Employee> findByOrganisationIdAndDeleted(Long organisationId, boolean deleted);
+        // Find all by organisation (excluding deleted)
+        List<Employee> findByOrganisationIdAndDeleted(Long organisationId, boolean deleted);
 
-    // Find by organisation and status
-    List<Employee> findByOrganisationIdAndStatus(
-        Long organisationId, 
-        Employee.EmployeeStatus status
-    );
+        // Find by organisation and status
+        List<Employee> findByOrganisationIdAndStatus(
+                        Long organisationId,
+                        Employee.EmployeeStatus status);
 
-    // Find active employees by organisation
-    List<Employee> findByOrganisationIdAndStatusAndDeleted(
-        Long organisationId, 
-        Employee.EmployeeStatus status,
-        boolean deleted
-    );
+        // Find active employees by organisation
+        List<Employee> findByOrganisationIdAndStatusAndDeleted(
+                        Long organisationId,
+                        Employee.EmployeeStatus status,
+                        boolean deleted);
 
-    List<Employee> findByStatusAndDeletedFalse(EmployeeStatus status);
+        List<Employee> findByStatusAndDeletedFalse(EmployeeStatus status);
 
-    Optional<Employee> findByIdAndDeletedFalse(Long id);
+        Optional<Employee> findByIdAndDeletedFalse(Long id);
 
-    int countByOrganisationId(Long organisationId);
-    @Query("SELECT COUNT(e) FROM Employee e WHERE e.organisation.id = :orgId AND e.deleted = false")
-long countByOrganisationIdAndDeletedFalse(@Param("orgId") Long orgId);
+        int countByOrganisationId(Long organisationId);
 
+        @Query("SELECT COUNT(e) FROM Employee e WHERE e.organisation.id = :orgId AND e.deleted = false")
+        long countByOrganisationIdAndDeletedFalse(@Param("orgId") Long orgId);
 
-@Query("SELECT e FROM Employee e " +
-       "WHERE e.organisation.id = :orgId " +
-       "AND e.status = 'ACTIVE' " +
-       "AND e.dob BETWEEN :startDate AND :endDate")
-List<Employee> findUpcomingBirthdays(@Param("orgId") Long orgId,
-                                     @Param("startDate") LocalDate startDate,
-                                     @Param("endDate") LocalDate endDate);
+        @Query("SELECT e FROM Employee e " +
+                        "WHERE e.organisation.id = :orgId " +
+                        "AND e.status = 'ACTIVE' " +
+                        "AND e.dob BETWEEN :startDate AND :endDate")
+        List<Employee> findUpcomingBirthdays(@Param("orgId") Long orgId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
-@Query("SELECT e FROM Employee e " +
-       "WHERE e.organisation.id = :orgId " +
-       "AND e.status = 'ACTIVE' " +
-       "AND e.dateOfJoining BETWEEN :startDate AND :endDate")
-List<Employee> findUpcomingWorkAnniversaries(@Param("orgId") Long orgId,
-                                             @Param("startDate") LocalDate startDate,
-                                             @Param("endDate") LocalDate endDate);
-
-
+        @Query("SELECT e FROM Employee e " +
+                        "WHERE e.organisation.id = :orgId " +
+                        "AND e.status = 'ACTIVE' " +
+                        "AND e.dateOfJoining BETWEEN :startDate AND :endDate")
+        List<Employee> findUpcomingWorkAnniversaries(@Param("orgId") Long orgId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
 }

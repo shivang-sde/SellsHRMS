@@ -5,6 +5,8 @@ import com.sellspark.SellsHRMS.dto.mapper.DtoMapper;
 import com.sellspark.SellsHRMS.dto.organisation.*;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationAdmin;
+import com.sellspark.SellsHRMS.repository.DepartmentRepository;
+import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationAdminRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.OrganisationService;
@@ -12,7 +14,8 @@ import com.sellspark.SellsHRMS.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import  com.sellspark.SellsHRMS.entity.User;
+import com.sellspark.SellsHRMS.entity.User;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,8 @@ import java.util.List;
 public class OrganisationServiceImpl implements OrganisationService {
 
     private final OrganisationRepository organisationRepo;
+    private final EmployeeRepository employeeRepo;
+    private final DepartmentRepository departmentRepo;
     private final OrganisationAdminRepository adminRepo;
     private final DtoMapper mapper;
     private final UserService userService;
@@ -37,15 +42,15 @@ public class OrganisationServiceImpl implements OrganisationService {
         organisationRepo.save(org);
 
         // 2) if admin present, create user account + admin entity
-        if (dto.getAdminEmail() != null &&  dto.getAdminPassword() != null && dto.getAdminFullName() != null) {
+        if (dto.getAdminEmail() != null && dto.getAdminPassword() != null && dto.getAdminFullName() != null) {
 
             // create user account via UserService
-            User user = userService.createUser(dto.getAdminEmail(), dto.getAdminPassword(), "ORG_ADMIN", "ORG_ADMIN", org.getId());
+            User user = userService.createUser(dto.getAdminEmail(), dto.getAdminPassword(), "ORG_ADMIN", "ORG_ADMIN",
+                    org.getId());
 
-            if(user == null){
+            if (user == null) {
                 log.info("user is not created,see the issue in userservice impl.");
             }
-
 
             // create admin entity
             OrganisationAdmin adminEntity = mapper.toAdminEntity(dto);
@@ -60,22 +65,54 @@ public class OrganisationServiceImpl implements OrganisationService {
         return toDto(org);
     }
 
+    @Override
+    public OrganisationDetailDTO getOrganisationDetailsById(Long id) {
+        Organisation org = organisationRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
+
+        Long totalEmployees = employeeRepo.countByOrganisationIdAndDeletedFalse(id);
+        Long totalDepartments = departmentRepo.countByOrganisation(org);
+
+        log.info("Organisation details retrieved successfully");
+        log.info("Organisation ID: {}", id);
+        log.info("Total Employees: {}, {}", totalEmployees, totalDepartments);
+        log.info("Total Departments: {}", totalDepartments);
+
+        OrganisationDetailDTO detailDTO = OrganisationDetailDTO.builder()
+                .id(org.getId())
+                .name(org.getName())
+                .domain(org.getDomain())
+                .prefix(org.getEmpPrefix())
+                .contactEmail(org.getContactEmail())
+                .contactPhone(org.getContactPhone())
+                .address(org.getAddress())
+                .country(org.getCountry())
+                .logoUrl(org.getLogoUrl())
+                .maxEmployees(org.getMaxEmployees())
+                .isActive(org.getIsActive())
+                .validity(org.getValidity())
+                .totalEmployees(totalEmployees)
+                .totalDepartments(totalDepartments)
+                .build();
+
+        return detailDTO;
+    }
 
     @Override
     public OrganisationDTO getOrganisationById(Long id) {
         return organisationRepo.findById(id)
-            .map(this::toDto)
-            .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .map(this::toDto)
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
     }
-
 
     @Override
     public OrganisationDTO updateOrganisation(Long id, OrganisationDTO dto) {
         Organisation org = organisationRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
 
         org.setName(dto.getName());
         org.setDomain(dto.getDomain());
+        org.setEmpPrefix(dto.getPrefix());
         org.setContactEmail(dto.getContactEmail());
         org.setContactPhone(dto.getContactPhone());
         org.setAddress(dto.getAddress());
@@ -93,7 +130,7 @@ public class OrganisationServiceImpl implements OrganisationService {
     @Override
     public OrganisationDTO toggleStatus(Long id, boolean activate) {
         Organisation org = organisationRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
         org.setIsActive(activate);
         org.setSuspendedReason(activate ? null : "Revoked by SuperAdmin");
         organisationRepo.save(org);
@@ -103,7 +140,7 @@ public class OrganisationServiceImpl implements OrganisationService {
     @Override
     public OrganisationDTO extendValidity(Long id, LocalDate newValidity) {
         Organisation org = organisationRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
         org.setValidity(newValidity);
         organisationRepo.save(org);
         return toDto(org);
@@ -112,12 +149,11 @@ public class OrganisationServiceImpl implements OrganisationService {
     @Override
     public OrganisationDTO increaseMaxEmployees(Long id, Integer newLimit) {
         Organisation org = organisationRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
         org.setMaxEmployees(newLimit);
         organisationRepo.save(org);
         return toDto(org);
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -131,12 +167,9 @@ public class OrganisationServiceImpl implements OrganisationService {
     @Transactional
     public void updateStatus(Long id, boolean status, String reasone) {
         organisationRepo.findById(id)
-        .orElseThrow(() -> new RuntimeException("Organisation not found"));
+                .orElseThrow(() -> new RuntimeException("Organisation not found"));
         organisationRepo.updateStatus(id, status, reasone);
     }
-
-    
-
 
     @Override
     @Transactional(readOnly = true)
@@ -146,68 +179,62 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .toList();
     }
 
-
     @Override
     public List<OrganisationDTO> getAllOrganisations() {
 
         return organisationRepo.findAllByOrderByIdDesc()
-            .stream()
-            .map(this::toDto)
-            .toList();
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
-
 
     @Override
     public List<OrganisationDTO> getAllOrganisationsWithAdmins() {
-    return organisationRepo.findAllWithAdmins()
-        .stream()
-        .map(row -> {
-            Organisation org = (Organisation) row[0];
-            OrganisationAdmin admin = (OrganisationAdmin) row[1];
-            return toDto(org, admin);
-        })
-        .toList();
+        return organisationRepo.findAllWithAdmins()
+                .stream()
+                .map(row -> {
+                    Organisation org = (Organisation) row[0];
+                    OrganisationAdmin admin = (OrganisationAdmin) row[1];
+                    return toDto(org, admin);
+                })
+                .toList();
     }
-
-
 
     @Override
     public void delete(Long id) {
         organisationRepo.deleteById(id);
     }
 
-
     private OrganisationDTO toDto(Organisation org, OrganisationAdmin admin) {
-    return OrganisationDTO.builder()
-            .id(org.getId())
-            .name(org.getName())
-            .domain(org.getDomain())
-            .contactEmail(org.getContactEmail())
-            .contactPhone(org.getContactPhone())
-            .address(org.getAddress())
-            .country(org.getCountry())
-            .logoUrl(org.getLogoUrl())
-            .pan(org.getPan())
-            .tan(org.getTan())
-            .maxEmployees(org.getMaxEmployees())
-            .isActive(org.getIsActive())
-            .validity(org.getValidity())
-            .suspendedReason(org.getSuspendedReason())
-            .adminFullName(admin != null ? admin.getFullName() : "NA")
-            .adminEmail(admin != null ? admin.getEmail() : "NA")
-            .build();
-}
-
-
-
-
-    private OrganisationDTO toDto(Organisation org) {
-       OrganisationAdmin admin = adminRepo.findByOrganisation_Id(org.getId());
-       
         return OrganisationDTO.builder()
                 .id(org.getId())
                 .name(org.getName())
                 .domain(org.getDomain())
+                .prefix(org.getEmpPrefix())
+                .contactEmail(org.getContactEmail())
+                .contactPhone(org.getContactPhone())
+                .address(org.getAddress())
+                .country(org.getCountry())
+                .logoUrl(org.getLogoUrl())
+                .pan(org.getPan())
+                .tan(org.getTan())
+                .maxEmployees(org.getMaxEmployees())
+                .isActive(org.getIsActive())
+                .validity(org.getValidity())
+                .suspendedReason(org.getSuspendedReason())
+                .adminFullName(admin != null ? admin.getFullName() : "NA")
+                .adminEmail(admin != null ? admin.getEmail() : "NA")
+                .build();
+    }
+
+    private OrganisationDTO toDto(Organisation org) {
+        OrganisationAdmin admin = adminRepo.findByOrganisation_Id(org.getId());
+
+        return OrganisationDTO.builder()
+                .id(org.getId())
+                .name(org.getName())
+                .domain(org.getDomain())
+                .prefix(org.getEmpPrefix())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())
                 .address(org.getAddress())

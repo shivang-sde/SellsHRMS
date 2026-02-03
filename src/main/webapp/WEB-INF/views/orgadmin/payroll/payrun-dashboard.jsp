@@ -65,10 +65,10 @@
                         <tr>
                             <th>Pay Period</th>
                             <th>Status</th>
-                            <th>Total Employees</th>
+                            <!-- <th>Total Employees</th> -->
                             <th class="text-end">Total Net</th>
                             <th class="text-end">Run Date</th>
-                            <th class="text-end">Actions</th>
+                            <!-- <th class="text-end">Actions</th> -->
                         </tr>
                     </thead>
                     <tbody id="payrunsTableBody">

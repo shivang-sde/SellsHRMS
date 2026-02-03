@@ -1,8 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<c:set var="pageTitle" value="Organisation Admin Dashboard" />
-<c:set var="pageScript" value="dashboard" />
 <div class="container-fluid mt-4">
 
     <!-- HEADER -->
@@ -31,15 +29,6 @@
                 <div class="card-body">
                     <h6>Departments</h6>
                     <h3 id="countDepartments">0</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6>Designations</h6>
-                    <h3 id="countDesignations">0</h3>
                 </div>
             </div>
         </div>

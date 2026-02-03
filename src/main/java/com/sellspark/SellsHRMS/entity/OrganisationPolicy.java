@@ -26,27 +26,35 @@ public class OrganisationPolicy {
     @Builder.Default
     private Integer financialYearStartMonth = 4; // default April
     @Builder.Default
-    private Integer financialYearStartDay = 1;   // default 1st day
+    private Integer financialYearStartDay = 1; // default 1st day
     @Builder.Default
     private Integer leaveYearStartMonth = 1; // default January
     @Builder.Default
-    private Integer leaveYearStartDay = 1;   // default 1st day
+    private Integer leaveYearStartDay = 1; // default 1st day
 
-
-   private Integer salaryCycleStartDay; // e.g. 1
-    private Integer cycleDuration;       // e.g. 30
+    private Integer salaryCycleStartDay; // e.g. 1
+    private Integer cycleDuration; // e.g. 30
     private Integer payslipGenerationOffsetDays; // e.g. 5 days after cycle end
 
-
     // Attendance & work-hour settings
+
+    @Builder.Default
+    private LocalTime officeStart = LocalTime.of(10, 00);
+
+    @Builder.Default
+    private LocalTime officeClosed = LocalTime.of(19, 00);
+
     @Builder.Default
     private Double standardDailyHours = 8.0;
     @Builder.Default
     private Double weeklyHours = 40.0;
     @Builder.Default
-        private Double monthlyHours = 160.0;    // e.g., 160 hours/month
+    private Double monthlyHours = 160.0; // e.g., 160 hours/month
     @Builder.Default
     private LocalTime autoPunchTime = LocalTime.of(23, 59);
+
+    @Builder.Default
+    private LocalTime autoPunchOutTime = LocalTime.of(20, 00);
     @Builder.Default
     private Integer lateGraceMinutes = 10;
     @Builder.Default

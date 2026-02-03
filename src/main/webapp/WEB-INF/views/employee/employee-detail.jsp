@@ -38,10 +38,10 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-2 text-center">
-                    <img id="employeePhoto" src="/images/default-avatar.png" 
-                         class="img-fluid rounded-circle" 
-                         style="width: 120px; height: 120px; object-fit: cover;" 
-                         alt="Employee Photo">
+                    <div class="profile-pic-wrapper">
+                        <img id="employeePhoto" src="/images/default-avatar.png" class="img-fluid rounded-circle mb-2"
+                            style="width: 120px; height: 120px; object-fit: cover;" alt="Employee Photo">
+                    </div>
                 </div>
                 <div class="col-md-10">
                     <div class="row">

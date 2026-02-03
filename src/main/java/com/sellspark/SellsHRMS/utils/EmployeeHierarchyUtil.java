@@ -6,9 +6,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
-
 import com.sellspark.SellsHRMS.entity.Employee;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ public class EmployeeHierarchyUtil {
 
     private void collectSubordinates(Long managerId, Set<Long> result) {
         Employee manager = employeeRepository.findById(managerId)
-        .orElseThrow(() -> new EmployeeNotFoundException(managerId));
+                .orElseThrow(() -> new EmployeeNotFoundException(managerId));
         List<Employee> subs = employeeRepository.findByReportingTo(manager);
         for (Employee sub : subs) {
             if (result.add(sub.getId())) {

@@ -12,7 +12,9 @@ $(document).ready(function () {
   // Load payruns (completed + upcoming)
   // ───────────────────────────────────────────────
   function loadPayRuns() {
-    $tableBody.html(`<tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>`);
+    $tableBody.html(
+      `<tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>`,
+    );
     $.getJSON(`${API_BASE}/organisation/${ORG_ID}`, function (runs) {
       if (!runs || runs.length === 0) {
         $empty.removeClass("d-none");
@@ -35,23 +37,27 @@ $(document).ready(function () {
   // ───────────────────────────────────────────────
   function renderTable(runs) {
     $tableBody.empty();
-    runs.forEach(run => {
+    runs.forEach((run) => {
+      console.log("pay run", run);
       const row = `
         <tr>
           <td>${run.periodLabel || `${run.startDate} → ${run.endDate}`}</td>
-          <td>${statusBadge(run.status)}</td>
-          <td class="text-center">${run.totalEmployees || "-"}</td>
+          <td>${statusBadge(run.status)}</td>     
           <td class="text-end">${formatCurrency(run.totalNet)}</td>
           <td class="text-end">${formatDate(run.runDate)}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary" onclick="viewPayRun(${run.id})">
-              <i class="fas fa-eye"></i> View
-            </button>
-          </td>
         </tr>`;
       $tableBody.append(row);
     });
   }
+
+  // <td class="text-end">
+  //   <button
+  //     class="btn btn-sm btn-outline-primary"
+  //     onclick="viewPayRun(${run.id})"
+  //   >
+  //     <i class="fas fa-eye"></i> View
+  //   </button>
+  // </td>;
 
   // ───────────────────────────────────────────────
   // View payrun details
@@ -65,11 +71,11 @@ $(document).ready(function () {
   // ───────────────────────────────────────────────
   function updateStats(runs) {
     const total = runs.length;
-    const completed = runs.filter(r => r.status === "COMPLETED").length;
-    const processing = runs.filter(r => r.status === "PROCESSING").length;
+    const completed = runs.filter((r) => r.status === "COMPLETED").length;
+    const processing = runs.filter((r) => r.status === "PROCESSING").length;
     const totalNet = runs.reduce((sum, r) => sum + (r.totalNet || 0), 0);
 
-    const nextRun = runs.find(r => ["READY", "UPCOMING"].includes(r.status));
+    const nextRun = runs.find((r) => ["READY", "UPCOMING"].includes(r.status));
     $("#statTotal").text(total);
     $("#statCompleted").text(completed);
     $("#statProcessing").text(processing);
@@ -82,13 +88,13 @@ $(document).ready(function () {
   // ───────────────────────────────────────────────
   function statusBadge(status) {
     const map = {
-      "READY": "secondary",
-      "UPCOMING": "info",
-      "PROCESSING": "warning",
-      "COMPLETED": "success",
-      "FAILED": "danger"
+      READY: "secondary",
+      UPCOMING: "info",
+      PROCESSING: "warning",
+      COMPLETED: "success",
+      FAILED: "danger",
     };
-    return `<span class="badge bg-${map[status] || 'secondary'}">${status}</span>`;
+    return `<span class="badge bg-${map[status] || "secondary"}">${status}</span>`;
   }
 
   function formatCurrency(val) {

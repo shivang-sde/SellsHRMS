@@ -3,8 +3,8 @@ package com.sellspark.SellsHRMS.controller.api;
 import com.sellspark.SellsHRMS.dto.project.TaskDTO;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Task;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.dto.project.TaskAttachmentDTO;
 import com.sellspark.SellsHRMS.dto.project.TaskActivityDTO;
 import com.sellspark.SellsHRMS.payload.ApiResponse;
@@ -44,35 +44,33 @@ public class TaskRestController {
     private final EmployeeRepository empRepo;
 
     // ---------------- CREATE TASK ----------------
-@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ApiResponse<TaskDTO>> createTask(
-        @RequestPart("task") TaskDTO dto,
-        @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments,
-        @RequestParam Long organisationId,
-        @RequestParam Long reporterId,
-        @RequestParam(value = "descriptions", required = false) List<String> descriptions
-    ) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(
+            @RequestPart("task") TaskDTO dto,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments,
+            @RequestParam Long organisationId,
+            @RequestParam Long reporterId,
+            @RequestParam(value = "descriptions", required = false) List<String> descriptions) {
 
-    TaskDTO created = taskService.createTask(dto, organisationId, reporterId, attachments, descriptions);
-    return ResponseEntity.ok(ApiResponse.ok("Task created successfully", created));
-}
+        TaskDTO created = taskService.createTask(dto, organisationId, reporterId, attachments, descriptions);
+        return ResponseEntity.ok(ApiResponse.ok("Task created successfully", created));
+    }
 
-// ---------------- UPDATE TASK ----------------
-@PutMapping(value = "/{taskId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
-        @PathVariable Long taskId,
-        @RequestPart("task") TaskDTO dto,
-        @RequestPart(value = "attachments", required = false) List<MultipartFile> newFiles,
-        @RequestParam(value = "removeAttachmentIds", required = false) List<Long> removeAttachmentIds,
-        @RequestParam(value = "descriptions", required = false) List<String> descriptions,
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId) {
+    // ---------------- UPDATE TASK ----------------
+    @PutMapping(value = "/{taskId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
+            @PathVariable Long taskId,
+            @RequestPart("task") TaskDTO dto,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> newFiles,
+            @RequestParam(value = "removeAttachmentIds", required = false) List<Long> removeAttachmentIds,
+            @RequestParam(value = "descriptions", required = false) List<String> descriptions,
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
 
-     TaskDTO updated = taskService.updateTask(taskId, dto, organisationId, employeeId, newFiles, removeAttachmentIds, descriptions);
-    return ResponseEntity.ok(ApiResponse.ok("Task updated successfully", updated));
-}
-
-
+        TaskDTO updated = taskService.updateTask(taskId, dto, organisationId, employeeId, newFiles, removeAttachmentIds,
+                descriptions);
+        return ResponseEntity.ok(ApiResponse.ok("Task updated successfully", updated));
+    }
 
     // ----------------------------------------------------------------
     // DELETE TASK
@@ -100,16 +98,14 @@ public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
         return ResponseEntity.ok(ApiResponse.ok("Task retrieved successfully", task));
     }
 
-
     @GetMapping("/self")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getSelfTasks(
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId) {
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
 
-    List<TaskDTO> tasks = taskService.getSelfTasks(organisationId, employeeId);
-    return ResponseEntity.ok(ApiResponse.ok("Fetched self tasks", tasks));
-}
-
+        List<TaskDTO> tasks = taskService.getSelfTasks(organisationId, employeeId);
+        return ResponseEntity.ok(ApiResponse.ok("Fetched self tasks", tasks));
+    }
 
     // ----------------------------------------------------------------
     // LIST TASKS BY PROJECT
@@ -128,56 +124,55 @@ public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
     // ADD ATTACHMENT
     // ----------------------------------------------------------------
     @PostMapping(value = "/{taskId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ApiResponse<List<TaskAttachmentDTO>>> addAttachments(
-        @PathVariable Long taskId,
-        @RequestParam("files") List<MultipartFile> files,
-        @RequestParam(value = "descriptions", required = false) List<String> descriptions,
-        @RequestParam Long employeeId) {
+    public ResponseEntity<ApiResponse<List<TaskAttachmentDTO>>> addAttachments(
+            @PathVariable Long taskId,
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam(value = "descriptions", required = false) List<String> descriptions,
+            @RequestParam Long employeeId) {
 
-    Employee uploader = empRepo.findById(employeeId)
-            .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
-    Task task = taskRepository.findById(taskId)
-            .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        Employee uploader = empRepo.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-    Long orgId = uploader.getOrganisation().getId();
-    Path basePath = Paths.get("uploads", "org-" + orgId, "tasks", "task-" + taskId);
+        Long orgId = uploader.getOrganisation().getId();
+        Path basePath = Paths.get("uploads", "org-" + orgId, "tasks", "task-" + taskId);
 
-    try {
-        Files.createDirectories(basePath);
+        try {
+            Files.createDirectories(basePath);
 
-        List<TaskAttachmentDTO> dtos = IntStream.range(0, files.size())
-                .mapToObj(i -> {
-                    MultipartFile file = files.get(i);
-                    String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
+            List<TaskAttachmentDTO> dtos = IntStream.range(0, files.size())
+                    .mapToObj(i -> {
+                        MultipartFile file = files.get(i);
+                        String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
 
-                    String fileName = file.getOriginalFilename();
-                    Path dest = basePath.resolve(fileName);
+                        String fileName = file.getOriginalFilename();
+                        Path dest = basePath.resolve(fileName);
 
-                    try (InputStream is = file.getInputStream()) {
-                        Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to store file: " + fileName, e);
-                    }
+                        try (InputStream is = file.getInputStream()) {
+                            Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to store file: " + fileName, e);
+                        }
 
-                    String fileUrl = "/uploads/org-" + orgId + "/tasks/task-" + taskId + "/" + fileName;
+                        String fileUrl = "/uploads/org-" + orgId + "/tasks/task-" + taskId + "/" + fileName;
 
-                    return TaskAttachmentDTO.builder()
-                            .fileName(fileName)
-                            .fileUrl(fileUrl)
-                            .fileType(file.getContentType())
-                            .fileSizeKB((double) file.getSize() / 1024)
-                            .description(desc)
-                            .build();
-                }).collect(Collectors.toList());
+                        return TaskAttachmentDTO.builder()
+                                .fileName(fileName)
+                                .fileUrl(fileUrl)
+                                .fileType(file.getContentType())
+                                .fileSizeKB((double) file.getSize() / 1024)
+                                .description(desc)
+                                .build();
+                    }).collect(Collectors.toList());
 
-        List<TaskAttachmentDTO> saved = taskService.addAttachments(taskId, dtos, employeeId);
-        return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", saved));
+            List<TaskAttachmentDTO> saved = taskService.addAttachments(taskId, dtos, employeeId);
+            return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", saved));
 
-    } catch (IOException e) {
-        throw new RuntimeException("Could not store attachments", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not store attachments", e);
+        }
     }
-}
-
 
     // ----------------------------------------------------------------
     // GET ATTACHMENTS
@@ -214,16 +209,14 @@ public ResponseEntity<ApiResponse<List<TaskAttachmentDTO>>> addAttachments(
         return ResponseEntity.ok(ApiResponse.ok("Task activities fetched successfully", activities));
     }
 
-
-
     @GetMapping("/reminders/upcoming")
-        public ResponseEntity<ApiResponse<List<TaskDTO>>> getUpcomingReminders(
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId,
-        @RequestParam(defaultValue = "3") int daysAhead) {
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getUpcomingReminders(
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId,
+            @RequestParam(defaultValue = "3") int daysAhead) {
 
-    List<TaskDTO> reminders = taskService.getUpcomingReminders(organisationId, employeeId, daysAhead);
-    return ResponseEntity.ok(ApiResponse.ok("Upcoming reminders fetched successfully", reminders));
-}
+        List<TaskDTO> reminders = taskService.getUpcomingReminders(organisationId, employeeId, daysAhead);
+        return ResponseEntity.ok(ApiResponse.ok("Upcoming reminders fetched successfully", reminders));
+    }
 
 }

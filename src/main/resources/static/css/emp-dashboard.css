@@ -1,0 +1,53 @@
+.text-gradient {
+  background: linear-gradient(90deg, #0d6efd, #6610f2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#btnPunchIn, #btnPunchOut {
+  transition: all 0.3s ease;
+}
+
+#btnPunchIn:hover {
+  background-color: #157347;
+  transform: translateY(-2px);
+}
+
+#btnPunchOut:hover {
+  background-color: #bb2d3b;
+  transform: translateY(-2px);
+}
+
+#punchStatus .badge {
+  transition: background-color 0.4s ease, transform 0.3s ease;
+}
+
+#workingHours strong {
+  font-size: 1.1rem;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-select {
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+}
+
+.timer-pill {
+  background-color: #f1f3f5;
+  border-radius: 30px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: 1px;
+}

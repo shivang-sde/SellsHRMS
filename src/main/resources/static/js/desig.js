@@ -192,18 +192,60 @@
 
     // --- Delete ---
     window.deleteDesignation = async function (id) {
-        if (!confirm("Delete this designation?")) return;
+    if (!confirm("Delete this designation?")) return;
 
-        const res = await fetch(`/api/designations/${id}`, { method: "DELETE" });
+    try {
+        const res = await fetch(`/api/designations/${id}`, {
+            method: "DELETE",
+            headers: { "Accept": "application/json" }
+        });
+
+        const body = await res.json().catch(() => null);
+
+        console.log("DELETE designation response:", res.status, body);
+
         if (!res.ok) {
-            showToast("error", "Delete failed");
+            handleApiError(res.status, body);
             return;
         }
 
-        showToast("success", "Designation deleted");
+        showToast("success", body?.message || "Designation deleted successfully");
+
         await loadDesignations();
-        await loadRoles(); // refresh roles availability
+        await loadRoles();
+
+    } catch (err) {
+        console.error("Network error:", err);
+        showToast("error", "Network error. Please try again.");
+    }
     };
+    
+    function handleApiError(status, error) {
+    if (!error) {
+        showToast("error", "Unexpected error occurred.");
+        return;
+    }
+
+    switch (error.errorCode) {
+
+        case "RESOURCE_IN_USE":
+            showToast("warning", error.message);
+            break;
+
+        case "DUPLICATE_ENTRY":
+            showToast("error", error.message);
+            break;
+
+        case "VALIDATION_FAILED":
+            showToast("error", "Please correct the highlighted fields.");
+            break;
+
+        default:
+            showToast("error", error.message || "Operation failed.");
+    }
+}
+
+
 
     // --- Utility ---
     function escape(s) {

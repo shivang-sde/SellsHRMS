@@ -11,12 +11,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.sellspark.SellsHRMS.service.FileStorageService;
+import com.sellspark.SellsHRMS.service.files.FileStorageService;
 
 @Service
-public class LocalFileStorageService  implements FileStorageService{
- 
+public class LocalFileStorageService implements FileStorageService {
+
     @Value("${app.upload.base-dir}")
     private String baseDir;
 
@@ -26,46 +27,47 @@ public class LocalFileStorageService  implements FileStorageService{
     @Override
     public String store(MultipartFile file, String relativeFolder) throws Exception {
 
-        if(file == null || file.isEmpty()){
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Empty File");
         }
 
         String cleanName = StringUtils.cleanPath(file.getOriginalFilename());
         String ext = "";
         int idx = cleanName.lastIndexOf('.');
-        if(idx > 0) ext = cleanName.substring(idx);
+        if (idx > 0)
+            ext = cleanName.substring(idx);
 
         String fileName = UUID.randomUUID().toString() + ext;
 
+        Path folder = Paths.get(baseDir).toAbsolutePath().normalize().resolve(relativeFolder);
+        Files.createDirectories(folder);
+        Path target = folder.resolve(fileName);
 
-       Path folder = Paths.get(baseDir).toAbsolutePath().normalize().resolve(relativeFolder);
-       Files.createDirectories(folder);
-       Path target = folder.resolve(fileName);
+        // store
 
-       // store
+        try (InputStream is = file.getInputStream()) {
+            Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+        }
 
-       try(InputStream is = file.getInputStream()){
-        Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
-       }
+        String rel = relativeFolder.replace("\\", "/");
 
-       String rel = relativeFolder.replace("\\", "/");
+        if (!rel.startsWith("/"))
+            rel = "/" + rel;
 
-       if(!rel.startsWith("/")) rel = "/" + rel;
-
-       return uploadUrlPath + rel + "/" + fileName;
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        return baseUrl + uploadUrlPath + rel + "/" + fileName;
 
     }
 
-
-
     @Override
     public boolean delete(String urlPath) throws Exception {
-        if(urlPath == null) return false;
+        if (urlPath == null)
+            return false;
 
         // urlPath like /uploads/12/urlPath
         Path abs = toAbsolutePath(urlPath);
 
-        if(abs != null) {
+        if (abs != null) {
             return Files.deleteIfExists(abs);
         }
         return false;
@@ -73,20 +75,20 @@ public class LocalFileStorageService  implements FileStorageService{
 
     @Override
     public Path toAbsolutePath(String urlPath) {
-        if(urlPath == null) return null;
+        if (urlPath == null)
+            return null;
 
         String cleaned = urlPath;
 
-        //remove prefix (/uploads)
-        if(cleaned.startsWith(uploadUrlPath)){
+        // remove prefix (/uploads)
+        if (cleaned.startsWith(uploadUrlPath)) {
             cleaned = cleaned.substring(uploadUrlPath.length());
         }
         // enusre it doesn't start with "/"
-        if(cleaned.startsWith("/")) cleaned.substring(1);
+        if (cleaned.startsWith("/"))
+            cleaned.substring(1);
         Path p = Paths.get(baseDir).toAbsolutePath().normalize().resolve(cleaned);
         return p;
     }
-
-    
 
 }

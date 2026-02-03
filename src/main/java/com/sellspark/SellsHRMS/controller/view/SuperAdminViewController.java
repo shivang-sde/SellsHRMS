@@ -16,20 +16,26 @@ public class SuperAdminViewController {
     }
 
     @GetMapping("/superadmin/org")
-    public String superAdminHome(Model model) { 
+    public String superAdminHome(Model model) {
         model.addAttribute("pageTitle", "Super Admin Home");
         model.addAttribute("contentPage", "superadmin/org-dashboard"); // create this JSP
         return "layout/main-layout";
     }
 
-
+    @GetMapping("/superadmin/permissions")
+    public String permissionsPage(Model model) {
+        model.addAttribute("pageTitle", "Manage Permissions");
+        model.addAttribute("contentPage", "superadmin/permissions");
+        model.addAttribute("pageScript", "superadmin/permissions");
+        return "layout/main-layout";
+    }
 
     // LIST ALL ORGANISATIONS
     @GetMapping("/superadmin/organisations")
     public String organisations(Model model) {
         model.addAttribute("pageTitle", "Organisations");
         model.addAttribute("contentPage", "superadmin/organisation-list");
-         model.addAttribute("pageScript", "organisation-list");
+        model.addAttribute("pageScript", "organisation-list");
         return "layout/main-layout";
     }
 
@@ -38,7 +44,7 @@ public class SuperAdminViewController {
     public String createOrganisationPage(Model model) {
         model.addAttribute("pageTitle", "Create Organisation");
         model.addAttribute("contentPage", "superadmin/organisation-form"); // create this JSP
-        
+
         return "layout/main-layout";
     }
 

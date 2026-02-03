@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
   const orgId = window.APP?.ORG_ID || $('#globalOrgId').val();
   let policyData = null;
   const $form = $('#organisationPolicyForm');
@@ -13,7 +13,7 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/organisation/${orgId}/policy`,
       method: 'GET',
-      success: function(data) {
+      success: function (data) {
         if (!data || !data.id) return showNoPolicyState();
         console.log('Organisation Policy Data:', data);
         policyData = data;
@@ -76,7 +76,7 @@ $(document).ready(function() {
     policyData = {};
   });
 
-  $form.on('submit', function(e) {
+  $form.on('submit', function (e) {
     e.preventDefault();
 
     if (!confirm("Updating this policy will affect payroll, attendance, and leave calculations. Proceed?")) {
@@ -92,6 +92,8 @@ $(document).ready(function() {
       standardDailyHours: parseFloat($('#standardDailyHours').val()),
       weeklyHours: parseFloat($('#weeklyHours').val()),
       autoPunchTime: $('#autoPunchTime').val(),
+      officeStart: $('#officeStartTime').val(),
+      officeClosed: $('#officeClosedTime').val(),
       lateGraceMinutes: parseInt($('#lateGraceMinutes').val()),
       earlyOutGraceMinutes: parseInt($('#earlyOutGraceMinutes').val()),
       overtimeAllowed: $('#overtimeAllowed').is(':checked'),
@@ -114,11 +116,11 @@ $(document).ready(function() {
       method,
       contentType: 'application/json',
       data: JSON.stringify(updated),
-      success: function() {
+      success: function () {
         alert(isNew ? 'Policy created successfully!' : 'Policy updated successfully!');
         loadOrganisationPolicy();
       },
-      error: function() {
+      error: function () {
         alert('Failed to save organisation policy.');
       }
     });

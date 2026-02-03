@@ -14,12 +14,21 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
 
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/layout.css">
     <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css"> -->
     <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/header.css"> -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/toast.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/payroll.css">
+    <c:if test="${not empty pageStyle}">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/${pageStyle}.css">
+    </c:if>
+
+    
 
 </head>
 
@@ -29,6 +38,10 @@
     </c:if>
     <input type="hidden" id="globalRole" value="${sessionScope.SYSTEM_ROLE}">
     <input type="hidden" id="globalUserId" value="${sessionScope.USER_ID}">
+    <sec:authorize access="isAuthenticated()">
+        <input type="hidden" id="globalAuthorities" value="<sec:authentication property='principal.authorities'/>">
+    </sec:authorize>
+
 
     <div class="hrms-wrapper">
         <c:import url="/WEB-INF/views/layout/sidebar.jsp"/>
@@ -72,8 +85,7 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -89,6 +101,7 @@
         ROLE: "${sessionScope.SYSTEM_ROLE}",
         PERMISSIONS: "${sessionScope.PERMISSIONS}",
         LAST_LOGIN: "${sessionScope.LAST_LOGIN}",
+        LOGO_URL: "${sessionScope.LOGO_URL}",
         CONTEXT_PATH: "${pageContext.request.contextPath}"
     };
 

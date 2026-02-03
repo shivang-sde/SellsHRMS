@@ -6,8 +6,8 @@ import com.sellspark.SellsHRMS.entity.Holiday;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.exception.DuplicateResourceException;
 import com.sellspark.SellsHRMS.exception.HolidayNotFoundException;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.exception.UnauthorizedAccessException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.HolidayRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.HolidayService;
@@ -32,7 +32,7 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public HolidayResponse createHoliday(HolidayRequest request) {
         log.info("Creating holiday for org: {}", request.getOrgId());
-        
+
         Organisation org = organisationRepository.findById(request.getOrgId())
                 .orElseThrow(() -> new OrganisationNotFoundException(request.getOrgId()));
 
@@ -52,14 +52,14 @@ public class HolidayServiceImpl implements HolidayService {
 
         holiday = holidayRepository.save(holiday);
         log.info("Holiday created with ID: {}", holiday.getId());
-        
+
         return toResponseDTO(holiday);
     }
 
     @Override
     public HolidayResponse updateHoliday(Long holidayId, HolidayRequest request) {
         log.info("Updating holiday ID: {}", holidayId);
-        
+
         Holiday holiday = holidayRepository.findById(holidayId)
                 .orElseThrow(() -> new HolidayNotFoundException(holidayId));
 
@@ -84,14 +84,14 @@ public class HolidayServiceImpl implements HolidayService {
 
         holiday = holidayRepository.save(holiday);
         log.info("Holiday updated successfully");
-        
+
         return toResponseDTO(holiday);
     }
 
     @Override
     public void deleteHoliday(Long holidayId, Long orgId) {
         log.info("Deleting holiday ID: {} for org: {}", holidayId, orgId);
-        
+
         Holiday holiday = holidayRepository.findById(holidayId)
                 .orElseThrow(() -> new HolidayNotFoundException(holidayId));
 
@@ -106,7 +106,7 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public HolidayResponse getHolidayById(Long holidayId, Long orgId) {
         Holiday holiday = holidayRepository.findById(holidayId)
-                .orElseThrow(() ->  new HolidayNotFoundException(orgId));
+                .orElseThrow(() -> new HolidayNotFoundException(orgId));
 
         if (!holiday.getOrganisation().getId().equals(orgId)) {
             throw new UnauthorizedAccessException();
@@ -118,7 +118,7 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public List<HolidayResponse> getAllHolidaysByOrg(Long orgId) {
         log.info("Fetching all holidays for org: {}", orgId);
-        
+
         return holidayRepository.findByOrganisationId(orgId).stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -127,7 +127,7 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public List<HolidayResponse> getHolidaysByDateRange(Long orgId, LocalDate startDate, LocalDate endDate) {
         log.info("Fetching holidays between {} and {} for org: {}", startDate, endDate, orgId);
-        
+
         return holidayRepository.findByOrganisationIdAndHolidayDateBetween(orgId, startDate, endDate).stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -136,42 +136,43 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public List<HolidayResponse> getCurrentYearHolidays(Long orgId) {
         log.info("Fetching current year holidays for org: {}", orgId);
-        
+
         LocalDate startOfYear = LocalDate.now().withDayOfYear(1);
         LocalDate endOfYear = LocalDate.now().withDayOfYear(LocalDate.now().lengthOfYear());
-        
+
         return getHolidaysByDateRange(orgId, startOfYear, endOfYear);
     }
 
     @Override
     public List<HolidayResponse> getUpcomingHolidays(Long orgId) {
         log.info("Fetching upcoming holidays for org: {}", orgId);
-        
+
         LocalDate today = LocalDate.now();
         LocalDate endOfYear = today.withDayOfYear(today.lengthOfYear());
-        
-        List<HolidayResponse> holidays = holidayRepository.findByOrganisationIdAndHolidayDateBetween(orgId, today, endOfYear).stream()
+
+        List<HolidayResponse> holidays = holidayRepository
+                .findByOrganisationIdAndHolidayDateBetween(orgId, today, endOfYear).stream()
                 .map(this::toResponseDTO)
                 .sorted((h1, h2) -> h1.getHolidayDate().compareTo(h2.getHolidayDate()))
                 .collect(Collectors.toList());
-        
-                log.info("holidays size {}", holidays.size());
+
+        log.info("holidays size {}", holidays.size());
         return holidays;
     }
 
-     @Override
+    @Override
     public List<HolidayResponse> getUpcomingHolidays(Long orgId, LocalDate start, LocalDate end) {
         log.info("Fetching upcoming holidays for org: {}", orgId);
         return holidayRepository.findByOrganisationIdAndHolidayDateBetween(orgId, start, end).stream()
-        .map(this::toResponseDTO)
-        .sorted((h1, h2)-> h1.getHolidayDate().compareTo(h2.getHolidayDate()))
-        .collect(Collectors.toList());
+                .map(this::toResponseDTO)
+                .sorted((h1, h2) -> h1.getHolidayDate().compareTo(h2.getHolidayDate()))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<HolidayResponse> getMandatoryHolidays(Long orgId) {
         log.info("Fetching mandatory holidays for org: {}", orgId);
-        
+
         return holidayRepository.findByOrganisationId(orgId).stream()
                 .filter(Holiday::getIsMandatory)
                 .map(this::toResponseDTO)
@@ -181,9 +182,9 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public List<HolidayResponse> getHolidaysByType(Long orgId, String holidayType) {
         log.info("Fetching holidays of type {} for org: {}", holidayType, orgId);
-        
+
         Holiday.HolidayType type = Holiday.HolidayType.valueOf(holidayType);
-        
+
         return holidayRepository.findByOrganisationId(orgId).stream()
                 .filter(h -> h.getHolidayType().equals(type))
                 .map(this::toResponseDTO)
@@ -205,17 +206,17 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public int getHolidayCountForYear(Long orgId, int year) {
         log.info("Counting holidays for year {} in org: {}", year, orgId);
-        
+
         LocalDate startOfYear = LocalDate.of(year, 1, 1);
         LocalDate endOfYear = LocalDate.of(year, 12, 31);
-        
+
         return holidayRepository.findByOrganisationIdAndHolidayDateBetween(orgId, startOfYear, endOfYear).size();
     }
 
     @Override
     public List<LocalDate> getHolidayDatesForRange(Long orgId, LocalDate startDate, LocalDate endDate) {
         log.info("Fetching holiday dates between {} and {} for org: {}", startDate, endDate, orgId);
-        
+
         return holidayRepository.findByOrganisationIdAndHolidayDateBetween(orgId, startDate, endDate).stream()
                 .map(Holiday::getHolidayDate)
                 .sorted()
@@ -223,7 +224,7 @@ public class HolidayServiceImpl implements HolidayService {
     }
 
     // ==================== Helper Method ====================
-    
+
     private HolidayResponse toResponseDTO(Holiday holiday) {
         HolidayResponse response = new HolidayResponse();
         response.setId(holiday.getId());

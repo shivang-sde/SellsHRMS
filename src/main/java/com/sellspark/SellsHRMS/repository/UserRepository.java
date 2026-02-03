@@ -12,7 +12,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     public boolean existsByEmail(String email);
 
-     @Query("SELECT u FROM User u JOIN FETCH u.organisation WHERE u.email = :email")
+    Optional<User> findByEmployeeId(Long employeeId);
+
+    @Query("SELECT u FROM User u JOIN FETCH u.organisation WHERE u.email = :email")
     Optional<User> findByEmailWithOrganisation(@Param("email") String email);
 
 }

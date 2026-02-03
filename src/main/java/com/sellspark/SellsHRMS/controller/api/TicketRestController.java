@@ -1,12 +1,10 @@
 package com.sellspark.SellsHRMS.controller.api;
 
-
-
 import com.sellspark.SellsHRMS.dto.project.*;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Ticket;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.payload.ApiResponse;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.TicketActivityRepository;
@@ -73,14 +71,13 @@ public class TicketRestController {
 
     @PutMapping("/{ticketId}/status")
     public ResponseEntity<ApiResponse<TicketDTO>> updateTicketStatus(
-        @PathVariable Long ticketId,
-        @RequestParam String status,
-        @RequestParam Long employeeId) {
+            @PathVariable Long ticketId,
+            @RequestParam String status,
+            @RequestParam Long employeeId) {
 
-    TicketDTO updated = ticketService.updateTicketStatus(ticketId, status, employeeId);
-    return ResponseEntity.ok(ApiResponse.ok("Ticket status updated", updated));
+        TicketDTO updated = ticketService.updateTicketStatus(ticketId, status, employeeId);
+        return ResponseEntity.ok(ApiResponse.ok("Ticket status updated", updated));
     }
-
 
     // ----------------------------------------------------------------
     // DELETE
@@ -147,52 +144,48 @@ public class TicketRestController {
     }
 
     @PutMapping("/{ticketId}/assign")
-public ResponseEntity<ApiResponse<TicketDTO>> assignTicket(
-        @PathVariable Long ticketId,
-        @RequestParam List<Long> assigneeIds,
-        @RequestParam Long managerId) {
+    public ResponseEntity<ApiResponse<TicketDTO>> assignTicket(
+            @PathVariable Long ticketId,
+            @RequestParam List<Long> assigneeIds,
+            @RequestParam Long managerId) {
 
-    TicketDTO updated = ticketService.assignTicket(ticketId, assigneeIds, managerId);
-    return ResponseEntity.ok(ApiResponse.ok("Ticket assigned successfully", updated));
-}
+        TicketDTO updated = ticketService.assignTicket(ticketId, assigneeIds, managerId);
+        return ResponseEntity.ok(ApiResponse.ok("Ticket assigned successfully", updated));
+    }
 
+    @GetMapping("/status/{status}")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getTicketsByStatus(
+            @PathVariable String status,
+            @RequestParam Long organisationId) {
 
-@GetMapping("/status/{status}")
-public ResponseEntity<ApiResponse<List<TicketDTO>>> getTicketsByStatus(
-        @PathVariable String status,
-        @RequestParam Long organisationId) {
+        List<TicketDTO> tickets = ticketService.getTicketsByStatus(organisationId, status);
+        return ResponseEntity.ok(ApiResponse.ok("Tickets fetched by status", tickets));
+    }
 
-    List<TicketDTO> tickets = ticketService.getTicketsByStatus(organisationId, status);
-    return ResponseEntity.ok(ApiResponse.ok("Tickets fetched by status", tickets));
-}
+    @GetMapping("/visible")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getVisibleTickets(
+            @RequestParam Long organisationId,
+            @RequestParam Long employeeId) {
 
-@GetMapping("/visible")
-public ResponseEntity<ApiResponse<List<TicketDTO>>> getVisibleTickets(
-        @RequestParam Long organisationId,
-        @RequestParam Long employeeId) {
+        List<TicketDTO> tickets = ticketService.getAllVisibleToEmployee(employeeId, organisationId);
+        return ResponseEntity.ok(ApiResponse.ok("Visible tickets fetched successfully", tickets));
+    }
 
-    List<TicketDTO> tickets = ticketService.getAllVisibleToEmployee(employeeId, organisationId);
-    return ResponseEntity.ok(ApiResponse.ok("Visible tickets fetched successfully", tickets));
-}
+    @GetMapping("/{ticketId}/history")
+    public ResponseEntity<ApiResponse<List<TicketActivityDTO>>> getTicketHistory(
+            @PathVariable Long ticketId) {
 
-@GetMapping("/{ticketId}/history")
-public ResponseEntity<ApiResponse<List<TicketActivityDTO>>> getTicketHistory(
-        @PathVariable Long ticketId) {
+        List<TicketActivityDTO> history = ticketService.getTicketHistory(ticketId);
+        return ResponseEntity.ok(ApiResponse.ok("Ticket history fetched successfully", history));
+    }
 
-    List<TicketActivityDTO> history = ticketService.getTicketHistory(ticketId);
-    return ResponseEntity.ok(ApiResponse.ok("Ticket history fetched successfully", history));
-}
+    @GetMapping("/delayed")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getDelayedTickets(
+            @RequestParam Long organisationId) {
 
-
-@GetMapping("/delayed")
-public ResponseEntity<ApiResponse<List<TicketDTO>>> getDelayedTickets(
-        @RequestParam Long organisationId) {
-
-    List<TicketDTO> tickets = ticketService.getDelayedTickets(organisationId);
-    return ResponseEntity.ok(ApiResponse.ok("Delayed tickets fetched successfully", tickets));
-}
-
-
+        List<TicketDTO> tickets = ticketService.getDelayedTickets(organisationId);
+        return ResponseEntity.ok(ApiResponse.ok("Delayed tickets fetched successfully", tickets));
+    }
 
     // ----------------------------------------------------------------
     // SEARCH
@@ -211,67 +204,68 @@ public ResponseEntity<ApiResponse<List<TicketDTO>>> getDelayedTickets(
     // ----------------------------------------------------------------
     // @PostMapping("/{ticketId}/attachments")
     // public ResponseEntity<ApiResponse<TicketAttachmentDTO>> addAttachment(
-    //         @PathVariable Long ticketId,
-    //         @RequestBody TicketAttachmentDTO dto,
-    //         @RequestParam Long employeeId) {
+    // @PathVariable Long ticketId,
+    // @RequestBody TicketAttachmentDTO dto,
+    // @RequestParam Long employeeId) {
 
-    //     TicketAttachmentDTO saved = ticketService.addAttachment(ticketId, dto, employeeId);
-    //     return ResponseEntity.ok(ApiResponse.ok("Attachment added successfully", saved));
+    // TicketAttachmentDTO saved = ticketService.addAttachment(ticketId, dto,
+    // employeeId);
+    // return ResponseEntity.ok(ApiResponse.ok("Attachment added successfully",
+    // saved));
     // }
 
-   @PostMapping(value = "/{ticketId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ApiResponse<List<TicketAttachmentDTO>>> addAttachments(
-        @PathVariable Long ticketId,
-        @RequestParam("files") List<MultipartFile> files,
-        @RequestParam(value = "descriptions", required = false) List<String> descriptions,
-        @RequestParam Long employeeId) {
+    @PostMapping(value = "/{ticketId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<List<TicketAttachmentDTO>>> addAttachments(
+            @PathVariable Long ticketId,
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam(value = "descriptions", required = false) List<String> descriptions,
+            @RequestParam Long employeeId) {
 
-    Employee uploader = employeeRepo.findById(employeeId)
-            .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        Employee uploader = employeeRepo.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
 
-    Ticket ticket = ticketRepo.findById(ticketId)
-            .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+        Ticket ticket = ticketRepo.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
-    Long orgId = uploader.getOrganisation().getId();
-    Path basePath = Paths.get("uploads", "org-" + orgId, "tickets", "ticket-" + ticket.getId());
+        Long orgId = uploader.getOrganisation().getId();
+        Path basePath = Paths.get("uploads", "org-" + orgId, "tickets", "ticket-" + ticket.getId());
 
-    try {
-        Files.createDirectories(basePath);
+        try {
+            Files.createDirectories(basePath);
 
-        List<TicketAttachmentDTO> dtos = IntStream.range(0, files.size())
-                .mapToObj(i -> {
-                    MultipartFile file = files.get(i);
-                    String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
+            List<TicketAttachmentDTO> dtos = IntStream.range(0, files.size())
+                    .mapToObj(i -> {
+                        MultipartFile file = files.get(i);
+                        String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
 
-                    String originalName = file.getOriginalFilename();
-                    Path dest = basePath.resolve(originalName);
+                        String originalName = file.getOriginalFilename();
+                        Path dest = basePath.resolve(originalName);
 
-                    try (InputStream is = file.getInputStream()) {
-                        Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to store file: " + originalName, e);
-                    }
+                        try (InputStream is = file.getInputStream()) {
+                            Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to store file: " + originalName, e);
+                        }
 
-                    String url = "/uploads/org-" + orgId + "/tickets/ticket-" + ticketId + "/" + originalName;
+                        String url = "/uploads/org-" + orgId + "/tickets/ticket-" + ticketId + "/" + originalName;
 
-                    return TicketAttachmentDTO.builder()
-                            .fileName(originalName)
-                            .fileType(file.getContentType())
-                            .fileSizeKB((double) file.getSize() / 1024)
-                            .description(desc)
-                            .fileUrl(url)
-                            .build();
-                })
-                .collect(Collectors.toList());
+                        return TicketAttachmentDTO.builder()
+                                .fileName(originalName)
+                                .fileType(file.getContentType())
+                                .fileSizeKB((double) file.getSize() / 1024)
+                                .description(desc)
+                                .fileUrl(url)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
 
-        List<TicketAttachmentDTO> saved = ticketService.addAttachments(ticketId, dtos, employeeId);
-        return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", saved));
+            List<TicketAttachmentDTO> saved = ticketService.addAttachments(ticketId, dtos, employeeId);
+            return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", saved));
 
-    } catch (IOException e) {
-        throw new RuntimeException("Could not store attachments", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not store attachments", e);
+        }
     }
-}
-
 
     // ----------------------------------------------------------------
     // GET ATTACHMENTS

@@ -8,22 +8,27 @@ import com.sellspark.SellsHRMS.dto.employee.EmployeeResponse;
 import com.sellspark.SellsHRMS.entity.*;
 import com.sellspark.SellsHRMS.entity.Employee.EmployeeStatus;
 import com.sellspark.SellsHRMS.entity.Employee.EmploymentType;
-import com.sellspark.SellsHRMS.exception.EmployeeNotFoundException;
-import com.sellspark.SellsHRMS.exception.HRMSException;
 import com.sellspark.SellsHRMS.exception.InvalidOperationException;
-import com.sellspark.SellsHRMS.exception.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
+import com.sellspark.SellsHRMS.exception.core.HRMSException;
+import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 
 import com.sellspark.SellsHRMS.service.EmployeeService;
 import com.sellspark.SellsHRMS.service.LeaveService;
 import com.sellspark.SellsHRMS.service.UserService;
+import com.sellspark.SellsHRMS.utils.EmployeeCodeGenerator;
 import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -40,6 +45,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final UserService userService;
     private final EmployeeRepository employeeRepo;
+    private UserDetailsServiceImpl userDetailsService;
+    private final UserRepository userRepo;
     private final OrganisationRepository orgRepo;
     private final DepartmentRepository deptRepo;
     private final DesignationRepository desigRepo;
@@ -47,55 +54,54 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final LeaveService leaveService;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
-  
+    private final EmployeeCodeGenerator codeGenerator;
 
     @Override
     public EmployeeResponse create(EmployeeCreateRequest req) {
-        
+
         Long orgId = req.getOrganisationId();
         Organisation org = orgRepo.findById(orgId)
-            .orElseThrow(() -> new HRMSException(
-                    "Organisation not found.",
-                    "ORG_NOT_FOUND",
-                    HttpStatus.NOT_FOUND
-            ));
+                .orElseThrow(() -> new HRMSException(
+                        "Organisation not found.",
+                        "ORG_NOT_FOUND",
+                        HttpStatus.NOT_FOUND));
 
-            // check emp limit 
+        // check emp limit
         long currentCount = employeeRepo.countByOrganisationIdAndDeletedFalse(orgId);
 
         if (org.getMaxEmployees() != null && currentCount >= org.getMaxEmployees()) {
             throw new HRMSException(
-                "Employee creation limit exceeded for organisation '" + org.getName() + "'. " +
-                "Please request to increase max employee limit.",
-                "ORG_EMPLOYEE_LIMIT_EXCEEDED",
-                HttpStatus.FORBIDDEN
-            );
+                    "Employee creation limit exceeded for organisation '" + org.getName() + "'. " +
+                            "Please request to increase max employee limit.",
+                    "ORG_EMPLOYEE_LIMIT_EXCEEDED",
+                    HttpStatus.FORBIDDEN);
         }
 
+        // Generate Employee Code
+        String empCode = codeGenerator.generateEmployeeCode(org.getId());
+
         Designation desig = desigRepo.findById(req.getDesignationId())
-            .orElseThrow(() -> 
-                new ResourceNotFoundException("Designation", "id ", req.getDesignationId())
-            );
+                .orElseThrow(() -> new ResourceNotFoundException("Designation", "id ", req.getDesignationId()));
 
-
-    Role orgRole = roleRepo.findById(desig.getRole().getId()).orElseThrow(() -> 
-     new HRMSException("Role not found with Id " + desig.getRole().getId() + ". " + "Please create a role first", "ROLE_NOT_FOUND", HttpStatus.NOT_FOUND ));
-
+        Role orgRole = roleRepo.findById(desig.getRole().getId())
+                .orElseThrow(() -> new HRMSException(
+                        "Role not found with Id " + desig.getRole().getId() + ". " + "Please create a role first",
+                        "ROLE_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Employee emp = mapRequestToEntity(new Employee(), req);
+        emp.setEmployeeCode(empCode); // setting up emp code;
         employeeRepo.save(emp);
 
         userService.createEmpUser(
                 emp.getId(),
                 req.getWorkEmail(),
                 req.getPassword(),
-                orgRole.getName(), // system role for employees in all org it is not org dependednt instead it is plateform dependednt and fix. 
-                req.getOrganisationId()
-        );
+                orgRole.getName(), // system role for employees in all org it is not org dependednt instead it is
+                                   // plateform dependednt and fix.
+                req.getOrganisationId());
 
         String ly = leaveService.getCurrentLeaveYear(req.getOrganisationId());
         leaveService.initializeLeaveBalancesForEmployee(emp.getId(), emp.getOrganisation().getId(), ly);
-
 
         return mapToResponse(emp);
     }
@@ -105,8 +111,39 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee emp = employeeRepo.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new EmployeeNotFoundException(id));
 
+        User user = userService.findByEmail(emp.getEmail());
+
+        log.info("user updating {} with status {}", user.getEmail(), user.getIsActive());
+
+        EmployeeStatus newStatus = EmployeeStatus.valueOf(req.getStatus());
+
+        if (newStatus == EmployeeStatus.INACTIVE
+                || newStatus == EmployeeStatus.TERMINATED
+                || newStatus == EmployeeStatus.EXIT) {
+            userService.deactivateUser(user.getId());
+        } else if (newStatus == EmployeeStatus.ACTIVE) {
+            userService.activateUser(user.getId());
+
+        }
+
+        log.info("user updating {} with status {}", user.getEmail(), user.getIsActive());
         mapRequestToEntity(emp, req);
         employeeRepo.save(emp);
+
+        // Update user's org role if designation changed
+        if (emp.getDesignation() != null && emp.getDesignation().getRole() != null) {
+            user.setOrgRole(emp.getDesignation().getRole());
+            userRepo.save(user); // make sure this persists
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName().equalsIgnoreCase(user.getEmail())) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+            UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(userDetails,
+                    auth.getCredentials(), userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(newAuth);
+            log.debug("Refreshed authorities for currently logged-in user {}", user.getEmail());
+        }
 
         return mapToResponse(emp);
     }
@@ -116,23 +153,25 @@ public class EmployeeServiceImpl implements EmployeeService {
         List<Employee> employess = employeeRepo.findByOrganisationIdAndDeletedFalse(orgId);
         return employess.stream()
                 .map(this::mapToResponse)
-                .toList(); 
+                .toList();
     }
 
     @Override
     public EmployeeDetailResponse getById(Long id) {
         Employee target = employeeRepo.findByIdAndDeletedFalse(id)
-            .orElseThrow(() -> new EmployeeNotFoundException(id));
-        
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
+
         return mapToDetailResponse(target);
     }
 
-
     public EmployeeDetailResponse getByIdAndOrg(Long id, Long orgId) {
-    var emp = employeeRepo.findByIdAndOrganisationId(id, orgId).orElse(null);
-    if (emp == null) return null;
-    return mapToDetailResponse(emp);
-    } @Override
+        var emp = employeeRepo.findByIdAndOrganisationId(id, orgId).orElse(null);
+        if (emp == null)
+            return null;
+        return mapToDetailResponse(emp);
+    }
+
+    @Override
     public List<EmployeeResponse> findUpcomingBirthdays(Long orgId, LocalDate startDate, LocalDate endDate) {
         log.info("Fetching upcoming birthdays for orgId={} from {} to {}", orgId, startDate, endDate);
         List<Employee> employees = employeeRepo.findUpcomingBirthdays(orgId, startDate, endDate);
@@ -147,19 +186,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     public List<EmployeeResponse> getSubordinates(Long managerId, Long organisationId) {
-    Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
-    List<Employee> employees = employeeRepo.findAllById(subordinateIds);
-    return employees.stream().map(this::mapToResponse).collect(Collectors.toList());
-}
-
-
-
-
+        Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
+        List<Employee> employees = employeeRepo.findAllById(subordinateIds);
+        return employees.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
 
     // @Override
     // public Employee getDetailEmpById(Long id) {
-    //     Employee emp = employeeRepo.findByIdAndDeletedFalse(id).orElseThrow(() -> new RuntimeException("Employee not found"));
-    //     return emp;
+    // Employee emp = employeeRepo.findByIdAndDeletedFalse(id).orElseThrow(() -> new
+    // RuntimeException("Employee not found"));
+    // return emp;
     // }
 
     @Override
@@ -172,43 +208,41 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepo.save(emp);
     }
 
-   @Override
-public EmployeeResponse updateStatus(Long id, String status) {
+    @Override
+    public EmployeeResponse updateStatus(Long id, String status) {
 
-    Employee emp = employeeRepo.findByIdAndDeletedFalse(id)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        Employee emp = employeeRepo.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-    EmployeeStatus newStatus = Arrays.stream(EmployeeStatus.values())
-            .filter(s -> s.name().equalsIgnoreCase(status))
-            .findFirst()
-            .orElseThrow(() -> new InvalidOperationException("Invalid employee status: " + status));
+        EmployeeStatus newStatus = Arrays.stream(EmployeeStatus.values())
+                .filter(s -> s.name().equalsIgnoreCase(status))
+                .findFirst()
+                .orElseThrow(() -> new InvalidOperationException("Invalid employee status: " + status));
 
-    emp.setStatus(newStatus);
-    employeeRepo.save(emp);
+        emp.setStatus(newStatus);
+        employeeRepo.save(emp);
 
-    return mapToResponse(emp);
-}
-
+        return mapToResponse(emp);
+    }
 
     // ================ Mapping Layer =================
 
     private Employee mapRequestToEntity(Employee emp, EmployeeCreateRequest req) {
 
         // Basic
-        emp.setEmployeeCode(req.getEmployeeCode());
         emp.setFirstName(req.getFirstName());
         emp.setLastName(req.getLastName());
         emp.setEmail(req.getWorkEmail());
         emp.setPhone(req.getPhone());
         emp.setDob(req.getDob());
+        emp.setPhotoUrl(req.getPhotoUrl());
 
-   
+        emp.setEmployeeCode(req.getEmployeeCode() != null ? req.getEmployeeCode() : null);
+
         emp.setGender(Employee.Gender.valueOf(req.getGender()));
         emp.setEmploymentType(EmploymentType.valueOf(req.getEmploymentType()));
         emp.setStatus(EmployeeStatus.valueOf(req.getStatus()));
 
-
-   
         emp.setDateOfJoining(req.getDateOfJoining());
         emp.setDateOfExit(req.getDateOfExit());
 
@@ -234,35 +268,28 @@ public EmployeeResponse updateStatus(Long id, String status) {
         // Organisation
         emp.setOrganisation(
                 orgRepo.findById(req.getOrganisationId())
-                        .orElseThrow(() -> new OrganisationNotFoundException(req.getOrganisationId()))
-        );
+                        .orElseThrow(() -> new OrganisationNotFoundException(req.getOrganisationId())));
 
         // Department
         if (req.getDepartmentId() != null)
             emp.setDepartment(
-                    deptRepo.findById(req.getDepartmentId()).orElse(null)
-            );
+                    deptRepo.findById(req.getDepartmentId()).orElse(null));
 
         // Designation
         if (req.getDesignationId() != null)
             emp.setDesignation(
-                    desigRepo.findById(req.getDesignationId()).orElse(null)
-            );
+                    desigRepo.findById(req.getDesignationId()).orElse(null));
 
         // Reporting To
         if (req.getReportingToId() != null)
             emp.setReportingTo(
-                    employeeRepo.findById(req.getReportingToId()).orElse(null)
-            );
+                    employeeRepo.findById(req.getReportingToId()).orElse(null));
 
-
-
-//         if (req.getDataVisibility() != null) {
-//     emp.setDataVisibility(Employee.DataVisibility.valueOf(req.getDataVisibility().toUpperCase()));
-// } else if (emp.getDataVisibility() == null) {
-//     emp.setDataVisibility(Employee.DataVisibility.SELF);
-// }
-
+        // if (req.getDataVisibility() != null) {
+        // emp.setDataVisibility(Employee.DataVisibility.valueOf(req.getDataVisibility().toUpperCase()));
+        // } else if (emp.getDataVisibility() == null) {
+        // emp.setDataVisibility(Employee.DataVisibility.SELF);
+        // }
 
         // Salary (quick field)
         // emp.setSalary(req);
@@ -292,17 +319,18 @@ public EmployeeResponse updateStatus(Long id, String status) {
         res.setFullName(emp.getFirstName() + " " + emp.getLastName());
         res.setEmail(emp.getEmail());
         res.setPhone(emp.getPhone());
+        res.setPhotoUrl(emp.getPhotoUrl());
 
         if (emp.getStatus() != null) {
-        res.setStatus(emp.getStatus().name());
-    }
+            res.setStatus(emp.getStatus().name());
+        }
         if (emp.getEmploymentType() != null) {
-        res.setEmploymentType(emp.getEmploymentType().name());
-    }
+            res.setEmploymentType(emp.getEmploymentType().name());
+        }
 
         if (emp.getOrganisation() != null) {
-        res.setOrganisation(emp.getOrganisation().getName());
-    }
+            res.setOrganisation(emp.getOrganisation().getName());
+        }
 
         if (emp.getDepartment() != null)
             res.setDepartment(emp.getDepartment().getName());
@@ -310,90 +338,94 @@ public EmployeeResponse updateStatus(Long id, String status) {
         if (emp.getDesignation() != null)
             res.setDesignation(emp.getDesignation().getTitle());
 
-         if (emp.getDesignation().getRole() != null){
+        if (emp.getDesignation().getRole() != null) {
             res.setRole(emp.getDesignation().getRole().getName());
         }
-
-
 
         return res;
     }
 
-
     private EmployeeDetailResponse mapToDetailResponse(Employee emp) {
 
-    EmployeeDetailResponse res = new EmployeeDetailResponse();
+        EmployeeDetailResponse res = new EmployeeDetailResponse();
 
-    res.setId(emp.getId());
-    res.setEmployeeCode(emp.getEmployeeCode());
-    res.setFirstName(emp.getFirstName());
-    res.setLastName(emp.getLastName());
-    res.setFullName(emp.getFirstName() + " " + emp.getLastName());
-    res.setEmail(emp.getEmail());
-    res.setPersonalEmail(emp.getPersonalEmail());
-    res.setPhone(emp.getPhone());
-    res.setFatherName(emp.getFatherName());
-    res.setMaritalStatus(emp.getMaritalStatus());
-    res.setNationality(emp.getNationality());
+        res.setId(emp.getId());
+        res.setEmployeeCode(emp.getEmployeeCode());
+        res.setFirstName(emp.getFirstName());
+        res.setLastName(emp.getLastName());
+        res.setFullName(emp.getFirstName() + " " + emp.getLastName());
+        res.setEmail(emp.getEmail());
+        res.setPersonalEmail(emp.getPersonalEmail());
+        res.setPhone(emp.getPhone());
+        res.setPhotoUrl(emp.getPhotoUrl() != null ? emp.getPhotoUrl() : "");
+        res.setFatherName(emp.getFatherName());
+        res.setMaritalStatus(emp.getMaritalStatus());
+        res.setNationality(emp.getNationality());
 
+        if (emp.getAlternatePhone() != null) {
+            res.setAlternatePhone(emp.getAlternatePhone());
+        }
 
-    if(emp.getAlternatePhone() != null) {
-        res.setAlternatePhone(emp.getAlternatePhone());
+        if (emp.getReferenceName() != null)
+            res.setReferenceName(emp.getReferenceName());
+
+        if (emp.getReferencePhone() != null)
+            res.setReferencePhone(emp.getReferencePhone());
+
+        res.setStatus(emp.getStatus().name());
+        res.setEmploymentType(emp.getEmploymentType().name());
+        res.setGender(emp.getGender().name());
+
+        if (emp.getDob() != null)
+            res.setDob(emp.getDob().toString());
+
+        if (emp.getDateOfJoining() != null) {
+            res.setDateOfJoining(emp.getDateOfJoining().toString());
+        }
+
+        if (emp.getDateOfExit() != null) {
+            res.setDateOfExit(emp.getDateOfExit().toString());
+        }
+
+        if (emp.getDepartment() != null) {
+            res.setDepartment(emp.getDepartment().getName());
+            res.setDepartmentId(emp.getDepartment().getId());
+        }
+
+        if (emp.getDesignation() != null) {
+            res.setDesignation(emp.getDesignation().getTitle());
+            res.setDesignationId(emp.getDesignation().getId());
+        }
+
+        if (emp.getDesignation().getRole() != null)
+            res.setRole(emp.getDesignation().getRole().getName());
+
+        res.setOrganisation(emp.getOrganisation().getName());
+
+        if (emp.getReportingTo() != null) {
+            res.setReportingToName(emp.getReportingTo().getFirstName() + " " + emp.getReportingTo().getLastName() + " "
+                    + "( " + emp.getReportingTo().getEmployeeCode() + " )");
+            res.setReportingToId(emp.getReportingTo().getId());
+        }
+
+        if (emp.getLocalAddress() != null)
+            res.setLocalAddress(mapAddressToDTO(emp.getLocalAddress()));
+
+        if (emp.getPermanentAddress() != null)
+            res.setPermanentAddress(mapAddressToDTO(emp.getPermanentAddress()));
+
+        return res;
     }
 
-    if(emp.getReferenceName() != null) res.setReferenceName(emp.getReferenceName());
-
-    if(emp.getReferencePhone() != null) res.setReferencePhone(emp.getReferencePhone());
-
-    res.setStatus(emp.getStatus().name());
-    res.setEmploymentType(emp.getEmploymentType().name());
-    res.setGender(emp.getGender().name());
-
-    if (emp.getDob() != null)
-        res.setDob(emp.getDob().toString());
-
-    if(emp.getDateOfJoining() != null) {
-        res.setDateOfJoining(emp.getDateOfJoining().toString());
+    private AddressDTO mapAddressToDTO(Address a) {
+        AddressDTO dto = new AddressDTO();
+        dto.setAddressLine1(a.getLine1());
+        dto.setAddressLine2(a.getLine2());
+        dto.setCity(a.getCity());
+        dto.setState(a.getState());
+        dto.setCountry(a.getCountry());
+        dto.setPincode(a.getPincode());
+        return dto;
     }
-
-    if(emp.getDateOfExit() != null) {
-        res.setDateOfExit(emp.getDateOfExit().toString());
-    }
-
-    if (emp.getDepartment() != null)
-        res.setDepartment(emp.getDepartment().getName());
-
-    if (emp.getDesignation() != null)
-        res.setDesignation(emp.getDesignation().getTitle());
-
-    if (emp.getDesignation().getRole() != null)
-     res.setRole(emp.getDesignation().getRole().getName());
-
-
-    res.setOrganisation(emp.getOrganisation().getName());
-
-
-    if (emp.getReportingTo() != null)
-        res.setReportingToName(emp.getReportingTo().getFirstName() + " " + emp.getReportingTo().getLastName() + " " + "( " + emp.getReportingTo().getEmployeeCode() + " )");
-
-    if (emp.getLocalAddress() != null)
-        res.setLocalAddress(mapAddressToDTO(emp.getLocalAddress()));
-
-    if (emp.getPermanentAddress() != null)
-        res.setPermanentAddress(mapAddressToDTO(emp.getPermanentAddress()));
-
-    return res;
-}
-
-private AddressDTO mapAddressToDTO(Address a) {
-    AddressDTO dto = new AddressDTO();
-    dto.setAddressLine1(a.getLine1());
-    dto.setAddressLine2(a.getLine2());
-    dto.setCity(a.getCity());
-    dto.setState(a.getState());
-    dto.setCountry(a.getCountry());
-    dto.setPincode(a.getPincode());
-    return dto;
-}
 
 }

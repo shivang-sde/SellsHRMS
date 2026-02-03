@@ -1,11 +1,8 @@
 
 package com.sellspark.SellsHRMS.entity;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -44,11 +41,16 @@ public class Organisation {
     @Column(unique = true)
     private String domain;
     private String logoUrl;
-    
-   
 
     private String contactEmail;
     private String contactPhone;
+
+    @Column(name = "emp_prefix", length = 10)
+    private String empPrefix;
+
+    @Builder.Default
+    @Column(name = "emp_seq")
+    private Integer empSequence = 0; // stores last used number
 
     private String address;
     private String country;
@@ -56,12 +58,11 @@ public class Organisation {
     private String currencyCode; // default currency for org
     private String timeZone;
 
-    //  @OneToMany(mappedBy = "organisation")
+    // @OneToMany(mappedBy = "organisation")
     // private List<WorkLocation> workLocations;
 
     private String pan;
     private String tan;
-
 
     private LocalDate validity;
     private Integer maxEmployees;

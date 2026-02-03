@@ -15,24 +15,23 @@ public interface OrganisationRepository extends JpaRepository<Organisation, Long
     Optional<Organisation> findByName(String name);
 
     @Modifying
-    @Query("UPDATE Organisation o SET o.isActive = :active, o.suspendedReason = :reason WHERE o.id = :id") 
+    @Query("UPDATE Organisation o SET o.isActive = :active, o.suspendedReason = :reason WHERE o.id = :id")
     void updateStatus(@Param("id") Long id, @Param("active") boolean active, @Param("reason") String reason);
 
     Optional<Organisation> findByDomain(String domain);
 
     List<Organisation> findAllByOrderByIdDesc();
+
     List<Organisation> findByIsActiveTrue();
+
     List<Organisation> findByValidityBeforeAndIsActiveTrue(LocalDate date);
 
-
     @Query("""
-    SELECT o, a 
-    FROM Organisation o 
-    LEFT JOIN OrganisationAdmin a ON a.organisation.id = o.id 
-    ORDER BY o.id DESC
-""")
-List<Object[]> findAllWithAdmins();
-
-
+                SELECT o, a
+                FROM Organisation o
+                LEFT JOIN OrganisationAdmin a ON a.organisation.id = o.id
+                ORDER BY o.id DESC
+            """)
+    List<Object[]> findAllWithAdmins();
 
 }

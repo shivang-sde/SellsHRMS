@@ -33,6 +33,11 @@
           <i class="fa fa-plus-circle"></i>
           <span class="nav-text">Create Organisation</span>
         </a>
+
+        <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/permissions">
+          <i class="fa fa-key"> </i>
+          <span class="nav-text">Permission</span>
+        </a>
       </sec:authorize>
 
       <!-- ORG ADMIN -->
@@ -59,12 +64,12 @@
         <span class="nav-text">Attendance & Absenteeism</span>
       </a>
     </li>
-    <li class="nav-item">
+    <!-- <li class="nav-item">
       <a class="nav-link" href="${pageContext.request.contextPath}/org/employee-performance">
         <i class="fa fa-chart-bar"></i>
         <span class="nav-text">Employee Performance</span>
       </a>
-    </li>
+    </li> -->
     <!-- Future feature -->
     <!--
     <li class="nav-item">
@@ -147,22 +152,7 @@
           <li><a href="${pageContext.request.contextPath}/org/leave-types">Leave Types</a></li>
           <li><a href="${pageContext.request.contextPath}/org/leave-balances">Leave Balances</a></li>
         </ul>
-
-
         
-
-         <!-- Organization Info -->
-        <a class="nav-link toggle-link" href="#">
-          <i class="fa fa-info-circle"></i>
-          <span class="nav-text">Organization Info</span>
-          <i class="fa fa-plus toggle-icon"></i>
-        </a>
-        <ul class="sub-menu">
-          <li><a href="${pageContext.request.contextPath}/org/knowledge-base">Knowledge Base</a></li>
-          <li><a href="${pageContext.request.contextPath}/org/announcements">Announcements</a></li>
-          <li><a href="${pageContext.request.contextPath}/org/events">Events</a></li>
-        </ul>
-
         <!-- Organisation Policy -->
         <a class="nav-link" href="${pageContext.request.contextPath}/org/organisation-policy">
           <i class="fa fa-file-contract"></i>
@@ -209,13 +199,13 @@
   <li class="sub-header text-muted small mt-2">Templates</li>
   <li>
     <a href="${pageContext.request.contextPath}/salary-slip-template/list">
-      <i class="fa fa-file-alt me-2 text-primary"></i> 
+      <i class="fa fa-file-alt me-2 text-primary"></i>
       <span class="nav-text">Salary Slip Templates</span>
     </a>
   </li>
   <li>
     <a href="${pageContext.request.contextPath}/salary-slip-template/design">
-      <i class="fa fa-drafting-compass me-2 text-info"></i> 
+      <i class="fa fa-drafting-compass me-2 text-info"></i>
       <span class="nav-text">Template Designer</span>
     </a>
   </li>
@@ -228,19 +218,19 @@
         <i class="fa fa-play-circle me-2 text-danger"></i><span class="nav-text">PayRun Dashboard</span>
       </a>
     </li>
-    <li>
+    <!-- <li>
       <a href="${pageContext.request.contextPath}/payroll/payslips">
         <i class="fa fa-file-invoice-dollar me-2 text-secondary"></i><span class="nav-text">Salary Slips</span>
       </a>
-   </li>
+   </li> -->
 
   <!-- Reports -->
-  <li class="sub-header text-muted small mt-2">Reports</li>
+  <!-- <li class="sub-header text-muted small mt-2">Reports</li>
   <li>
     <a href="${pageContext.request.contextPath}/payroll/reports">
       <i class="fa fa-table me-2 text-dark"></i> <span class="nav-text">Payroll Reports</span>
     </a>
-  </li>
+  </li> -->
 </ul>
 
 
@@ -254,10 +244,10 @@
           <span class="nav-text">Dashboard</span>
         </a>
 
-        <a class="nav-link" href="${pageContext.request.contextPath}/employee/profile">
+        <!-- <a class="nav-link" href="${pageContext.request.contextPath}/employee/profile">
           <i class="fa fa-user"></i>
           <span class="nav-text">My Profile</span>
-        </a>
+        </a> -->
 
         <a class="nav-link" href="${pageContext.request.contextPath}/employee/attendance">
           <i class="fa fa-clock"></i>
@@ -274,12 +264,14 @@
           <span class="nav-text">My Salaries</span>
         </a>
         
-         <a class="nav-link" href="${pageContext.request.contextPath}/org/leaves">
-          <i class="fa fa-calendar-check"></i>
-          <span class="nav-text">Leave Requests</span>
-         </a>
+      <sec:authorize access="hasAuthority('LEAVE_VIEW_ALL')">
+    <a class="nav-link" href="${pageContext.request.contextPath}/employee/leaves">
+      <i class="fa fa-calendar-check"></i>
+      <span class="nav-text">Leave Requests</span>
+    </a>
+  </sec:authorize>
           <!-- Organization Info -->
-        <a class="nav-link toggle-link" href="#">
+        <!-- <a class="nav-link toggle-link" href="#">
           <i class="fa fa-info-circle"></i>
           <span class="nav-text">Organization</span>
           <i class="fa fa-plus toggle-icon"></i>
@@ -288,7 +280,7 @@
           <li><a href="${pageContext.request.contextPath}/employee/knowledge-base">Knowledge Base</a></li>
           <li><a href="${pageContext.request.contextPath}/employee/announcements">Announcements</a></li>
           <li><a href="${pageContext.request.contextPath}/employee/events">Events</a></li>
-        </ul>
+        </ul> -->
         <!-- <a class="nav-link" href="${pageContext.request.contextPath}/employee/leave">
           <i class="fa fa-calendar-check"></i>
           <span class="nav-text">My Leaves</span>
@@ -342,6 +334,25 @@
   </ul>
 
 </sec:authorize>
+
+
+<sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE')" >
+<!-- Organization Info -->
+<a class="nav-link toggle-link" href="#">
+  <i class="fa fa-info-circle"></i>
+  <span class="nav-text">Organization Hub</span>
+  <i class="fa fa-plus toggle-icon"></i>
+</a>
+<ul class="sub-menu">
+  <li><a href="${pageContext.request.contextPath}/org/knowledge-base">Knowledge Base</a></li>
+  <li><a href="${pageContext.request.contextPath}/org/announcements">Announcements</a></li>
+  <li><a href="${pageContext.request.contextPath}/org/events">Events</a></li>
+</ul>
+
+</sec:authorize>
+
+
+
 
 
 

@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<c:set var="pageTitle" value="Org Admin Dashboard" />
-<c:set var="pageScript" value="orgadmin-dashboard" />
+
 <div class="container-fluid mt-4">
 
     <!-- HEADER -->
@@ -17,7 +16,7 @@
     <div class="row g-3">
 
 
-    STAT CARDS
+    <!-- STAT CARDS -->
     <div class="row g-3">
 
         <div class="col-md-3">
@@ -38,14 +37,14 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <!-- <div class="col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h6>Designations</h6>
                     <h3 id="countDesignations">0</h3>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <div class="col-md-3">
             <div class="card shadow-sm border-0">
@@ -68,9 +67,9 @@
         </div>
         <div class="card-body">
             <div class="d-flex flex-wrap gap-3">
-                <a href="/orgadmin/department" class="btn btn-outline-primary"><i class="fas fa-building"></i> Manage Departments</a>
-                <a href="/orgadmin/designation" class="btn btn-outline-primary"><i class="fas fa-id-badge"></i> Manage Designations</a>
-                <a href="/orgadmin/employees" class="btn btn-outline-primary"><i class="fas fa-users"></i> Employee List</a>
+                <a href="/org/departments" class="btn btn-outline-primary"><i class="fas fa-building"></i> Manage Departments</a>
+                <a href="/org/designations" class="btn btn-outline-primary"><i class="fas fa-id-badge"></i> Manage Designations</a>
+                <a href="/org/employees" class="btn btn-outline-primary"><i class="fas fa-users"></i> Employee List</a>
             </div>
         </div>
     </div>
@@ -99,8 +98,5 @@
     </div> -->
 
 </div>
-
-
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 

@@ -1,6 +1,8 @@
 package com.sellspark.SellsHRMS.service;
 
+import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.User;
+import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.config.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -39,20 +41,20 @@ public class AuthService {
         if (user == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash()))
             return null;
 
+        Organisation org = user.getOrganisation();
+
         user.setLastLogin(LocalDateTime.now());
-        log.info("user attempted to login at {}", LocalDateTime.now());
+        log.info("user attempted to login at {}, user active status: {}", LocalDateTime.now(), user.getIsActive());
         userRepository.save(user);
 
-
-        if (user.getIsActive() == null ||  Boolean.FALSE.equals(user.getIsActive()))
+        if (user.getIsActive() == null || Boolean.FALSE.equals(user.getIsActive()))
             return null;
 
         String userName = resolveUserDisplayName(user);
-            
 
         // Load permissions dynamically
         Set<String> perms = accessService.getPermissionsForUser(user.getId());
-        
+
         UserPrincipal principal = UserPrincipal.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -64,19 +66,19 @@ public class AuthService {
                 .lastLogin(user.getLastLogin())
                 .build();
 
-         // determine authorities
+        // determine authorities
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         // Add system-level enum role (SUPER_ADMIN / ORG_ADMIN / EMPLOYEE)
         if (user.getSystemRole() != null)
             authorities.add(new SimpleGrantedAuthority(user.getSystemRole().name()));
 
-         // Add org-level role (e.g., HR, MANAGER)
+        // Add org-level role (e.g., HR, MANAGER)
         if (user.getOrgRole() != null)
             authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getOrgRole().getName().toUpperCase()));
 
-        
-        // set Spring Security context (so .authenticated() checks pass), Add all permission codes (LEAVE_VIEW_SELF, etc.)
+        // set Spring Security context (so .authenticated() checks pass), Add all
+        // permission codes (LEAVE_VIEW_SELF, etc.)
         authorities.addAll(perms.stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList());
@@ -88,26 +90,34 @@ public class AuthService {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
-
         // store context into HTTP session (for subsequent requests)
         HttpSession session = request.getSession(true);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
+        /*
+         * Remove manual saving of SPRING_SECURITY_CONTEXT in your AuthService
+         * Spring Security automatically stores the SecurityContext into session at the
+         * end of the request. manual setAttribute is redundant and causing duplicates.
+         */
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                context);
 
         // also store convenience items for JSPs (modules + role)
         session.setAttribute("USER_ID", user.getId());
         session.setAttribute("LAST_LOGIN", user.getLastLogin());
         session.setAttribute("EMAIL", user.getEmail());
         session.setAttribute("USER_NAME", userName);
-        session.setAttribute("EMP_ID", user.getEmployee() != null ? user.getEmployee().getId() : null); 
+        session.setAttribute("EMP_ID", user.getEmployee() != null ? user.getEmployee().getId() : null);
         session.setAttribute("SYSTEM_ROLE", principal.getSystemRole());
         session.setAttribute("ORG_ROLE", principal.getOrgRole());
         session.setAttribute("ORG_ID", principal.getOrganisationId());
+        session.setAttribute("LOGO_URL", org.getLogoUrl());
         session.setAttribute("PERMISSIONS", perms);
-        // session.setAttribute("MODULES", accessService.getModuleCodesForUser(user.getId()));
+        // session.setAttribute("MODULES",
+        // accessService.getModuleCodesForUser(user.getId()));
 
         // log.info("Authenticated [{}] | systemRole={} | orgRole={} | orgId={}",
-        //         user.getEmail(), principal.getSystemRole(), principal.getOrgRole(), principal.getOrganisationId());
+        // user.getEmail(), principal.getSystemRole(), principal.getOrgRole(),
+        // principal.getOrganisationId());
 
         return principal;
     }
