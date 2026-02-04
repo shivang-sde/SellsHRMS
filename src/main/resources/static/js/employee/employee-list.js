@@ -91,26 +91,6 @@ $(document).ready(function () {
             const statusClass = getStatusClass(emp.status);
             const typeClass = getTypeClass(emp.employmentType);
 
-            let actions = `
-                 <a href="/org/employee/${emp.id}" class="btn btn-outline-primary" title="View">
-                    <i class="fas fa-eye"></i>
-                </a>
-            `;
-
-            if (window.APP.hasAnyPermission('EMPLOYEE_EDIT', 'ORG_ADMIN')) {
-                actions += `
-                    <a href="/org/employee/edit/${emp.id}" class="btn btn-outline-warning" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </a>`;
-            }
-
-            if (window.APP.hasAnyPermission('EMPLOYEE_DELETE', 'ORG_ADMIN')) {
-                actions += `
-                    <button class="btn btn-outline-danger btn-delete" data-id="${emp.id}" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>`;
-            }
-
             html += `
                 <tr>
                     <td><strong>${escapeHtml(emp.employeeCode)}</strong></td>
@@ -123,7 +103,15 @@ $(document).ready(function () {
                     <td><span class="badge ${statusClass}">${formatText(emp.status)}</span></td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            ${actions}
+                            <a href="/org/employee/${emp.id}" class="btn btn-outline-primary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/org/employee/edit/${emp.id}" class="btn btn-outline-warning" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-outline-danger btn-delete" data-id="${emp.id}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>

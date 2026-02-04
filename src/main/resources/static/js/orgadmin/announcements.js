@@ -1,19 +1,19 @@
-$(document).ready(function () {
+$(document).ready(function() {
   let announcements = [];
-
+  
   init();
-
+  
   function init() {
     loadAnnouncements();
     $('#createAnnouncementForm').on('submit', handleCreate);
     $('#editAnnouncementForm').on('submit', handleEdit);
   }
-
+  
   function loadAnnouncements() {
     $.ajax({
       url: '/api/announcements',
       method: 'GET',
-      success: function (response) {
+      success: function(response) {
         if (response.success) {
           announcements = response.data;
           displayAnnouncements(announcements);
@@ -21,36 +21,17 @@ $(document).ready(function () {
       }
     });
   }
-
+  
   function displayAnnouncements(announcements) {
     const container = $('#announcementsList');
     container.empty();
-
+    
     if (announcements.length === 0) {
       container.append('<div class="text-center py-4"><p class="text-muted">No announcements</p></div>');
       return;
     }
-
+    
     announcements.forEach(ann => {
-      let actions = '';
-
-      if (window.APP.hasAnyPermission('ORGHUB_EDIT', 'ORG_ADMIN')) {
-        actions += `
-            <button class="btn btn-sm btn-outline-primary" onclick="editAnnouncement(${ann.id})">
-              <i class="fa fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-${ann.isActive ? 'warning' : 'success'}" onclick="toggleStatus(${ann.id})">
-              <i class="fa fa-${ann.isActive ? 'eye-slash' : 'eye'}"></i>
-            </button>`;
-      }
-
-      if (window.APP.hasAnyPermission('ORGHUB_DELETE', 'ORG_ADMIN')) {
-        actions += `
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement(${ann.id})">
-              <i class="fa fa-trash"></i>
-            </button>`;
-      }
-
       const card = `
         <div class="announcement-card card mb-3">
           <div class="card-body">
@@ -61,7 +42,15 @@ $(document).ready(function () {
                 <small class="text-muted">Valid until: ${ann.validUntil ? formatDateTime(ann.validUntil) : 'No expiry'}</small>
               </div>
               <div>
-                ${actions}
+                <button class="btn btn-sm btn-outline-primary" onclick="editAnnouncement(${ann.id})">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-${ann.isActive ? 'warning' : 'success'}" onclick="toggleStatus(${ann.id})">
+                  <i class="fa fa-${ann.isActive ? 'eye-slash' : 'eye'}"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement(${ann.id})">
+                  <i class="fa fa-trash"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -70,7 +59,7 @@ $(document).ready(function () {
       container.append(card);
     });
   }
-
+  
   function handleCreate(e) {
     e.preventDefault();
     const formData = {
@@ -78,13 +67,13 @@ $(document).ready(function () {
       message: $('textarea[name="message"]').val(),
       validUntil: $('input[name="validUntil"]').val() || null
     };
-
+    
     $.ajax({
       url: '/api/announcements',
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function (response) {
+      success: function(response) {
         if (response.success) {
           showToast('success', response.message);
           $('#createAnnouncementModal').modal('hide');
@@ -94,18 +83,18 @@ $(document).ready(function () {
       }
     });
   }
-
-  window.editAnnouncement = function (id) {
+  
+  window.editAnnouncement = function(id) {
     const ann = announcements.find(a => a.id === id);
     if (!ann) return;
-
+    
     $('#editAnnouncementId').val(ann.id);
     $('#editTitle').val(ann.title);
     $('#editMessage').val(ann.message);
     $('#editValidUntil').val(ann.validUntil ? ann.validUntil.slice(0, 16) : '');
     $('#editAnnouncementModal').modal('show');
   };
-
+  
   function handleEdit(e) {
     e.preventDefault();
     const id = $('#editAnnouncementId').val();
@@ -114,13 +103,13 @@ $(document).ready(function () {
       message: $('#editMessage').val(),
       validUntil: $('#editValidUntil').val() || null
     };
-
+    
     $.ajax({
       url: `/api/announcements/${id}`,
       method: 'PATCH',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function (response) {
+      success: function(response) {
         if (response.success) {
           showToast('success', response.message);
           $('#editAnnouncementModal').modal('hide');
@@ -129,12 +118,12 @@ $(document).ready(function () {
       }
     });
   }
-
-  window.toggleStatus = function (id) {
+  
+  window.toggleStatus = function(id) {
     $.ajax({
       url: `/api/announcements/${id}/toggle`,
       method: 'PATCH',
-      success: function (response) {
+      success: function(response) {
         if (response.success) {
           showToast('success', response.message);
           loadAnnouncements();
@@ -142,14 +131,14 @@ $(document).ready(function () {
       }
     });
   };
-
-  window.deleteAnnouncement = function (id) {
+  
+  window.deleteAnnouncement = function(id) {
     if (!confirm('Are you sure?')) return;
-
+    
     $.ajax({
       url: `/api/announcements/${id}`,
       method: 'DELETE',
-      success: function (response) {
+      success: function(response) {
         if (response.success) {
           showToast('success', response.message);
           loadAnnouncements();
@@ -157,7 +146,7 @@ $(document).ready(function () {
       }
     });
   };
-
+  
   function formatDateTime(dt) {
     return new Date(dt).toLocaleString('en-IN');
   }

@@ -41,7 +41,9 @@
 // today);
 
 // if (count == 0) {
-
+// log.warn("⚠️ No attendance summaries found for org: {} (ID: {}). Running
+// preMarkDailyAttendance...",
+// org.getName(), org.getId());
 // try {
 // scheduler.preMarkDailyAttendance();
 // log.info("✅ Attendance pre-mark completed for org: {}", org.getName());
@@ -58,24 +60,24 @@
 // log.info("AttendanceStartupChecker completed.");
 // }
 
-// // // @PostConstruct
-// // // public void seedLeavesForExistingEmployees() {
-// // // log.info("Starting leave balance initialization for existing
-// // employees...");
-// // // Iterable<Employee> employees = employeeRepository.findAll();
-// // // log.info("employees fetched: {}", ((Collection<?>) employees).size());
-// // // for (Employee employee : employees) {
-// // // try {
-// // // String leaveYear =
-// // leaveService.getCurrentLeaveYear(employee.getOrganisation().getId());
-// // // leaveService.initializeLeaveBalancesForEmployee(employee.getId(),
-// // employee.getOrganisation().getId(), leaveYear);
-// // // log.info("Initialized leave balances for employee ID: " +
-// // employee.getId());
-// // // } catch (Exception e) {
-// // // log.error("Failed to initialize leave balances for employee ID: " +
-// // employee.getId(), e);
-// // // }
-// // // }
-// // // }
+// // @PostConstruct
+// // public void seedLeavesForExistingEmployees() {
+// // log.info("Starting leave balance initialization for existing
+// employees...");
+// // Iterable<Employee> employees = employeeRepository.findAll();
+// // log.info("employees fetched: {}", ((Collection<?>) employees).size());
+// // for (Employee employee : employees) {
+// // try {
+// // String leaveYear =
+// leaveService.getCurrentLeaveYear(employee.getOrganisation().getId());
+// // leaveService.initializeLeaveBalancesForEmployee(employee.getId(),
+// employee.getOrganisation().getId(), leaveYear);
+// // log.info("Initialized leave balances for employee ID: " +
+// employee.getId());
+// // } catch (Exception e) {
+// // log.error("Failed to initialize leave balances for employee ID: " +
+// employee.getId(), e);
+// // }
+// // }
+// // }
 // }

@@ -1,9 +1,9 @@
-$(document).ready(function () {
+$(document).ready(function() {
   const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
   const approverId = window.APP.EMPLOYEE_ID || $('#globalEmployeeId').val();
 
   function loadPending() {
-    $.getJSON(`/api/leaves/pending`, function (resp) {
+    $.getJSON(`/api/leaves/pending`, function(resp) {
       if (!resp.success) return showToast('error', 'Failed to load pending leaves');
       const tbody = $('#pendingLeavesTable tbody').empty();
       resp.data.forEach(l => {
@@ -27,7 +27,7 @@ $(document).ready(function () {
 
   loadPending();
 
-  $(document).on('click', '.approve-btn', function () {
+  $(document).on('click', '.approve-btn', function() {
     const id = $(this).data('id');
     const remarks = prompt('Add approval remarks (optional):') || '';
     $.ajax({
@@ -40,7 +40,7 @@ $(document).ready(function () {
     });
   });
 
-  $(document).on('click', '.reject-btn', function () {
+  $(document).on('click', '.reject-btn', function() {
     const id = $(this).data('id');
     const remarks = prompt('Reason for rejection:') || '';
     $.ajax({
