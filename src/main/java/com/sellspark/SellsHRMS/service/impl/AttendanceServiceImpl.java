@@ -94,7 +94,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         summary.setPunchRecord(punch);
         summary.setEffectivePunchIn(request.getPunchIn());
         summary.setSource(AttendanceSummary.AttendanceSource.PUNCH_SYSTEM);
-        summary.setRemarks("Punched in via " + request.getSource());
+        summary.setRemarks("Punched in via " + request.getPunchedFrom());
 
         // Check if late (example: 9:30 AM grace period)
         // TODO: Get shift timing from employee's shift configuration
@@ -200,6 +200,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                         r.setId(summary.getPunchRecord().getId());
                         r.setPunchSource(summary.getPunchRecord().getPunchSource().name());
                     }
+                    r.setIsLate(summary.getIsLate());
+                    r.setIsEarlyOut(summary.getIsEarlyOut());
+                    r.setRemarks(summary.getRemarks());
                     return r;
                 })
                 .collect(Collectors.toList());
@@ -247,6 +250,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                         response.setWorkHours(summary.getWorkHours());
                         response.setPunchIn(safeConvert(summary.getEffectivePunchIn()));
                         response.setPunchOut(safeConvert(summary.getEffectivePunchOut()));
+                        response.setIsLate(summary.getIsLate());
+                        response.setIsEarlyOut(summary.getIsEarlyOut());
+                        response.setRemarks(summary.getRemarks());
                         return response;
                     }
                 })
@@ -267,12 +273,15 @@ public class AttendanceServiceImpl implements AttendanceService {
                         response.setEmployeeId(emp.getId());
                         response.setEmployeeName(emp.getFirstName() + " " + emp.getLastName());
                         response.setEmployeeCode(emp.getEmployeeCode());
+                        response.setDepartment(emp.getDepartment().getName());
                     }
-                    response.setDepartment(emp.getDepartment().getName());
                     response.setStatus(summary.getStatus() != null ? summary.getStatus().name() : "UNKNOWN");
                     response.setWorkHours(summary.getWorkHours() != null ? summary.getWorkHours() : 0.0);
                     response.setPunchIn(safeConvert(summary.getEffectivePunchIn()));
                     response.setPunchOut(safeConvert(summary.getEffectivePunchOut()));
+                    response.setIsLate(summary.getIsLate());
+                    response.setIsEarlyOut(summary.getIsEarlyOut());
+                    response.setRemarks(summary.getRemarks());
 
                     PunchInOut punch = summary.getPunchRecord();
                     if (punch != null) {
@@ -367,6 +376,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         response.setPunchIn(safeConvert(punch.getPunchIn()));
         response.setPunchOut(safeConvert(punch.getPunchOut()));
         response.setPunchSource(punch.getPunchSource().name());
+        response.setIsLate(summary.getIsLate());
+        response.setIsEarlyOut(summary.getIsEarlyOut());
         response.setStatus(summary.getStatus().name());
         return response;
     }

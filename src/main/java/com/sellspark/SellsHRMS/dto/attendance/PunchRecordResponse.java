@@ -16,4 +16,7 @@ public class PunchRecordResponse {
     private Double workHours;
     private String punchSource;
     private String status; // IN_PROGRESS, COMPLETED
+    private Boolean isLate;
+    private Boolean isEarlyOut;
+    private String remarks;
 }

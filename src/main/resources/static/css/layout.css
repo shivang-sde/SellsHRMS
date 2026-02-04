@@ -20,7 +20,8 @@
 }
 
 /* Global base */
-body.hrms-app, html {
+body.hrms-app,
+html {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -102,6 +103,7 @@ body.hrms-app, html {
 .nav-text {
   font-size: small;
 }
+
 .sub-menu li a {
   display: block;
   padding: 8px 14px;
@@ -118,6 +120,7 @@ body.hrms-app, html {
 .toggle-icon {
   transition: transform var(--transition-speed);
 }
+
 .toggle-link.open .toggle-icon {
   transform: rotate(45deg);
 }
@@ -126,6 +129,7 @@ body.hrms-app, html {
 .hrms-sidebar::-webkit-scrollbar {
   width: 6px;
 }
+
 .hrms-sidebar::-webkit-scrollbar-thumb {
   background: #475569;
   border-radius: 3px;
@@ -162,7 +166,7 @@ body.hrms-app, html {
 
 .brand-logo-wrap img {
   margin: 10px;
-    padding: 10px;
+  padding: 10px;
   width: 60px;
   height: 60px;
   object-fit: contain;
@@ -190,7 +194,7 @@ body.hrms-app, html {
   padding-bottom: 80px;
 }
 
-.hrms-sidebar.collapsed ~ .hrms-main {
+.hrms-sidebar.collapsed~.hrms-main {
   margin-left: var(--sidebar-collapsed-width);
 }
 

@@ -2,6 +2,20 @@
 const modalUtils = {
     instances: {},
 
+
+    show() {
+        if (document.getElementById('globalLoadingSpinner')) return;
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-overlay';
+        spinner.id = 'globalLoadingSpinner';
+        spinner.innerHTML = `
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  `;
+        document.body.appendChild(spinner);
+    },
+
     open(modalId, data = null) {
         const modalEl = document.getElementById(modalId);
         if (!modalEl) {
@@ -21,9 +35,14 @@ const modalUtils = {
     },
 
     close(modalId) {
-        if (this.instances[modalId]) {
-            this.instances[modalId].hide();
+        let instance = this.instances[modalId];
+        const modalEl = document.getElementById(modalId);
+        if (!instance && modalEl) {
+            // Bootstrap auto-created modal instance
+            instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            this.instances[modalId] = instance;
         }
+        if (instance) instance.hide();
     },
 
     populateForm(modalId, data) {

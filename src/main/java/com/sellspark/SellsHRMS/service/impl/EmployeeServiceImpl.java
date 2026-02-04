@@ -237,8 +237,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         emp.setDob(req.getDob());
         emp.setPhotoUrl(req.getPhotoUrl());
 
-        emp.setEmployeeCode(req.getEmployeeCode() != null ? req.getEmployeeCode() : null);
-
         emp.setGender(Employee.Gender.valueOf(req.getGender()));
         emp.setEmploymentType(EmploymentType.valueOf(req.getEmploymentType()));
         emp.setStatus(EmployeeStatus.valueOf(req.getStatus()));

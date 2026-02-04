@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
     let allAttendance = [];
 
@@ -34,12 +34,12 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/attendance/today/org/${orgId}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 allAttendance = data;
                 updateSummaryCards(data);
                 filterAttendance();
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 showToast('error', 'Failed to load attendance');
                 $('#attendanceTableBody').html(`
                     <tr>
@@ -58,14 +58,14 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/departments/org/${orgId}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 let options = '<option value="">All Departments</option>';
                 data.forEach(dept => {
-                    options += `<option value="${dept.id}">${dept.name}</option>`;
+                    options += `<option value="${dept.name}">${dept.name}</option>`;
                 });
                 $('#filterDepartment').html(options);
             },
-            error: function() {
+            error: function () {
                 console.error('Failed to load departments');
             }
         });
@@ -73,10 +73,10 @@ $(document).ready(function() {
 
     // Update summary cards
     function updateSummaryCards(data) {
-        const present = data.filter(d => 
+        const present = data.filter(d =>
             d.status === 'PRESENT' || d.status === 'HALF_DAY' || d.status === 'WFH'
         ).length;
-        
+
         const absent = data.filter(d => d.status === 'ABSENT').length;
         const onLeave = data.filter(d => d.status === 'ON_LEAVE').length;
         const pending = data.filter(d => d.status === 'ABSENT' && !d.punchIn).length;
@@ -94,15 +94,16 @@ $(document).ready(function() {
         const deptFilter = $('#filterDepartment').val();
 
         let filtered = allAttendance.filter(record => {
-            const matchesSearch = !search || 
+            const matchesSearch = !search ||
                 (record.employeeName && record.employeeName.toLowerCase().includes(search)) ||
                 (record.employeeCode && record.employeeCode.toLowerCase().includes(search));
-            
+
             const matchesStatus = !statusFilter || record.status === statusFilter;
-            
-            // Department filter would need department info in response
-            const matchesDept = !deptFilter; // TODO: Add dept filtering when available
-            
+
+
+            const matchesDept =
+                !deptFilter || record.departmentId == deptFilter || record.department == deptFilter;
+
             return matchesSearch && matchesStatus && matchesDept;
         });
 
@@ -124,12 +125,21 @@ $(document).ready(function() {
 
         let html = '';
         data.forEach(record => {
-            console.log(record);    
+            console.log(record);
             const statusBadge = getStatusBadge(record.status);
             const punchIn = record.punchIn ? formatTime(record.punchIn) : '<span class="text-muted">--:--</span>';
             const punchOut = record.punchOut ? formatTime(record.punchOut) : '<span class="text-muted">--:--</span>';
             const workHours = record.workHours ? record.workHours.toFixed(2) + 'h' : '<span class="text-muted">--</span>';
-            
+
+            const lateEarly = [];
+            if (record.isLate)
+                lateEarly.push('<span class="badge bg-warning text-dark" title="Late In">Late</span>');
+            if (record.isEarlyOut)
+                lateEarly.push('<span class="badge bg-info" title="Early Out">Early</span>');
+            const lateEarlyStr = lateEarly.length > 0 ? lateEarly.join(" ") : "--";
+
+
+
             html += `
                 <tr>
                     <td><strong>${escapeHtml(record.employeeCode || 'N/A')}</strong></td>
@@ -139,6 +149,9 @@ $(document).ready(function() {
                     <td>${punchOut}</td>
                     <td>${workHours}</td>
                     <td>${statusBadge}</td>
+                    <td>
+                      ${lateEarlyStr}
+                    </td>
                     <td><small class="text-muted">${escapeHtml(record.remarks || '--')}</small></td>
                 </tr>
             `;
@@ -153,8 +166,9 @@ $(document).ready(function() {
         const search = $('#searchEmployee').val().toLowerCase();
         const statusFilter = $('#filterStatus').val();
 
+        console.log(allAttendance[0]);
         let filtered = allAttendance.filter(record => {
-            const matchesSearch = !search || 
+            const matchesSearch = !search ||
                 (record.employeeName && record.employeeName.toLowerCase().includes(search)) ||
                 (record.employeeCode && record.employeeCode.toLowerCase().includes(search));
             const matchesStatus = !statusFilter || record.status === statusFilter;
@@ -211,7 +225,7 @@ $(document).ready(function() {
     function formatTime(dateTimeStr) {
         if (!dateTimeStr) return '--';
         const date = new Date(dateTimeStr);
-        return date.toLocaleTimeString('en-IN', { hour12: true }); 
+        return date.toLocaleTimeString('en-IN', { hour12: true });
     }
 
 

@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
     let employees = [];
     let deleteEmployeeId = null;
@@ -7,19 +7,19 @@ $(document).ready(function() {
     loadEmployees();
 
     // Search button click
-    $('#btnSearch').on('click', function() {
+    $('#btnSearch').on('click', function () {
         filterEmployees();
     });
 
     // Enter key in search box
-    $('#searchEmployee').on('keypress', function(e) {
+    $('#searchEmployee').on('keypress', function (e) {
         if (e.which === 13) {
             filterEmployees();
         }
     });
 
     // Delete confirmation
-    $('#confirmDelete').on('click', function() {
+    $('#confirmDelete').on('click', function () {
         if (deleteEmployeeId) {
             deleteEmployee(deleteEmployeeId);
         }
@@ -30,11 +30,12 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/employees/org/${orgId}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
+
                 employees = data;
                 renderEmployees(employees);
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 showToast('error', 'Failed to load employees');
                 $('#employeeTableBody').html(`
                     <tr>
@@ -55,7 +56,9 @@ $(document).ready(function() {
         const typeFilter = $('#filterEmploymentType').val();
 
         let filtered = employees.filter(emp => {
-            const matchesSearch = !searchTerm || 
+            console.log('emp.employmentType:', emp.employmentType);
+
+            const matchesSearch = !searchTerm ||
                 emp.fullName.toLowerCase().includes(searchTerm) ||
                 emp.employeeCode.toLowerCase().includes(searchTerm) ||
                 (emp.email && emp.email.toLowerCase().includes(searchTerm));
@@ -118,7 +121,7 @@ $(document).ready(function() {
         $('#employeeTableBody').html(html);
 
         // Attach delete event handlers
-        $('.btn-delete').on('click', function() {
+        $('.btn-delete').on('click', function () {
             deleteEmployeeId = $(this).data('id');
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             modal.show();
@@ -130,12 +133,12 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/employees/${id}`,
             method: 'DELETE',
-            success: function() {
+            success: function () {
                 showToast('success', 'Employee deleted successfully');
                 $('#deleteModal').modal('hide');
                 loadEmployees(); // Reload list
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 showToast('error', 'Failed to delete employee');
             }
         });

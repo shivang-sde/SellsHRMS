@@ -14,33 +14,6 @@ function showToast(type, message) {
     container.removeChild(container.firstChild);
   }
 
-  // Parse the permissions string "[PERM1, PERM2]" → ["PERM1", "PERM2"]
-  window.APP.getPermissions = function () {
-    const raw = window.APP.PERMISSIONS || "";
-    return raw
-      .replace(/[\[\]\s]/g, "")
-      .split(",")
-      .filter(Boolean);
-  };
-
-  // Check if the user has a specific permission
-  window.APP.hasPermission = function (permission) {
-    return window.APP.getPermissions().includes(permission);
-  };
-
-  // (optional) check any-of-multiple
-  window.APP.hasAnyPermission = function (...perms) {
-    const userPerms = window.APP.getPermissions();
-    return perms.some((p) => userPerms.includes(p));
-  };
-
-  document.querySelectorAll("[data-permission]").forEach((el) => {
-    const required = el.dataset.permission;
-    if (!APP.hasPermission(required)) {
-      el.style.display = "none";
-    }
-  });
-
   const icons = {
     success: "fa-circle-check text-success",
     error: "fa-circle-xmark text-danger",
@@ -129,9 +102,8 @@ function showIntervention(config) {
   cancelBtn.textContent = config.cancelText || "Dismiss";
   cancelBtn.style.display = config.hideCancel ? "none" : "block";
 
-  iconWrap.innerHTML = `<i class="fa-solid ${
-    config.icon || "fa-circle-info"
-  }"></i>`;
+  iconWrap.innerHTML = `<i class="fa-solid ${config.icon || "fa-circle-info"
+    }"></i>`;
   iconWrap.style.color = config.severity === "critical" ? "#ef4444" : "#f59e0b";
 
   modal.style.display = "flex";

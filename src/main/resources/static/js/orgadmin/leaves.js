@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
 
 
   const orgId = window.APP?.ORG_ID || $('#globalOrgId').val();
@@ -26,18 +26,18 @@ $(document).ready(function() {
     $('#rejectForm').on('submit', handleRejectLeave);
 
     // Search filters
-    $('#pendingSearch').on('keyup', function() {
+    $('#pendingSearch').on('keyup', function () {
       filterTable('pending', $(this).val());
     });
-    $('#approvedSearch').on('keyup', function() {
+    $('#approvedSearch').on('keyup', function () {
       filterTable('approved', $(this).val());
     });
-    $('#allSearch').on('keyup', function() {
+    $('#allSearch').on('keyup', function () {
       filterTable('all', $(this).val());
     });
 
     // Status filter for all leaves
-    $('#allStatusFilter').on('change', function() {
+    $('#allStatusFilter').on('change', function () {
       const status = $(this).val();
       if (status === '') {
         displayAllLeaves(allLeaves);
@@ -48,7 +48,7 @@ $(document).ready(function() {
     });
 
     // Date filter for approved leaves
-    $('#approvedDateFilter').on('change', function() {
+    $('#approvedDateFilter').on('change', function () {
       const date = $(this).val();
       if (date) {
         const filtered = approvedLeaves.filter(l => l.startDate === date || l.endDate === date);
@@ -59,7 +59,7 @@ $(document).ready(function() {
     });
 
     // Tab change events
-    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
       const target = $(e.target).data('bs-target');
       if (target === '#pending') loadPendingLeaves();
       if (target === '#approved') loadApprovedLeaves();
@@ -77,14 +77,14 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/pending',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           pendingLeaves = response.data;
           displayPendingLeaves(pendingLeaves);
           $('#pendingBadge').text(pendingLeaves.length);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#pendingTableBody').html(`
           <tr>
             <td colspan="7" class="text-center text-danger">Error loading pending leaves</td>
@@ -117,8 +117,8 @@ $(document).ready(function() {
       <i class="fa fa-eye"></i>
     </button>
   `;
-      
-      if (APP.hasPermission("LEAVE_APPROVE")) {
+
+      if (window.APP.hasPermission("LEAVE_APPROVE")) {
         actionButtons = `
       <button  class="btn btn-sm btn-success action-btn" onclick="openApproveModal(${leave.id})">
         <i class="fa fa-check"></i> Approve
@@ -164,13 +164,13 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/status?status=APPROVE',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           approvedLeaves = response.data;
           displayApprovedLeaves(approvedLeaves);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#approvedTableBody').html(`
           <tr>
             <td colspan="7" class="text-center text-danger">Error loading approved leaves</td>
@@ -224,13 +224,13 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/status?status=REJECTED',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           rejectedLeaves = response.data;
           displayRejectedLeaves(rejectedLeaves);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#rejectedTableBody').html(`
           <tr>
             <td colspan="7" class="text-center text-danger">Error loading rejected leaves</td>
@@ -284,13 +284,13 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/all',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           allLeaves = response.data;
           displayAllLeaves(allLeaves);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#allTableBody').html(`
           <tr>
             <td colspan="7" class="text-center text-danger">Error loading leaves</td>
@@ -341,17 +341,17 @@ $(document).ready(function() {
   }
 
   // Approve leave
-  window.openApproveModal = function(leaveId) {
+  window.openApproveModal = function (leaveId) {
 
 
-    if(!empId) {
-     showToast('error', 'approver needs employee ID to approve leave, contact admin or support');
-     return;
+    if (!empId) {
+      showToast('error', 'approver needs employee ID to approve leave, contact admin or support');
+      return;
     }
     const leave = pendingLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
-       if(leave.employeeId === empId) {
+    if (leave.employeeId === empId) {
       showToast('error', 'You cannot approve your own leave request');
       return;
     }
@@ -361,13 +361,13 @@ $(document).ready(function() {
     $('#approveLeaveType').val(leave.leaveTypeName);
     $('#approveDuration').val(`${formatDate(leave.startDate)} to ${formatDate(leave.endDate)} (${leave.leaveDays} days)`);
     $('#approveEmployeeReason').val(leave.reason);
-    
+
     $('#approveModal').modal('show');
   };
 
   function handleApproveLeave(e) {
     e.preventDefault();
-    
+
     const leaveId = $('#approveLeaveId').val();
     const remarks = $('#approveForm textarea[name="remarks"]').val();
 
@@ -375,21 +375,21 @@ $(document).ready(function() {
       url: `/api/leaves/${leaveId}/approve`,
       method: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ remarks: remarks, approverId : empId, orgId : orgId }),
-      success: function(response) {
+      data: JSON.stringify({ remarks: remarks, approverId: empId, orgId: orgId }),
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#approveModal').modal('hide');
           $('#approveForm')[0].reset();
           loadPendingLeaves();
-          
+
           // Reload current tab if it's not pending
           const activeTab = $('.nav-link.active').data('bs-target');
           if (activeTab === '#approved') loadApprovedLeaves();
           if (activeTab === '#all') loadAllLeaves();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to approve leave';
         showToast('error', error);
       }
@@ -397,16 +397,16 @@ $(document).ready(function() {
   }
 
   // Reject leave
-  window.openRejectModal = function(leaveId) {
-       
-    if(!empId) {
-     showToast('error', 'approver needs employee ID to reject leave, contact admin or support');
-     return;
+  window.openRejectModal = function (leaveId) {
+
+    if (!empId) {
+      showToast('error', 'approver needs employee ID to reject leave, contact admin or support');
+      return;
     }
     const leave = pendingLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
-     if(leave.employeeId === empId) {
+    if (leave.employeeId === empId) {
       showToast('error', 'You cannot reject your own leave request');
       return;
     }
@@ -417,13 +417,13 @@ $(document).ready(function() {
     $('#rejectLeaveType').val(leave.leaveTypeName);
     $('#rejectDuration').val(`${formatDate(leave.startDate)} to ${formatDate(leave.endDate)} (${leave.leaveDays} days)`);
     $('#rejectEmployeeReason').val(leave.reason);
-    
+
     $('#rejectModal').modal('show');
   };
 
   function handleRejectLeave(e) {
     e.preventDefault();
-    
+
     const leaveId = $('#rejectLeaveId').val();
     const remarks = $('#rejectForm textarea[name="remarks"]').val();
 
@@ -436,21 +436,21 @@ $(document).ready(function() {
       url: `/api/leaves/${leaveId}/reject`,
       method: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ remarks: remarks, approverId : empId, orgId : orgId }),
-      success: function(response) {
+      data: JSON.stringify({ remarks: remarks, approverId: empId, orgId: orgId }),
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#rejectModal').modal('hide');
           $('#rejectForm')[0].reset();
           loadPendingLeaves();
-          
+
           // Reload current tab if it's not pending
           const activeTab = $('.nav-link.active').data('bs-target');
           if (activeTab === '#rejected') loadRejectedLeaves();
           if (activeTab === '#all') loadAllLeaves();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to reject leave';
         showToast('error', error);
       }
@@ -458,13 +458,13 @@ $(document).ready(function() {
   }
 
   // View leave details
-  window.viewLeaveDetails = function(leaveId) {
+  window.viewLeaveDetails = function (leaveId) {
     // Find leave in any of the arrays
     let leave = pendingLeaves.find(l => l.id === leaveId) ||
-                approvedLeaves.find(l => l.id === leaveId) ||
-                rejectedLeaves.find(l => l.id === leaveId) ||
-                allLeaves.find(l => l.id === leaveId);
-    
+      approvedLeaves.find(l => l.id === leaveId) ||
+      rejectedLeaves.find(l => l.id === leaveId) ||
+      allLeaves.find(l => l.id === leaveId);
+
     if (!leave) return;
 
     $('#detailEmployeeName').text(leave.employeeName);
@@ -492,14 +492,14 @@ $(document).ready(function() {
   function filterTable(type, searchTerm) {
     const tbody = $(`#${type}TableBody`);
     const rows = tbody.find('tr[data-employee]');
-    
+
     if (!searchTerm) {
       rows.show();
       return;
     }
 
     searchTerm = searchTerm.toLowerCase();
-    rows.each(function() {
+    rows.each(function () {
       const employeeName = $(this).data('employee');
       if (employeeName.includes(searchTerm)) {
         $(this).show();
@@ -523,10 +523,10 @@ $(document).ready(function() {
   function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     });
   }
 

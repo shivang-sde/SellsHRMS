@@ -78,6 +78,7 @@ $(document).ready(function () {
       method: "GET",
       data: { startDate, endDate },
       success: function (data) {
+        console.log("Employee Report Data", data);
         reportData = data;
         updateStatistics(data);
         renderReportTable(data);
@@ -96,13 +97,13 @@ $(document).ready(function () {
     });
   }
 
- function generateOrgReport(startDate, endDate) {
+  function generateOrgReport(startDate, endDate) {
     $.ajax({
-        url: `/api/attendance/org/${orgId}`,
-        method: 'GET',
-        data: { startDate, endDate },
-        beforeSend: function() {
-            $('#reportTableBody').html(`
+      url: `/api/attendance/org/${orgId}`,
+      method: 'GET',
+      data: { startDate, endDate },
+      beforeSend: function () {
+        $('#reportTableBody').html(`
                 <tr>
                     <td colspan="8" class="text-center">
                         <div class="spinner-border text-primary"></div>
@@ -110,24 +111,25 @@ $(document).ready(function () {
                     </td>
                 </tr>
             `);
-        },
-        success: function(data) {
-            reportData = data;
-            updateStatistics(reportData);
-            renderReportTable(reportData);
-        },
-        error: function() {
-            showToast('error', 'Failed to generate report');
-            $('#reportTableBody').html(`
+      },
+      success: function (data) {
+
+        reportData = data;
+        updateStatistics(reportData);
+        renderReportTable(reportData);
+      },
+      error: function () {
+        showToast('error', 'Failed to generate report');
+        $('#reportTableBody').html(`
                 <tr>
                     <td colspan="8" class="text-center text-danger">
                         Failed to load report data
                     </td>
                 </tr>
             `);
-        }
+      }
     });
-}
+  }
 
 
   function updateStatistics(data) {
@@ -141,7 +143,7 @@ $(document).ready(function () {
     const total = data.length;
     const totalHours = data.reduce((sum, d) => sum + (d.workHours || 0), 0);
 
-    $('#statPresent').text(`${presentCount} (${((presentCount/total)*100).toFixed(1)}%)`);
+    $('#statPresent').text(`${presentCount} (${((presentCount / total) * 100).toFixed(1)}%)`);
     $("#statAbsent").text(absentCount);
     $("#statLeaves").text(leaveCount);
     $("#statHours").text(totalHours.toFixed(2) + "h");
@@ -167,9 +169,9 @@ $(document).ready(function () {
 
       const lateEarly = [];
       if (record.isLate)
-        lateEarly.push('<span class="badge bg-warning text-dark" title="Late by 15 mins">Late</span>');
+        lateEarly.push('<span class="badge bg-warning text-dark" title="Late In">Late</span>');
       if (record.isEarlyOut)
-        lateEarly.push('<span class="badge bg-info">Early</span>');
+        lateEarly.push('<span class="badge bg-info" title="Early Out">Early</span>');
       const lateEarlyStr = lateEarly.length > 0 ? lateEarly.join(" ") : "--";
 
       html += `
@@ -182,6 +184,7 @@ $(document).ready(function () {
                     <td>${record.workHours ? record.workHours.toFixed(2) + "h" : "--"}</td>
                     <td>${getStatusBadge(record.status)}</td>
                     <td>${lateEarlyStr}</td>
+                    <td>${record.remarks ? `<span class="badge bg-secondary">${record.remarks}</span>` : "--"}</td>
                 </tr>
             `;
     });
@@ -214,7 +217,9 @@ $(document).ready(function () {
       csv += `"${record.punchOut ? formatTime(record.punchOut) : "--"}",`;
       csv += `"${record.workHours ? record.workHours.toFixed(2) : "--"}",`;
       csv += `"${record.status || "--"}",`;
-      csv += `"${lateEarly.join(", ") || "--"}"\n`;
+      csv += `"${record.isLate ? "Late" : ""}",`;
+      csv += `"${record.isEarlyOut ? "Early" : ""}",`;
+      csv += `"${record.remarks ? record.remarks : "--"}",`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });

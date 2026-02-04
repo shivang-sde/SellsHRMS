@@ -104,11 +104,10 @@ function renderMembers(members) {
         <tr>
           <td>${escapeHtml(m.employeeName)}</td>
           <td>${escapeHtml(m.departmentName || '-')}</td>
-          <td>${escapeHtml(m.email || '-')}</td>
           <td class="text-end">
             ${isManagerOrLead && !isProtected
-              ? `<button class="btn btn-sm btn-outline-danger" onclick="removeMember(${m.employeeId})"><i class="fas fa-trash"></i></button>`
-              : ''}
+          ? `<button class="btn btn-sm btn-outline-danger" onclick="removeMember(${m.employeeId})"><i class="fas fa-trash"></i></button>`
+          : ''}
           </td>
         </tr>`;
     })
@@ -197,7 +196,7 @@ function renderTickets(tickets) {
     String(employeeId) === String(projectData.createdById) ||
     String(employeeId) === String(projectData.projectManagerId) ||
     String(employeeId) === String(projectData.projectTeamLeadId);
-  
+
 
 
   const html = tickets
@@ -206,13 +205,13 @@ function renderTickets(tickets) {
       console.log("t.assigneeIds:", t.assigneeIds);
       console.log("projectData.members:", projectData.members);
       console.log("employeeId:", employeeId);
-      console.log("is employee a member?",  projectData.members.some(
-  m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID)
-));
+      console.log("is employee a member?", projectData.members.some(
+        m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID)
+      ));
       const condition1 = !isManagerOrLead;
       const condition2 = !t.assigneeIds || t.assigneeIds.length === 0;
-      const condition3 =  projectData.members.some(
-                                                    m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID));
+      const condition3 = projectData.members.some(
+        m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID));
       console.log({ condition1, condition2, condition3 }); const canPick = condition1 && condition2 && condition3; console.log("canPick:", canPick);
       return `
         <tr>
@@ -223,12 +222,12 @@ function renderTickets(tickets) {
           <td>${formatDate(t.endDate)}</td>
           <td>
             ${isManagerOrLead
-              ? `
+          ? `
                 <button class="btn btn-sm btn-outline-warning" onclick="editTicket(${t.id})"><i class="fas fa-edit"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTicket(${t.id})"><i class="fas fa-trash"></i></button>`
-              : canPick
-              ? `<button class="btn btn-sm btn-outline-success" onclick="pickTicket(${t.id})">Pick</button>`
-              : `<button class="btn btn-sm btn-outline-primary" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i></button>`}
+          : canPick
+            ? `<button class="btn btn-sm btn-outline-success" onclick="pickTicket(${t.id})">Pick</button>`
+            : `<button class="btn btn-sm btn-outline-primary" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i></button>`}
           </td>
         </tr>`;
     })
@@ -273,8 +272,11 @@ async function saveTicket() {
       showToast('success', 'Ticket created successfully');
 
       // Upload attachments if any
-      const files = $('#ticketAttachments')[0].files;
-      if (files && files.length > 0) await uploadTicketAttachments(created.id);
+      const filesInput = document.getElementById('ticketAttachments');
+      const files = filesInput ? filesInput.files : null;
+      if (files && files.length > 0) {
+        await uploadTicketAttachments(created.id);
+      }
     }
     modalUtils.close('ticketModal');
     await loadProjectDetails();
@@ -406,7 +408,7 @@ async function saveAttachment() {
       showToast('success', 'Link added successfully');
     }
 
-    $('#attachmentModal').modal('hide');
+    modalUtils.close('attachmentModal');
     await loadAttachments(projectId);
   } catch (err) {
     console.error(err);
@@ -434,7 +436,7 @@ async function uploadAndSaveFiles(files, title, description, type) {
 
     // 3️⃣ Refresh UI
     showToast('success', 'File(s) uploaded successfully');
-    $('#attachmentModal').modal('hide');
+    modalUtils.close('attachmentModal');
     await loadAttachments(projectId);
   } catch (err) {
     console.error('Upload failed', err);
@@ -642,3 +644,10 @@ function getStatusBadge(status) {
       return '<span class="badge bg-secondary">Planning</span>';
   }
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal').forEach(modal => {
+    document.body.appendChild(modal);
+  });
+});

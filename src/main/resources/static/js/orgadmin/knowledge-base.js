@@ -1,8 +1,11 @@
-$(document).ready(function() {
+$(document).ready(function () {
   const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
   let subjects = [];
   let currentSubjectId = null;
   let currentTopics = [];
+
+
+
 
   init();
 
@@ -24,13 +27,13 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/kb/org/${orgId}/subjects`,
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           subjects = response.data;
           displaySubjects(subjects);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#subjectsGrid').html(`
           <div class="col-12"><div class="alert alert-danger">Error loading subjects</div></div>
         `);
@@ -106,7 +109,7 @@ $(document).ready(function() {
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#createSubjectModal').modal('hide');
@@ -114,13 +117,13 @@ $(document).ready(function() {
           loadSubjects();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to create subject');
       }
     });
   }
 
-  window.editSubject = function(subjectId) {
+  window.editSubject = function (subjectId) {
     const subject = subjects.find(s => s.id === subjectId);
     if (!subject) return;
 
@@ -139,24 +142,24 @@ $(document).ready(function() {
     };
 
     $.ajax({
-       url: `/api/kb/org/${orgId}/subjects/${subjectId}`,
+      url: `/api/kb/org/${orgId}/subjects/${subjectId}`,
       method: 'PATCH',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#editSubjectModal').modal('hide');
           loadSubjects();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to update subject');
       }
     });
   }
 
-  window.deleteSubject = function(subjectId) {
+  window.deleteSubject = function (subjectId) {
     if (!confirm('Are you sure you want to delete this subject? All topics will be deleted.')) {
       return;
     }
@@ -164,19 +167,19 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/kb/org/${orgId}/subjects/${subjectId}`,
       method: 'DELETE',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           loadSubjects();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to delete subject');
       }
     });
   };
 
-  window.viewSubject = function(subjectId) {
+  window.viewSubject = function (subjectId) {
     currentSubjectId = subjectId;
     loadSubjectWithTopics(subjectId);
     $('#viewSubjectModal').modal('show');
@@ -186,7 +189,7 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/kb/org/${orgId}/subjects/${subjectId}/with-topics`,
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           const data = response.data;
           $('#viewSubjectTitle').text(data.title);
@@ -195,7 +198,7 @@ $(document).ready(function() {
           displayTopics(data.topics);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#topicsList').html('<div class="alert alert-danger">Error loading topics</div>');
       }
     });
@@ -215,7 +218,24 @@ $(document).ready(function() {
       return;
     }
 
+    const buttons = ``;
+
     topics.forEach(topic => {
+
+
+      if (window.APP.hasPermission("ORGHUB_EDIT")) {
+        buttons += `<button class="btn btn-sm btn-outline-primary me-1" onclick="editTopic(${topic.id})">
+      <i class="fa fa-edit"></i>
+    </button>`;
+      }
+
+      if (window.APP.hasPermission("ORGHUB_DELETE")) {
+        buttons += `<button class="btn btn-sm btn-outline-danger" onclick="deleteTopic(${topic.id})">
+      <i class="fa fa-trash"></i>
+    </button>`;
+      }
+
+
       const item = `
         <div class="topic-item p-3 mb-2 border rounded">
           <div class="d-flex justify-content-between align-items-start">
@@ -225,12 +245,7 @@ $(document).ready(function() {
               ${topic.attachmentUrl ? `<a href="${topic.attachmentUrl}" target="_blank" class="small"><i class="fa fa-paperclip me-1"></i>Attachment</a>` : ''}
             </div>
             <div class="ms-3">
-              <button class="btn btn-sm btn-outline-primary me-1" onclick="editTopic(${topic.id})">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic(${topic.id})">
-                <i class="fa fa-trash"></i>
-              </button>
+              ${buttons}
             </div>
           </div>
         </div>
@@ -241,7 +256,7 @@ $(document).ready(function() {
 
   // ==================== Topics ====================
 
-  window.openCreateTopicModal = function() {
+  window.openCreateTopicModal = function () {
     $('#createTopicSubjectId').val(currentSubjectId);
     $('#viewSubjectModal').modal('hide');
     $('#createTopicModal').modal('show');
@@ -261,7 +276,7 @@ $(document).ready(function() {
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#createTopicModal').modal('hide');
@@ -270,13 +285,13 @@ $(document).ready(function() {
           loadSubjectWithTopics(currentSubjectId);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to create topic');
       }
     });
   }
 
-  window.editTopic = function(topicId) {
+  window.editTopic = function (topicId) {
     const topic = currentTopics.find(t => t.id === topicId);
     if (!topic) return;
 
@@ -304,7 +319,7 @@ $(document).ready(function() {
       method: 'PATCH',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#editTopicModal').modal('hide');
@@ -312,13 +327,13 @@ $(document).ready(function() {
           loadSubjectWithTopics(currentSubjectId);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to update topic');
       }
     });
   }
 
-  window.deleteTopic = function(topicId) {
+  window.deleteTopic = function (topicId) {
     if (!confirm('Are you sure you want to delete this topic?')) {
       return;
     }
@@ -326,13 +341,13 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/kb/org/${orgId}/topics/${topicId}`,
       method: 'DELETE',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           loadSubjectWithTopics(currentSubjectId);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         showToast('error', 'Failed to delete topic');
       }
     });
