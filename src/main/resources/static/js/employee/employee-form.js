@@ -4,6 +4,20 @@ $(document).ready(async function () {
   const isEditMode = !!employeeId;
   let photoUrl = "";
 
+  // Permission Check
+  if (isEditMode) {
+    if (!window.APP.hasAnyPermission('EMPLOYEE_EDIT', 'ORG_ADMIN')) {
+      $('input, select, textarea, button').prop('disabled', true);
+      showToast('warning', 'You do not have permission to edit this employee');
+    }
+  } else {
+    if (!window.APP.hasAnyPermission('EMPLOYEE_CREATE', 'ORG_ADMIN')) {
+      $('input, select, textarea, button').prop('disabled', true);
+      // Optional: Redirect or hide form
+      showToast('error', 'You do not have permission to create employees');
+    }
+  }
+
   $('input[name="dateOfJoining"]').attr(
     "min",
     new Date().toISOString().split("T")[0],
@@ -106,7 +120,7 @@ $(document).ready(async function () {
           .prop("disabled", false)
           .html(
             '<i class="fas fa-save me-2"></i>' +
-              (isEditMode ? "Update Employee" : "Create Employee"),
+            (isEditMode ? "Update Employee" : "Create Employee"),
           );
       },
     });
