@@ -89,6 +89,36 @@ public class HolidayServiceImpl implements HolidayService {
     }
 
     @Override
+    public List<HolidayResponse> createBulkHolidays(Long orgId, List<HolidayRequest> requests) {
+        log.info("Creating bulk holidays for org: {}, count: {}", orgId, requests.size());
+
+        Organisation org = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException(orgId));
+
+        List<Holiday> holidays = requests.stream().map(req -> {
+            Holiday holiday = holidayRepository.findByOrganisationIdAndHolidayDate(orgId, req.getHolidayDate())
+                    .orElse(Holiday.builder()
+                            .organisation(org)
+                            .holidayDate(req.getHolidayDate())
+                            .build());
+
+            holiday.setHolidayName(req.getHolidayName());
+            try {
+                holiday.setHolidayType(Holiday.HolidayType.valueOf(req.getHolidayType()));
+            } catch (Exception e) {
+                holiday.setHolidayType(Holiday.HolidayType.OPTIONAL);
+            }
+            holiday.setIsMandatory(req.getIsMandatory() != null ? req.getIsMandatory() : true);
+            holiday.setDescription(req.getDescription());
+
+            return holiday;
+        }).collect(Collectors.toList());
+
+        holidays = holidayRepository.saveAll(holidays);
+        return holidays.stream().map(this::toResponseDTO).collect(Collectors.toList());
+    }
+
+    @Override
     public void deleteHoliday(Long holidayId, Long orgId) {
         log.info("Deleting holiday ID: {} for org: {}", holidayId, orgId);
 

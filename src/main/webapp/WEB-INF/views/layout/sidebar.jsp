@@ -40,6 +40,12 @@
           </a>
         </sec:authorize>
 
+        <sec:authorize access="hasAuthority('ACCOUNTANT')">
+          <a class="nav-link" href="${pageContext.request.contextPath}/accountant-panel" data-key="dashboard">
+            <i class="fa fa-chart-line"></i>
+            <span class="nav-text">Accountant Panel</span>
+          </a>
+        </sec:authorize>
         <!-- ORG ADMIN -->
         <sec:authorize access="hasAuthority('ORG_ADMIN')">
           <!-- ORG ADMIN Dashboard -->
@@ -157,6 +163,10 @@
           <a class="nav-link" href="${pageContext.request.contextPath}/org/organisation-policy">
             <i class="fa fa-file-contract"></i>
             <span class="nav-text">Organisation Policy</span>
+          </a>
+
+          <a class="nav-link" href="${pageContext.request.contextPath}/accountant-panel">
+            <i class="fa-solid fa-wallet me-2"></i> Accountant Panel
           </a>
 
 
@@ -336,6 +346,27 @@
 
         </sec:authorize>
 
+
+        <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'ASSEST_MANAGEMENT')">
+          <!-- Asset Management -->
+          <a class="nav-link toggle-link" href="#">
+            <i class="fa fa-boxes-stacked"></i>
+            <span class="nav-text">Asset Management</span>
+            <i class="fa fa-plus toggle-icon"></i>
+          </a>
+          <ul class="sub-menu">
+            <li><a href="${pageContext.request.contextPath}/org/assets"><i class="fa fa-box me-2"></i>All Assets</a>
+            </li>
+            <li><a href="${pageContext.request.contextPath}/org/assets/categories"><i
+                  class="fa fa-tags me-2"></i>Categories</a></li>
+            <li><a href="${pageContext.request.contextPath}/org/assets/vendors"><i
+                  class="fa fa-truck-field me-2"></i>Vendors</a></li>
+            <li><a href="${pageContext.request.contextPath}/org/assets/assignments"><i
+                  class="fa fa-right-left me-2"></i>Assignments</a></li>
+            <li><a href="${pageContext.request.contextPath}/org/assets/maintenance"><i
+                  class="fa fa-screwdriver-wrench me-2"></i>Maintenance Logs</a></li>
+          </ul>
+        </sec:authorize>
 
         <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE')">
           <!-- Organization Info -->
