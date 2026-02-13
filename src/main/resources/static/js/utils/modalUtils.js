@@ -1,7 +1,14 @@
 // modalUtils.js - Bootstrap modal management utilities
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.modal').forEach(modal => {
+        document.body.appendChild(modal);
+    });
+});
+
+
 const modalUtils = {
     instances: {},
-
 
     show() {
         if (document.getElementById('globalLoadingSpinner')) return;

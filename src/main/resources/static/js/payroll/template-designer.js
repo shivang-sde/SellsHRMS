@@ -26,17 +26,17 @@ $(document).ready(function () {
  * Initialize template designer
  */
 function initializeTemplateDesigner() {
-  loadAvailableFields();
+  // Load available fields first
+  loadAvailableFields().then(() => {
+    const templateId = $("#templateId").val();
+    if (templateId) {
+      loadExistingTemplate(templateId);
+    }
+  });
 
-  // Load existing template if editing
-  const templateId = $("#templateId").val();
-  if (templateId) {
-    loadExistingTemplate(templateId);
-  }
-
-  // Setup event listeners
   setupEventListeners();
 }
+
 
 /**
  * Setup event listeners
@@ -66,26 +66,22 @@ function setupEventListeners() {
  * Load available fields from backend
  */
 function loadAvailableFields() {
-  $.ajax({
+  return $.ajax({
     url: `/api/salary-slip-template/${ORG_ID}/available-fields`,
     type: "GET",
-    success: function (response) {
-      console.log("reponse ", response);
+  })
+    .done(function (response) {
       if (response.success) {
         availableFields = response.data;
         renderFieldSections();
       } else {
         showAlert("danger", response.message);
       }
-    },
-    error: function (xhr) {
-      showAlert(
-        "danger",
-        "Failed to load available fields. Please refresh the page.",
-      );
+    })
+    .fail(function (xhr) {
+      showAlert("danger", "Failed to load available fields. Please refresh the page.");
       console.error("Error loading fields:", xhr);
-    },
-  });
+    });
 }
 
 /**
@@ -126,8 +122,8 @@ function renderFieldSections() {
                 </div>
                 <div class="card-body d-flex flex-wrap gap-3" id="${sectionId}">
                     ${fields
-                      .map(
-                        (field) => `
+        .map(
+          (field) => `
                         <div class="form-check" style="min-width: 220px;">
                             <input class="form-check-input"
                                 type="checkbox"
@@ -140,8 +136,8 @@ function renderFieldSections() {
                             </label>
                         </div>
                     `,
-                      )
-                      .join("")}
+        )
+        .join("")}
                 </div>
             </div>
         `;
@@ -251,163 +247,114 @@ function generatePreview() {
  * Build template HTML from selected fields (Dynamic FreeMarker version)
  */
 function buildTemplateHtml() {
-  let html = `
-        <div class="salary-slip" style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
-    `;
+  // Use a clean variable for the currency symbol to avoid escaping issues
+  const curr = "₹";
 
-  // Organisation header
+  let html = `
+    <div class="salary-slip" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 850px; margin: 20px auto; border: 1px solid #d1d1d1; background: #fff;">
+  `;
+
+  // 1. ORGANISATION HEADER
   if (selectedFields.organisation.length > 0) {
     html += `
-            <div class="org-header" style="text-align: center; padding: 20px; border-bottom: 3px solid #333;">
-                ${selectedFields.organisation.includes("logoUrl") ? '<img src="\${organisation.logoUrl!""}" alt="Logo" style="max-height: 80px; margin-bottom: 10px;">' : ""}
-                ${selectedFields.organisation.includes("name") ? '<h2 style="margin: 10px 0; color: #333;">\${organisation.name!""}</h2>' : ""}
-                ${selectedFields.organisation.includes("address") ? '<p style="margin: 5px 0; color: #666;">\${organisation.address!""}' : ""}
-                ${selectedFields.organisation.includes("city") ? ', \${organisation.city!""}' : ""}
-                ${selectedFields.organisation.includes("state") ? ', \${organisation.state!""}' : ""}
-                ${selectedFields.organisation.includes("pincode") ? ' - \${organisation.pincode!""}' : ""}
-                ${selectedFields.organisation.includes("address") ? "</p>" : ""}
-                ${selectedFields.organisation.includes("email") || selectedFields.organisation.includes("phone") ? '<p style="margin: 5px 0; color: #666;">' : ""}
-                ${selectedFields.organisation.includes("email") ? 'Email: \${organisation.email!""}' : ""}
-                ${selectedFields.organisation.includes("email") && selectedFields.organisation.includes("phone") ? " | " : ""}
-                ${selectedFields.organisation.includes("phone") ? 'Phone: \${organisation.phone!""}' : ""}
-                ${selectedFields.organisation.includes("email") || selectedFields.organisation.includes("phone") ? "</p>" : ""}
-            </div>
-        `;
-  }
-
-  // Title section
-  html += `
-        <div style="text-align: center; padding: 20px; background-color: #f8f9fa;">
-            <h3 style="margin: 0; color: #495057;">SALARY SLIP</h3>
-            ${selectedFields.payRun.includes("payPeriod") ? '<p style="margin: 5px 0; color: #6c757d;">For the month of \${payRun.payPeriod!""}</p>' : ""}
-        </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px; border-bottom: 2px solid #444;">
+          <div style="text-align: left;">
+              ${selectedFields.organisation.includes("logoUrl") ? '<img src="${organisation.logoUrl!""}" alt="Logo" style="max-height: 70px; display: block; margin-bottom: 10px;">' : ""}
+              ${selectedFields.organisation.includes("name") ? '<h2 style="margin: 0; color: #1a1a1a; font-size: 22px; text-transform: uppercase;">${organisation.name!""}</h2>' : ""}
+          </div>
+          <div style="text-align: right; font-size: 12px; color: #555; line-height: 1.4;">
+              ${selectedFields.organisation.includes("address") ? '<div>${organisation.address!""}</div>' : ""}
+              <div>
+                ${selectedFields.organisation.includes("email") ? 'Email: ${organisation.email!""}' : ""}
+                ${selectedFields.organisation.includes("phone") ? ' | Ph: ${organisation.phone!""}' : ""}
+              </div>
+          </div>
+      </div>
     `;
-
-  // Employee details
-  if (selectedFields.employee.length > 0) {
-    html += `
-            <div style="padding: 20px;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tbody>
-        `;
-
-    const empFields = selectedFields.employee;
-    for (let i = 0; i < empFields.length; i += 2) {
-      html += "<tr>";
-      html += `<td style="padding: 8px; width: 25%; font-weight: bold;">${getLabelForField("employee", empFields[i])}:</td>`;
-      html += `<td style="padding: 8px; width: 25%;">\${employee.${empFields[i]}!""}</td>`;
-
-      if (empFields[i + 1]) {
-        html += `<td style="padding: 8px; width: 25%; font-weight: bold;">${getLabelForField("employee", empFields[i + 1])}:</td>`;
-        html += `<td style="padding: 8px; width: 25%;">\${employee.${empFields[i + 1]}!""}</td>`;
-      } else {
-        html += '<td colspan="2"></td>';
-      }
-      html += "</tr>";
-    }
-
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
   }
 
-  // Bank details
+  // 2. SLIP TITLE
+  html += `
+    <div style="text-align: center; padding: 15px; background-color: #fcfcfc; border-bottom: 1px solid #eee;">
+        <h3 style="margin: 0; color: #333; letter-spacing: 2px; font-size: 18px;">PAYSLIP</h3>
+        ${selectedFields.payRun.includes("payPeriod") ? '<div style="margin-top: 5px; font-size: 13px; color: #666;">Period: <strong>${payRun.payPeriod!""}</strong></div>' : ""}
+    </div>
+  `;
+
+  // 3. DETAILS GRID
+  html += `<div style="padding: 20px; display: flex; gap: 20px; border-bottom: 1px solid #eee;">`;
+
+  // Left Side: Employee
+  html += `<div style="flex: 1;"><table style="width: 100%; font-size: 12px; border-collapse: collapse;">`;
+  selectedFields.employee.forEach(field => {
+    html += `<tr><td style="padding: 4px 0; color: #777;">${getLabelForField("employee", field)}</td><td style="padding: 4px 0; font-weight: 600;">: \${employee.${field}!""}</td></tr>`;
+  });
+  html += `</table></div>`;
+
+  // Right Side: Bank
   if (selectedFields.bank.length > 0) {
-    html += `
-            <div style="padding: 0 20px 20px 20px;">
-                <h5 style="margin-bottom: 10px; color: #495057; border-bottom: 2px solid #e9ecef; padding-bottom: 8px;">Bank Details</h5>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tbody>
-        `;
-
-    const bankFields = selectedFields.bank;
-    for (let i = 0; i < bankFields.length; i += 2) {
-      html += "<tr>";
-      html += `<td style="padding: 8px; width: 25%; font-weight: bold;">${getLabelForField("bank", bankFields[i])}:</td>`;
-      html += `<td style="padding: 8px; width: 25%;">\${bank.${bankFields[i]}!""}</td>`;
-
-      if (bankFields[i + 1]) {
-        html += `<td style="padding: 8px; width: 25%; font-weight: bold;">${getLabelForField("bank", bankFields[i + 1])}:</td>`;
-        html += `<td style="padding: 8px; width: 25%;">\${bank.${bankFields[i + 1]}!""}</td>`;
-      } else {
-        html += '<td colspan="2"></td>';
-      }
-      html += "</tr>";
-    }
-
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+    html += `<div style="flex: 1; border-left: 1px solid #f0f0f0; padding-left: 20px;"><table style="width: 100%; font-size: 12px; border-collapse: collapse;">`;
+    selectedFields.bank.forEach(field => {
+      html += `<tr><td style="padding: 4px 0; color: #777;">${getLabelForField("bank", field)}</td><td style="padding: 4px 0; font-weight: 600;">: \${bank.${field}!""}</td></tr>`;
+    });
+    html += `</table></div>`;
   }
+  html += `</div>`;
 
-  // ✅ Dynamic Salary Components
+  // 4. COMPONENTS TABLE
   html += `
     <div style="padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #eee;">
             <thead>
-                <tr style="background-color: #e9ecef;">
-                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6; width: 40%;">Earnings</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #dee2e6; width: 10%;">Amount</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6; width: 40%;">Deductions</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #dee2e6; width: 10%;">Amount</th>
+                <tr style="background-color: #f8f9fa; color: #333; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 10px; text-align: left; font-size: 12px;">EARNINGS</th>
+                    <th style="padding: 10px; text-align: right; font-size: 12px; border-right: 1px solid #eee;">AMOUNT</th>
+                    <th style="padding: 10px; text-align: left; font-size: 12px;">DEDUCTIONS</th>
+                    <th style="padding: 10px; text-align: right; font-size: 12px;">AMOUNT</th>
                 </tr>
             </thead>
-            <tbody>
-    <#assign maxRows = [(earnings?size)!0, (deductions?size)!0]?max>
-    <#list 0..(maxRows - 1) as i>
-        <tr>
-            <td style="padding:10px;border:1px solid #dee2e6;">
-                <#if earnings[i]??>\${earnings[i].name}</#if>
-            </td>
-            <td style="padding:10px;text-align:right;border:1px solid #dee2e6;">
-                <#if earnings[i]??>₹\${earnings[i].amount?string["#,##0.00"]}</#if>
-            </td>
-            <td style="padding:10px;border:1px solid #dee2e6;">
-                <#if deductions[i]??>\${deductions[i].name}</#if>
-            </td>
-            <td style="padding:10px;text-align:right;border:1px solid #dee2e6;">
-                <#if deductions[i]??>₹\${deductions[i].amount?string["#,##0.00"]}</#if>
-            </td>
-        </tr>
-    </#list>
-</tbody>
-
+            <tbody style="font-size: 12px;">
+                <#assign maxRows = [(earnings?size)!0, (deductions?size)!0]?max>
+                <#list 0..(maxRows - 1) as i>
+                    <tr>
+                        <td style="padding:8px; border-bottom: 1px solid #f9f9f9;"><#if earnings[i]??>\${earnings[i].name}</#if></td>
+                        <td style="padding:8px; text-align:right; border-bottom: 1px solid #f9f9f9; border-right: 1px solid #eee; font-weight: 600;">
+                            <#if earnings[i]??>${curr}\${earnings[i].amount?string["0.00"]}</#if>
+                        </td>
+                        <td style="padding:8px; border-bottom: 1px solid #f9f9f9;"><#if deductions[i]??>\${deductions[i].name}</#if></td>
+                        <td style="padding:8px; text-align:right; border-bottom: 1px solid #f9f9f9; font-weight: 600;">
+                            <#if deductions[i]??>${curr}\${deductions[i].amount?string["0.00"]}</#if>
+                        </td>
+                    </tr>
+                </#list>
+            </tbody>
         </table>
     </div>
-`;
+  `;
 
-  // Summary section
-  if (selectedFields.summary.length > 0) {
+  // 5. SUMMARY
+  if (selectedFields.summary.includes("netPay")) {
     html += `
-            <div style="padding: 20px; background-color: #f8f9fa; margin-top: 20px;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tbody>
-                    ${selectedFields.summary.includes("basePay") ? '<tr><td style="padding: 8px; font-weight: bold; font-size: 1.05em;">Total Earnings:</td><td style="padding: 8px; text-align: right; font-weight: bold; font-size: 1.05em;">\${summary.basePay!""}</td></tr>' : ""}
-                        ${selectedFields.summary.includes("totalEarnings") ? '<tr><td style="padding: 8px; font-weight: bold; font-size: 1.05em;">Total Earnings:</td><td style="padding: 8px; text-align: right; font-weight: bold; font-size: 1.05em;">\${summary.totalEarnings!""}</td></tr>' : ""}
-                        ${selectedFields.summary.includes("totalDeductions") ? '<tr><td style="padding: 8px; font-weight: bold; font-size: 1.05em;">Total Deductions:</td><td style="padding: 8px; text-align: right; font-weight: bold; font-size: 1.05em;">\${summary.totalDeductions!""}</td></tr>' : ""}
-                        ${selectedFields.summary.includes("netPay") ? '<tr style="background-color: #28a745; color: white;"><td style="padding: 15px; font-weight: bold; font-size: 1.2em;">NET PAY:</td><td style="padding: 15px; text-align: right; font-weight: bold; font-size: 1.2em;">\${summary.netPay!""}</td></tr>' : ""}
-                        ${selectedFields.summary.includes("netPayInWords") ? '<tr><td colspan="2" style="padding: 12px; font-style: italic; text-align: center; color: #495057;">(\${summary.netPayInWords!""})</td></tr>' : ""}
-                    </tbody>
-                </table>
-            </div>
-        `;
+      <div style="margin: 0 20px 20px; padding: 15px; background: #28a745; color: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 12px;">
+              <div style="font-weight: bold; text-transform: uppercase;">Net Take Home Pay</div>
+              <div style="font-style: italic; margin-top: 4px; opacity: 0.9;">\${summary.netPayInWords!""}</div>
+          </div>
+          <div style="font-size: 20px; font-weight: bold;">\${summary.netPay!""}</div>
+      </div>
+    `;
   }
 
   // Footer
   html += `
-        <div style="padding: 20px; text-align: center; color: #6c757d; font-size: 0.9em; border-top: 1px solid #dee2e6; margin-top: 30px;">
-            <p style="margin: 0;">This is a computer-generated salary slip and does not require a signature.</p>
+        <div style="padding: 15px; text-align: center; color: #999; font-size: 10px; border-top: 1px solid #eee; background: #fafafa;">
+            <p style="margin: 0;">This is a system-generated document and does not require a signature.</p>
         </div>
     </div>
-    `;
+  `;
 
   return html;
 }
-
 /**
  * Get label for a field
  */
@@ -505,6 +452,7 @@ function saveTemplate() {
     data: JSON.stringify(data),
     success: function (response) {
       if (response.success) {
+        console.log("template saved successfully", response);
         showToast("success", response.message);
         $("#templateId").val(response.data.id);
 
@@ -517,7 +465,8 @@ function saveTemplate() {
           );
         }
       } else {
-        showToast("warning", response);
+        console.log("template save failed", response);
+        showToast("warning", response.message);
       }
     },
     error: function (xhr) {
@@ -575,6 +524,7 @@ function renderTemplateList(templates) {
   }
 
   templates.forEach((template) => {
+    console.log("template", template);
     const row = `
             <tr>
                 <td>
@@ -582,28 +532,26 @@ function renderTemplateList(templates) {
                 </td>
                 <td>${formatDate(template.createdDate)}</td>
                 <td class="text-center">
-                    ${
-                      template.isDefault
-                        ? '<span class="badge bg-success"><i class="bi bi-star-fill"></i> Default</span>'
-                        : '<span class="badge bg-secondary">Active</span>'
-                    }
+                    ${template.isDefault
+        ? '<span class="badge bg-success"><i class="bi bi-star-fill"></i> Default</span>'
+        : '<span class="badge bg-secondary">Active</span>'
+      }
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-primary" onclick="editTemplate(${template.id})" title="Edit">
-                            <i class="bi bi-pencil"></i>
+                            <i class="fa fa-pencil"></i>
                         </button>
-                        ${
-                          !template.isDefault
-                            ? `
+                        ${!template.isDefault
+        ? `
                             <button class="btn btn-outline-success" onclick="setTemplateAsDefault(${template.id})" title="Set as Default">
-                                <i class="bi bi-star"></i>
+                                <i class="fa fa-star"></i>
                             </button>
                         `
-                            : ""
-                        }
+        : ""
+      }
                         <button class="btn btn-outline-danger" onclick="confirmDeleteTemplate(${template.id}, '${escapeHtml(template.templateName)}')" title="Delete">
-                            <i class="bi bi-trash"></i>
+                            <i class="fa fa-trash"></i>
                         </button>
                     </div>
                 </td>
@@ -762,23 +710,76 @@ function resetTemplate() {
  * Print preview
  */
 function printPreview() {
-  window.print();
+  const previewContent = document.getElementById("previewContainer").innerHTML;
+  const printWindow = window.open("", "_blank", "width=900,height=1000");
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Salary Slip Preview</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+          }
+          .salary-slip {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { padding: 8px; border: 1px solid #dee2e6; }
+          h2, h3, h5 { margin: 5px 0; }
+          .text-center { text-align: center; }
+          @media print {
+            body { margin: 0; }
+            .salary-slip { border: none; }
+          }
+        </style>
+      </head>
+      <body>
+        ${previewContent}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
 }
+
 
 /**
  * Export preview to PDF (mock - needs actual implementation)
  */
 function exportToPDF() {
-  const templateId = $("#templateId").val();
-  if (!templateId) {
-    showAlert(
-      "warning",
-      "Please save the template first before generating PDF",
-    );
+  const previewElement = document.getElementById("previewContainer");
+
+  if (!previewElement || previewElement.innerText.trim() === "") {
+    showAlert("warning", "Nothing to export. Please generate a preview first.");
     return;
   }
 
-  showAlert("info", "PDF export is available when viewing actual salary slips");
+  const opt = {
+    margin: 0.5,
+    filename: 'Salary_Slip_Template.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  showAlert("info", "Generating PDF...");
+
+  html2pdf()
+    .from(previewElement)
+    .set(opt)
+    .save()
+    .then(() => showAlert("success", "PDF downloaded successfully"))
+    .catch((err) => {
+      console.error("PDF export error:", err);
+      showAlert("danger", "Failed to generate PDF. Please try again.");
+    });
 }
 
 /**

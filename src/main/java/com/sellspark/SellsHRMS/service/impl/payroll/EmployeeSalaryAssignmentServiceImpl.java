@@ -1,10 +1,12 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellspark.SellsHRMS.dto.payroll.EmployeeSalaryAssignmentDTO;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.payroll.EmployeeSalaryAssignment;
 import com.sellspark.SellsHRMS.entity.payroll.IncomeTaxSlab;
+import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
 import com.sellspark.SellsHRMS.entity.payroll.SalaryStructure;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
@@ -12,7 +14,11 @@ import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.payroll.EmployeeSalaryAssignmentRepository;
 import com.sellspark.SellsHRMS.repository.payroll.IncomeTaxSlabRepository;
 import com.sellspark.SellsHRMS.repository.payroll.SalaryStructureRepository;
+import com.sellspark.SellsHRMS.service.helper.SalaryComponentDependencySorter;
+import com.sellspark.SellsHRMS.service.impl.payroll.StatutoryComputationEngineImpl.StatutoryResult;
 import com.sellspark.SellsHRMS.service.payroll.EmployeeSalaryAssignmentService;
+import com.sellspark.SellsHRMS.service.payroll.PayrollCalculationService;
+import com.sellspark.SellsHRMS.service.payroll.StatutoryComputationEngineService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +26,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,10 +39,13 @@ import java.util.stream.Collectors;
 public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssignmentService {
 
     private final EmployeeSalaryAssignmentRepository assignmentRepository;
+    private final PayrollCalculationService payrollCalculationService;
+    private final StatutoryComputationEngineService statutoryEngine;
     private final EmployeeRepository employeeRepository;
     private final OrganisationRepository organisationRepository;
     private final SalaryStructureRepository structureRepository;
     private final IncomeTaxSlabRepository taxSlabRepository;
+    private final ObjectMapper objectMapper;
 
     // ---------------- CREATE (Assign) ----------------
     @Override
@@ -46,16 +58,27 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
         SalaryStructure structure = structureRepository.findById(dto.getSalaryStructureId())
                 .orElseThrow(() -> new ResourceNotFoundException("Salary structure not found"));
         IncomeTaxSlab taxSlab = dto.getTaxSlabId() != null
-            ? taxSlabRepository.findById(dto.getTaxSlabId()).orElseThrow(() ->  new ResourceNotFoundException("Tax Slabs", "Id", dto.getTaxSlabId()))
-            : null;// optional
+                ? taxSlabRepository.findById(dto.getTaxSlabId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Tax Slabs", "Id", dto.getTaxSlabId()))
+                : null;// optional
 
         EmployeeSalaryAssignment assignment = new EmployeeSalaryAssignment();
-        log.info("emp slry assign new", assignment);
+        log.info("emp slry assign new {}", assignment.getEmployee().getFirstName());
         mapDtoToEntity(dto, assignment);
         assignment.setEmployee(employee);
         assignment.setOrganisation(org);
         assignment.setSalaryStructure(structure);
         assignment.setTaxSlab(taxSlab);
+
+        /*
+         * ----------- Futre Implementation -------------------
+         * 
+         * in futre when you assign a salary calculate the ctc of the person also
+         * -> basePay + earning components(from salary components ) + employer
+         * contributions + other benefits
+         */
+
+        calculateAndSetBaseline(assignment);
 
         assignmentRepository.save(assignment);
         return mapEntityToDto(assignment);
@@ -67,12 +90,21 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
         EmployeeSalaryAssignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary assignment not found"));
 
+        // Check if sensitive fields changed to trigger recalculation
+        boolean structureChanged = dto.getSalaryStructureId() != null &&
+                !dto.getSalaryStructureId().equals(assignment.getSalaryStructure().getId());
+        boolean basePayChanged = dto.getBasePay() != null && !dto.getBasePay().equals(assignment.getBasePay());
+
         mapDtoToEntity(dto, assignment);
 
-        if (dto.getSalaryStructureId() != null) {
-            SalaryStructure structure = structureRepository.findById(dto.getSalaryStructureId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Salary structure not found"));
+        if (structureChanged) {
+            SalaryStructure structure = structureRepository.findById(dto.getSalaryStructureId()).orElseThrow();
             assignment.setSalaryStructure(structure);
+        }
+
+        if (structureChanged || basePayChanged) {
+            // RE-CALC BASELINE
+            calculateAndSetBaseline(assignment);
         }
 
         if (dto.getTaxSlabId() != null) {
@@ -105,7 +137,8 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
     // ---------------- GET BY EMPLOYEE ----------------
     @Override
     public EmployeeSalaryAssignmentDTO getAssignmentsByEmployee(Long employeeId) {
-        EmployeeSalaryAssignment employeeSalaryAssignment = assignmentRepository.findByEmployeeIdAndActiveTrue(employeeId)
+        EmployeeSalaryAssignment employeeSalaryAssignment = assignmentRepository
+                .findByEmployeeIdAndActiveTrue(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary struture assigned to employee not found"));
 
         return mapEntityToDto(employeeSalaryAssignment);
@@ -120,11 +153,16 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
 
     // ---------------- MAPPERS ----------------
     private EmployeeSalaryAssignmentDTO mapEntityToDto(EmployeeSalaryAssignment e) {
-        log.info("emp slry assignment enity {}", e);
+
         return EmployeeSalaryAssignmentDTO.builder()
                 .id(e.getId() != null ? e.getId() : null)
                 .employeeId(e.getEmployee() != null ? e.getEmployee().getId() : null)
-                .employeeName(e.getEmployee() != null ? e.getEmployee().getFirstName() + " " + e.getEmployee().getLastName() : null)
+                .employeeName(
+                        e.getEmployee() != null ? e.getEmployee().getFirstName() + " " + e.getEmployee().getLastName()
+                                : null)
+                .monthlyGrossTarget(e.getMonthlyGrossTarget())
+                .monthlyNetTarget(e.getMonthlyNetTarget())
+                .annualCtc(e.getAnnualCtc())
                 .employeeDepartmentName(e.getEmployee() != null ? e.getEmployee().getDepartment().getName() : null)
                 .employeeCode(e.getEmployee().getEmployeeCode() != null ? e.getEmployee().getEmployeeCode() : null)
                 .organisationId(e.getOrganisation() != null ? e.getOrganisation().getId() : null)
@@ -142,11 +180,87 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
 
     private void mapDtoToEntity(EmployeeSalaryAssignmentDTO d, EmployeeSalaryAssignment e) {
         log.info("mapdto to enity slry asign");
-        if (d.getBasePay() != null) e.setBasePay(d.getBasePay());
-        if (d.getVariablePay() != null) e.setVariablePay(d.getVariablePay());
+        if (d.getBasePay() != null)
+            e.setBasePay(d.getBasePay());
+        if (d.getVariablePay() != null)
+            e.setVariablePay(d.getVariablePay());
         e.setRemarks(d.getRemarks());
         e.setEffectiveFrom(d.getEffectiveFrom());
         e.setEffectiveTo(d.getEffectiveTo());
-        if (d.getActive() != null) e.setActive(d.getActive());
+        if (d.getActive() != null)
+            e.setActive(d.getActive());
     }
+
+    /**
+     * Logic to calculate what the employee SHOULD earn with 100% attendance.
+     */
+
+    @Override
+    public void calculateAndSetBaseline(EmployeeSalaryAssignment assignment) {
+        SalaryStructure structure = assignment.getSalaryStructure();
+        if (structure == null)
+            return;
+
+        // Simulate context for 100% attendance
+        Map<String, Object> context = new HashMap<>();
+        context.put("BASE", assignment.getBasePay());
+        context.put("VARPAY", assignment.getVariablePay() != null ? assignment.getVariablePay() : 0.0);
+        context.put("WORKING_DAYS", 30.0); // Standard month baseline
+        context.put("PAYMENT_DAYS", 30.0);
+        context.put("LOP_DAYS", 0.0);
+
+        double totalEarnings = assignment.getBasePay(); // Start with Base
+        double totalDeductions = 0.0;
+        Map<String, Double> breakdownMap = new LinkedHashMap<>();
+        breakdownMap.put("Basic Pay", assignment.getBasePay());
+
+        Map<SalaryComponent, Double> componentValueMap = new HashMap<>();
+        List<SalaryComponent> orderedComponents = SalaryComponentDependencySorter
+                .sortByDependencies(structure.getComponents());
+
+        for (SalaryComponent comp : orderedComponents) {
+            if (Boolean.FALSE.equals(comp.getActive()))
+                continue;
+
+            // Use existing FormulaExpressionEvaluator logic here
+            double amount = payrollCalculationService.computeComponentAmount(comp, context);
+            context.put(comp.getAbbreviation(), amount);
+            // Add to context so subsequent formulas can use this component
+            componentValueMap.put(comp, amount);
+            breakdownMap.put(comp.getName(), round(amount));
+
+            if (comp.getType() == SalaryComponent.ComponentType.EARNING) {
+                totalEarnings += amount;
+            } else if (comp.getType() == SalaryComponent.ComponentType.DEDUCTION) {
+                totalDeductions += amount;
+            }
+        }
+
+        // Get Employee & Employer Statutory amounts
+        // This is the "hidden" cost like Employer PF contribution
+        Map<String, StatutoryResult> statutory = statutoryEngine.computeDetailed(
+                assignment, componentValueMap, assignment.getOrganisation());
+
+        // Sum up only Employer Contributions for CTC
+        double totalEmpStatutory = statutory.values().stream().mapToDouble(StatutoryResult::employeeDeduction).sum();
+        double totalOrgStatutory = statutory.values().stream().mapToDouble(StatutoryResult::employerContribution).sum();
+
+        statutory.forEach((code, res) -> breakdownMap.put(code + " (Emp)", res.employeeDeduction()));
+
+        assignment.setMonthlyGrossTarget(round(totalEarnings));
+        // Net = Earnings - Component Deductions - Statutory Deductions
+        assignment.setMonthlyNetTarget(round(totalEarnings - totalDeductions - totalEmpStatutory));
+        // CTC = (Earnings + Employer Statutory) * 12
+        assignment.setAnnualCtc(round((totalEarnings + totalOrgStatutory) * 12));
+
+        try {
+            assignment.setTargetBreakdownJson(objectMapper.writeValueAsString(breakdownMap));
+        } catch (Exception ignored) {
+        }
+    }
+
+    private Double round(double baselineGross) {
+        return Math.round(baselineGross * 100.0) / 100.0;
+    }
+
 }

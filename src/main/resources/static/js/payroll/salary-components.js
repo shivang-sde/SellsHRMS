@@ -11,7 +11,7 @@ const SalaryComponents = (() => {
 
     const init = () => {
         componentModal = new bootstrap.Modal(document.getElementById('componentModal'));
-        
+
         attachEventListeners();
         loadComponents();
     };
@@ -19,32 +19,32 @@ const SalaryComponents = (() => {
     const attachEventListeners = () => {
         // Add component buttons
         $('#btnAddComponent, #btnAddComponentEmpty').on('click', () => openComponentModal());
-        
+
         // Save component
         $('#btnSaveComponent').on('click', saveComponent);
 
-        $('#componentName').on('input', debounce(function(){
-             let name = $(this).val().trim();
-             let words = name.split(/\s+/);
-             let abbr = words.map(word => word.charAt(0).toUpperCase()).join('');
-             $('#componentAbbr').val(abbr);
+        $('#componentName').on('input', debounce(function () {
+            let name = $(this).val().trim();
+            let words = name.split(/\s+/);
+            let abbr = words.map(word => word.charAt(0).toUpperCase()).join('');
+            $('#componentAbbr').val(abbr);
         }, 300))
-        
+
         // Filters
         $('#filterType, #filterCalcType').on('change', applyFilters);
         $('#searchComponent').on('input', debounce(applyFilters, 300));
         $('#btnResetFilters').on('click', resetFilters);
-        
+
         // Calculation type change
         $('#calculationType').on('change', handleCalculationTypeChange);
-        
+
         // Form reset on modal close
         $('#componentModal').on('hidden.bs.modal', resetForm);
     };
 
     const loadComponents = async () => {
         showLoading(true);
-        
+
         try {
             const response = await $.ajax({
                 url: `${window.APP.CONTEXT_PATH}/api/payroll/salary-components/organisation/${window.APP.ORG_ID}`,
@@ -87,7 +87,7 @@ const SalaryComponents = (() => {
     const createComponentRow = (component) => {
         const typeClass = component.type === 'EARNING' ? 'success' : 'danger';
         const calcTypeLabel = getCalculationTypeLabel(component.calculationType);
-        
+
         return `
             <tr data-component-id="${component.id}">  
                 <td>
@@ -136,7 +136,7 @@ const SalaryComponents = (() => {
 
     const openComponentModal = (component = null) => {
         resetForm();
-        
+
         if (component) {
             currentComponentId = component.id;
             $('#componentModalTitle').html('<i class="fas fa-edit me-2"></i>Edit Salary Component');
@@ -145,7 +145,7 @@ const SalaryComponents = (() => {
             currentComponentId = null;
             $('#componentModalTitle').html('<i class="fas fa-plus me-2"></i>Add Salary Component');
         }
-        
+
         componentModal.show();
     };
 
@@ -165,7 +165,7 @@ const SalaryComponents = (() => {
         $('#dependsOnPaymentDays').prop('checked', component.dependsOnPaymentDays);
         $('#considerForPT').prop('checked', component.considerForPT);
         $('#isActive').prop('checked', component.active);
-        
+
         handleCalculationTypeChange();
     };
 
@@ -181,7 +181,7 @@ const SalaryComponents = (() => {
         if (calcType === 'FORMULA') {
             $('#formulaSection').removeClass('d-none');
             $('#fixedAmountSection').addClass('d-none')
-        } else if(calcType === 'FIXED') {
+        } else if (calcType === 'FIXED') {
             $('#fixedAmountSection').removeClass('d-none')
             $('#formulaSection').addClass('d-none');
         } else {
@@ -197,22 +197,23 @@ const SalaryComponents = (() => {
 
         const componentData = {
             id: currentComponentId,
-            orgId: window.APP.ORG_ID,
+            organisationId: window.APP.ORG_ID,
             name: $('#componentName').val().trim(),
             abbreviation: $('#componentAbbr').val().trim().toUpperCase(),
             type: $('#componentType').val(),
-            fixedAmount: $('#fixedAmount').val(),
+            fixedAmount: parseFloat($('#fixedAmount').val()) || 0,
             calculationType: $('#calculationType').val(),
             formula: $('#calculationType').val() === 'FORMULA' ? $('#componentFormula').val().trim() : null,
-            condition: $('#condition').val(),
+            componentCondition: $('#condition').val(),
             description: $('#componentDescription').val().trim(),
             taxable: $('#isTaxable').is(':checked'),
             includeInCTC: $('#includeInCTC').is(':checked'),
             dependsOnPaymentDays: $('#dependsOnPaymentDays').is(':checked'),
             roundToNearest: $('#roundToNearest').is(':checked'),
-            considerForPT: $('#considerForPT').is(':checked'),
+            considerForTax: $('#considerForPT').is(':checked'), // align with backend flag
             active: $('#isActive').is(':checked')
         };
+
 
         const btnSave = $('#btnSaveComponent');
         btnSave.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Saving...');
@@ -249,7 +250,7 @@ const SalaryComponents = (() => {
 
     const deactivateComponent = async (componentId) => {
         const component = componentsData.find(c => c.id === componentId);
-        
+
         const confirmed = await window.showConfirmation({
             title: 'Deactivate Component',
             message: `Are you sure you want to deactivate "${component.name}"? This component will no longer be available for new assignments.`,
@@ -289,8 +290,8 @@ const SalaryComponents = (() => {
         }
 
         if (searchTerm) {
-            filtered = filtered.filter(c => 
-                c.name.toLowerCase().includes(searchTerm) || 
+            filtered = filtered.filter(c =>
+                c.name.toLowerCase().includes(searchTerm) ||
                 c.abbreviation.toLowerCase().includes(searchTerm)
             );
         }

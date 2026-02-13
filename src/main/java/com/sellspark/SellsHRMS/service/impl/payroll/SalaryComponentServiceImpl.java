@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
 import com.sellspark.SellsHRMS.dto.payroll.SalaryComponentDTO;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
@@ -10,12 +9,15 @@ import com.sellspark.SellsHRMS.service.payroll.SalaryComponentService;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -27,6 +29,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     // ------------------ CREATE ------------------
     @Override
     public SalaryComponentDTO createComponent(SalaryComponentDTO dto) {
+        log.info("Creating salary component: {}", dto);
         Organisation org = organisationRepository.findById(dto.getOrganisationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
 
@@ -76,8 +79,9 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     // ------------------ GET BY COUNTRY ------------------
     // @Override
     // public List<SalaryComponentDTO> getComponentsByCountry(String countryCode) {
-    //     return componentRepository.findByOrganisation_CountryCodeAndActiveTrue(countryCode)
-    //             .stream().map(this::mapEntityToDto).collect(Collectors.toList());
+    // return
+    // componentRepository.findByOrganisation_CountryCodeAndActiveTrue(countryCode)
+    // .stream().map(this::mapEntityToDto).collect(Collectors.toList());
     // }
 
     // ------------------ MAPPING HELPERS ------------------
@@ -101,9 +105,11 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     }
 
     private void mapDtoToEntity(SalaryComponentDTO d, SalaryComponent e) {
-        
-        if (d.getName() != null) e.setName(d.getName());
-        if (d.getAbbreviation() != null) e.setAbbreviation(d.getAbbreviation());
+
+        if (d.getName() != null)
+            e.setName(d.getName());
+        if (d.getAbbreviation() != null)
+            e.setAbbreviation(d.getAbbreviation());
         if (d.getType() != null)
             e.setType(SalaryComponent.ComponentType.valueOf(d.getType().toUpperCase()));
         if (d.getCalculationType() != null)
@@ -116,7 +122,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         e.setDependsOnPaymentDays(Boolean.TRUE.equals(d.getDependsOnPaymentDays()));
         e.setIncludeInCTC(Boolean.TRUE.equals(d.getIncludeInCTC()));
         e.setRoundToNearest(Boolean.TRUE.equals(d.getRoundToNearest()));
-        if (d.getActive() != null) e.setActive(d.getActive());
+        if (d.getActive() != null)
+            e.setActive(d.getActive());
     }
 }
-

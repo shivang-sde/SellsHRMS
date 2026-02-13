@@ -89,7 +89,6 @@ const SalaryStructures = (() => {
             <tr data-id="${structure.id}">
                 <td>${structure.name}</td>
                 <td>${componentsList}</td>
-                <td class="text-end">₹${formatCurrency(ctcTotal)}</td>
                 <td><span class="badge bg-${statusClass}">${structure.active ? 'Active' : 'Inactive'}</span></td>
                 <td class="text-end">
                     <div class="btn-group btn-group-sm">
@@ -133,8 +132,8 @@ const SalaryStructures = (() => {
         $('#structureName').val(structure.name);
         $('#leaveEncashmentRate').val(structure.leaveEncashmentRate)
         $('#structureDescription').val(structure.description),
-        $('#structureFrequency').val(structure.payrollFrequency),
-        $('#structureCurrency').val(structure.currency)
+            $('#structureFrequency').val(structure.payrollFrequency),
+            $('#structureCurrency').val(structure.currency)
         $('#structureIsActive').prop('checked', structure.active);
         if (structure.components) {
             console.log("struc comp", structure.components)
@@ -196,8 +195,44 @@ const SalaryStructures = (() => {
         if (structure) openStructureModal(structure);
     };
 
+
+    // const previewImpact = async () => {
+    //     const structureId = $('#structureId').val();
+    //     const componentIds = $('#componentSelect').val() || [];
+
+    //     if (!structureId || componentIds.length === 0) return;
+
+    //     try {
+    //         const response = await $.ajax({
+    //             url: `${window.APP.CONTEXT_PATH}/api/payroll/salary-structures/${structureId}/preview-impact`,
+    //             method: 'POST',
+    //             contentType: 'application/json',
+    //             data: JSON.stringify(componentIds)
+    //         });
+
+    //         // Show a summary in the UI (You can add a div for this in your modal)
+    //         if (response.difference !== 0) {
+    //             const color = response.difference > 0 ? 'text-danger' : 'text-success';
+    //             const msg = response.difference > 0 ? 'Increase' : 'Decrease';
+    //             $('#impactPreviewArea').html(`
+    //             <div class="alert alert-warning mt-2">
+    //                 <small><i class="fas fa-info-circle me-1"></i> 
+    //                 Financial Impact: <strong>${msg} of ${formatCurrency(Math.abs(response.difference))}</strong> 
+    //                 per month across ${response.employeeCount} employees.
+    //                 </small>
+    //             </div>
+    //         `).removeClass('d-none');
+    //         }
+    //     } catch (error) {
+    //         console.error('Preview failed', error);
+    //     }
+    // };
+
+    // // Trigger preview when components change in the select box
+    // $('#componentSelect').on('change', previewImpact);
+
     const deactivateStructure = async (structureId) => {
-        console.log("deactivating struc" )
+        console.log("deactivating struc")
         const structure = structuresData.find(s => s.id === structureId);
         if (!structure) return;
         const confirmed = await window.showConfirmation({
@@ -207,7 +242,7 @@ const SalaryStructures = (() => {
             confirmClass: 'btn-danger'
         });
         console.log("Confirmation result:", confirmed); // Debug log
-    if (!confirmed) return;
+        if (!confirmed) return;
 
         try {
             await $.ajax({
@@ -270,7 +305,7 @@ const SalaryStructures = (() => {
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount);
+        return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
     };
 
     return { init, editStructure, deactivateStructure };

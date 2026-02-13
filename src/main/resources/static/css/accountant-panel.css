@@ -1,0 +1,11 @@
+.sticky-toolbar {
+    position: sticky;
+    top: 70px;
+    /* below your header */
+    z-index: 1030;
+    border-left: 4px solid #0d6efd;
+}
+
+.sticky-toolbar .btn {
+    white-space: nowrap;
+}

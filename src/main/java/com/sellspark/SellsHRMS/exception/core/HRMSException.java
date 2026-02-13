@@ -25,4 +25,18 @@ public class HRMSException extends RuntimeException {
         this.httpStatus = httpStatus;
     }
 
+    public HRMSException(String message, String errorCode, HttpStatus httpStatus, Throwable cause,
+            boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+        this.errorCode = errorCode;
+        this.httpStatus = httpStatus;
+    }
+
+    public HRMSException(String message, String errorCode, HttpStatus httpStatus, boolean enableSuppression,
+            boolean writableStackTrace, Throwable cause) {
+        super(message, cause, enableSuppression, writableStackTrace);
+        this.errorCode = errorCode;
+        this.httpStatus = httpStatus;
+    }
+
 }

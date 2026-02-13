@@ -1,7 +1,7 @@
 app:
   base-url: http://localhost:8080
   upload:
-    base-dir: /uploads/hrms-files/
+    base-dir: C:/uploads/hrms-files/
     url-path: /files/hrms
 
   async:
@@ -76,6 +76,7 @@ server:
   error:
     whitelabel:
       enabled: false
+    include-message: always
 
 logging:
   level:
@@ -83,6 +84,6 @@ logging:
     "[com.sellspark.SellsHRMS]": DEBUG
     "[com.sellspark.SellsHRMS.controller.api]": DEBUG
     # '[org.hibernate.SQL]': DEBUG
-    # '[org.springframework.security.web.FilterChainProxy]': INFO
-    # '[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]': ERROR
+    '[org.springframework.security.web.FilterChainProxy]': INFO
+    '[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]': ERROR
     # '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE

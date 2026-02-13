@@ -6,7 +6,6 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-
 public class PayrollFormulaEvaluator {
 
     private static final ExpressionParser parser = new SpelExpressionParser();
@@ -16,13 +15,14 @@ public class PayrollFormulaEvaluator {
             return component.getAmount();
 
         if (component.getCalculationType() == SalaryComponent.CalculationType.PERCENTAGE)
-            
+
             return assignment.getBasePay() * extractPercent(component.getFormula());
 
         if (component.getCalculationType() == SalaryComponent.CalculationType.FORMULA) {
             try {
                 StandardEvaluationContext context = new StandardEvaluationContext();
                 context.setVariable("BASE", assignment.getBasePay());
+                context.setVariable("BASEPAY", assignment.getBasePay());
                 return parser.parseExpression(component.getFormula()).getValue(context, Double.class);
             } catch (Exception e) {
                 return 0.0;

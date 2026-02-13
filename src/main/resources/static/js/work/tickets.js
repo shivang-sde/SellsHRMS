@@ -22,7 +22,7 @@ async function loadProjects() {
     $('[name="projectId"]').append(options);
   } catch (err) {
     console.error("Failed to load projects", err);
-    showToast("Could not load projects", "warning");
+    showToast("warning", "Could not load projects");
   }
 }
 
@@ -42,6 +42,7 @@ async function loadSubordinates() {
     $("#ticketAssigneesSelect").html(options);
   } catch (err) {
     console.error("Failed to load subordinates", err);
+    showToast("warning", "Could not load subordinates");
   }
 }
 
@@ -56,7 +57,7 @@ async function loadTickets() {
     renderTickets(allTickets);
   } catch (error) {
     console.error("Failed to load tickets:", error);
-    showToast("Failed to load tickets", "error");
+    showToast("error", "Failed to load tickets");
   } finally {
     loadingUtils.hide();
   }
@@ -150,7 +151,7 @@ async function editTicket(id) {
     modalUtils.open("ticketModal");
   } catch (err) {
     console.error(err);
-    showToast("Failed to load ticket details", "error");
+    showToast("error", "Failed to load ticket details");
   } finally {
     loadingUtils.hide();
   }
@@ -183,10 +184,10 @@ async function saveTicket() {
 
     if (editingTicketId) {
       await ticketAPI.update(editingTicketId, data);
-      showToast("Ticket updated successfully", "success");
+      showToast("success", "Ticket updated successfully");
     } else {
       const created = await ticketAPI.create(data);
-      showToast("Ticket created successfully", "success");
+      showToast("success", "Ticket created successfully");
 
       // Handle attachments if any
       await uploadTicketAttachments(created.id);
@@ -196,7 +197,7 @@ async function saveTicket() {
     await loadTickets();
   } catch (error) {
     console.error(error);
-    showToast(error.message || "Failed to save ticket", "error");
+    showToast("error", error.message || "Failed to save ticket");
   } finally {
     loadingUtils.hide();
   }
@@ -247,20 +248,20 @@ async function loadTicketAttachments(ticketId) {
 async function startTicket(ticketId) {
   try {
     await ticketAPI.updateStatus(ticketId, "IN_PROGRESS");
-    showToast("Ticket started", "success");
+    showToast("success", "Ticket started");
     await loadTickets();
   } catch (err) {
-    showToast(err.message || "Failed to start ticket", "error");
+    showToast("error", err.message || "Failed to start ticket");
   }
 }
 
 async function completeTicket(ticketId) {
   try {
     await ticketAPI.updateStatus(ticketId, "COMPLETED");
-    showToast("Ticket completed", "success");
+    showToast("success", "Ticket completed");
     await loadTickets();
   } catch (err) {
-    showToast(err.message || "Failed to complete ticket", "error");
+    showToast("error", err.message || "Failed to complete ticket");
   }
 }
 
@@ -298,23 +299,59 @@ async function loadTicketActivity(ticketId) {
 // ============================================================
 // FILE ATTACHMENT HANDLER
 // ============================================================
-// ============================================================
-// FILE ATTACHMENT HANDLER
-// ============================================================
 async function uploadTicketAttachments(ticketId) {
-  const fileInput = document.getElementById("ticketAttachmentsInput");
-  if (!fileInput || fileInput.files.length === 0) return;
+
+  if (!ticketId) {
+    showToast("warning", "Please save the ticket first before uploading attachments.");
+    return;
+  }
+
+  const employeeId = window.APP.EMPLOYEE_ID;
+  const rows = document.querySelectorAll(".attachment-row");
+
+  if (!rows.length) {
+    showToast("warning", "No attachments selected.");
+    return;
+  }
 
   const formData = new FormData();
-  Array.from(fileInput.files).forEach((file) => formData.append("files", file));
+
+  rows.forEach((row) => {
+    const fileInput = row.querySelector('[name="attachments"]');
+    const descInput = row.querySelector('[name="attachmentDescriptions"]');
+    const file = fileInput?.files?.[0];
+
+    if (file) {
+      formData.append("files", file);
+      formData.append("descriptions", descInput?.value || "");
+    }
+  });
+
+  formData.append("employeeId", employeeId);
 
   try {
-    await ticketAPI.addAttachment(ticketId, formData);
-    showToast("Attachments uploaded successfully", "success");
-  } catch (error) {
-    showToast("Failed to upload attachments", "error");
+    loadingUtils.show();
+
+    const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error("Failed to upload attachments");
+    const result = await response.json();
+
+    showToast("success", result.message || "Attachments uploaded successfully");
+
+    // Refresh the list to show new uploads
+    await loadTicketAttachments(ticketId);
+  } catch (err) {
+    console.error(err);
+    showToast("error", "Error uploading attachments");
+  } finally {
+    loadingUtils.hide();
   }
 }
+
 
 // ============================================================
 // DELETE
@@ -327,10 +364,10 @@ function deleteTicket(id) {
       try {
         loadingUtils.show();
         await ticketAPI.delete(id);
-        showToast("Ticket deleted successfully", "success");
+        showToast("success", "Ticket deleted successfully");
         await loadTickets();
       } catch (err) {
-        showToast("Failed to delete ticket", "error");
+        showToast("error", "Failed to delete ticket");
       } finally {
         loadingUtils.hide();
       }

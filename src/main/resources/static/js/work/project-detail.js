@@ -645,9 +645,3 @@ function getStatusBadge(status) {
   }
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.modal').forEach(modal => {
-    document.body.appendChild(modal);
-  });
-});

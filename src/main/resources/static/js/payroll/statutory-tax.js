@@ -78,22 +78,22 @@ $(document).ready(function () {
       contentType: "application/json",
       data: JSON.stringify(dto),
       success: function (component) {
-         const componentId = component.id || id;
-         const currentIds = $("#statutoryRuleTable tbody tr")
-        .map((_, tr) => $(tr).data("rule-id"))
-        .get()
-        .filter(Boolean);
+        const componentId = component.id || id;
+        const currentIds = $("#statutoryRuleTable tbody tr")
+          .map((_, tr) => $(tr).data("rule-id"))
+          .get()
+          .filter(Boolean);
 
         const deleted = window.oldStatutoryRuleIds?.filter(
-        (rid) => !currentIds.includes(rid)
-      ) || [];
+          (rid) => !currentIds.includes(rid)
+        ) || [];
 
-      deleted.forEach((rid) => {
-        $.ajax({
-          url: `${ctx.API_BASE}/statutory/rules/${rid}/deactivate`,
-          method: "PATCH",
+        deleted.forEach((rid) => {
+          $.ajax({
+            url: `${ctx.API_BASE}/statutory/rules/${rid}/deactivate`,
+            method: "PATCH",
+          });
         });
-      });
 
         // Save or update rules sequentially
         $("#statutoryRuleTable tbody tr").each(function () {
@@ -109,27 +109,27 @@ $(document).ready(function () {
             deductionCycle: row.find(".ruleDeductionCycle").val(),
           };
           if (ruleId) {
-          // ✅ Update existing rule
-          $.ajax({
-            url: `${ctx.API_BASE}/statutory/rules/${ruleId}`,
-            method: "PUT",
-            contentType: "application/json",
-            data: JSON.stringify(ruleDto),
-          });
-        } else {
-          // ➕ Create new rule
-          $.ajax({
-            url: `${ctx.API_BASE}/statutory/components/${componentId}/rules`,
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(ruleDto),
-          });
-        }
+            // ✅ Update existing rule
+            $.ajax({
+              url: `${ctx.API_BASE}/statutory/rules/${ruleId}`,
+              method: "PUT",
+              contentType: "application/json",
+              data: JSON.stringify(ruleDto),
+            });
+          } else {
+            // ➕ Create new rule
+            $.ajax({
+              url: `${ctx.API_BASE}/statutory/components/${componentId}/rules`,
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify(ruleDto),
+            });
+          }
         });
 
         $("#statutoryModal").modal("hide");
         loadStatutory();
-        showToast("Statutory component saved successfully!");
+        showToast("success", "Statutory component saved successfully!");
       },
     });
   });
@@ -151,33 +151,33 @@ $(document).ready(function () {
     });
   });
 
-// ===========================
-// 🔗 STATUTORY MAPPINGS
-// ===========================
-function loadStatutoryComponentSelect(selectedId = null) {
-  $.getJSON(`${ctx.API_BASE}/statutory/components/organisation/${ctx.ORG_ID}`, function (data) {
-    const select = $("#mappingStatutoryComponent").empty().append('<option value="">Select...</option>');
-    data.forEach(c => {
-      select.append(`<option value="${c.id}" ${selectedId == c.id ? "selected" : ""}>${c.name} (${c.code})</option>`);
+  // ===========================
+  // 🔗 STATUTORY MAPPINGS
+  // ===========================
+  function loadStatutoryComponentSelect(selectedId = null) {
+    $.getJSON(`${ctx.API_BASE}/statutory/components/organisation/${ctx.ORG_ID}`, function (data) {
+      const select = $("#mappingStatutoryComponent").empty().append('<option value="">Select...</option>');
+      data.forEach(c => {
+        select.append(`<option value="${c.id}" ${selectedId == c.id ? "selected" : ""}>${c.name} (${c.code})</option>`);
+      });
     });
-  });
-}
+  }
 
-function loadSalaryComponentSelect(selectedId = null) {
-  $.getJSON(`${ctx.API_BASE}/salary-components/organisation/${ctx.ORG_ID}`, function (data) {
-    const select = $("#mappingSalaryComponent").empty().append('<option value="">Select...</option>');
-    data.forEach(c => {
-      select.append(`<option value="${c.id}" ${selectedId == c.id ? "selected" : ""}>${c.name} (${c.abbreviation})</option>`);
+  function loadSalaryComponentSelect(selectedId = null) {
+    $.getJSON(`${ctx.API_BASE}/salary-components/organisation/${ctx.ORG_ID}`, function (data) {
+      const select = $("#mappingSalaryComponent").empty().append('<option value="">Select...</option>');
+      data.forEach(c => {
+        select.append(`<option value="${c.id}" ${selectedId == c.id ? "selected" : ""}>${c.name} (${c.abbreviation})</option>`);
+      });
     });
-  });
-}
+  }
 
-function loadMappings() {
-  $.getJSON(`${ctx.API_BASE}/statutory-mappings/organisation/${ctx.ORG_ID}`, function (data) {
-    const tbody = $("#mappingTable tbody").empty();
-    console.log("mapping data", data)
-    data.forEach((m) => {
-      tbody.append(`
+  function loadMappings() {
+    $.getJSON(`${ctx.API_BASE}/statutory-mappings/organisation/${ctx.ORG_ID}`, function (data) {
+      const tbody = $("#mappingTable tbody").empty();
+      console.log("mapping data", data)
+      data.forEach((m) => {
+        tbody.append(`
         <tr data-id="${m.id}" data-stat-id="${m.statutoryComponentId}" data-sal-id="${m.salaryComponentId}">
           <td>${m.statutoryComponentName}</td>
           <td>${m.salaryComponentName}</td>
@@ -189,115 +189,115 @@ function loadMappings() {
           </td>
         </tr>
       `);
+      });
+    });
+  }
+
+  // 🧭 Frontend duplicate check
+  function checkDuplicateMapping(statId, salId, existingId = null) {
+    let duplicate = false;
+    $("#mappingTable tbody tr").each(function () {
+      const tr = $(this);
+      const currentStatId = tr.data("stat-id");
+      const currentSalId = tr.data("sal-id");
+      const currentRowId = tr.data("id");
+      if (
+        currentStatId == statId &&
+        currentSalId == salId &&
+        currentRowId != existingId
+      ) {
+        duplicate = true;
+        return false; // break
+      }
+    });
+    return duplicate;
+  }
+
+  // 📥 Create or Update Mapping
+  $("#saveMapping").click(function () {
+    const id = $("#mappingId").val();
+    const statId = $("#mappingStatutoryComponent").val();
+    const salId = $("#mappingSalaryComponent").val();
+
+    if (!statId || !salId) {
+      showToast("warning", "Please select both Statutory and Salary components!",);
+      return;
+    }
+
+    // Prevent duplicate frontend entry
+    if (checkDuplicateMapping(statId, salId, id)) {
+      showToast("warning", "This mapping already exists!");
+      return;
+    }
+
+    const dto = {
+      statutoryComponentId: statId,
+      salaryComponentId: salId,
+      organisationId: ctx.ORG_ID,
+      employeePercent: parseFloat($("#mappingEmployeePercent").val()) || 0,
+      employerPercent: parseFloat($("#mappingEmployerPercent").val()) || 0,
+      // countryCode: $("#mappingCountry").val(),
+      // stateCode: $("#mappingState").val(),
+      includeInCalculation: $("#mappingInclude").is(":checked"),
+    };
+
+    const url = id
+      ? `${ctx.API_BASE}/statutory-mappings/${id}`
+      : `${ctx.API_BASE}/statutory-mappings`;
+    const method = id ? "PUT" : "POST";
+
+    $.ajax({
+      url,
+      method,
+      contentType: "application/json",
+      data: JSON.stringify(dto),
+      success: function () {
+        $("#mappingModal").modal("hide");
+        loadMappings();
+        showToast("success", `Mapping ${id ? "updated" : "created"} successfully!`);
+      },
     });
   });
-}
 
-// 🧭 Frontend duplicate check
-function checkDuplicateMapping(statId, salId, existingId = null) {
-  let duplicate = false;
-  $("#mappingTable tbody tr").each(function () {
-    const tr = $(this);
-    const currentStatId = tr.data("stat-id");
-    const currentSalId = tr.data("sal-id");
-    const currentRowId = tr.data("id");
-    if (
-      currentStatId == statId &&
-      currentSalId == salId &&
-      currentRowId != existingId
-    ) {
-      duplicate = true;
-      return false; // break
+  // 🖋 Edit Mapping
+  $(document).on("click", ".editMapping", function () {
+    const id = $(this).data("id");
+    $.getJSON(`${ctx.API_BASE}/statutory-mappings/${id}`, function (m) {
+      $("#mappingId").val(m.id);
+      $("#mappingEmployeePercent").val(m.employeePercent);
+      $("#mappingEmployerPercent").val(m.employerPercent);
+      // $("#mappingCountry").val(m.countryCode);
+      // $("#mappingState").val(m.stateCode);
+      $("#mappingInclude").prop("checked", m.includeInCalculation);
+
+      // Load dropdowns with current selections
+      loadStatutoryComponentSelect(m.statutoryComponentId);
+      loadSalaryComponentSelect(m.salaryComponentId);
+
+      $("#mappingModal").modal("show");
+    });
+  });
+
+  // ❌ Delete Mapping
+  $(document).on("click", ".deleteMapping", function () {
+    const id = $(this).data("id");
+    $.ajax({
+      url: `${ctx.API_BASE}/statutory-mappings/${id}/deactivate`,
+      method: "PATCH",
+      success: function () {
+        loadMappings();
+        showToast("success", "Mapping removed!");
+      },
+    });
+  });
+
+  // When modal opens (for create)
+  $("#mappingModal").on("show.bs.modal", function () {
+    if (!$("#mappingId").val()) {
+      loadStatutoryComponentSelect();
+      loadSalaryComponentSelect();
     }
   });
-  return duplicate;
-}
-
-// 📥 Create or Update Mapping
-$("#saveMapping").click(function () {
-  const id = $("#mappingId").val();
-  const statId = $("#mappingStatutoryComponent").val();
-  const salId = $("#mappingSalaryComponent").val();
-
-  if (!statId || !salId) {
-    showToast("Please select both Statutory and Salary components!", "warning");
-    return;
-  }
-
-  // Prevent duplicate frontend entry
-  if (checkDuplicateMapping(statId, salId, id)) {
-    showToast("This mapping already exists!", "warning");
-    return;
-  }
-
-  const dto = {
-    statutoryComponentId: statId,
-    salaryComponentId: salId,
-    organisationId: ctx.ORG_ID,
-    employeePercent: parseFloat($("#mappingEmployeePercent").val()) || 0,
-    employerPercent: parseFloat($("#mappingEmployerPercent").val()) || 0,
-    // countryCode: $("#mappingCountry").val(),
-    // stateCode: $("#mappingState").val(),
-    includeInCalculation: $("#mappingInclude").is(":checked"),
-  };
-
-  const url = id
-    ? `${ctx.API_BASE}/statutory-mappings/${id}`
-    : `${ctx.API_BASE}/statutory-mappings`;
-  const method = id ? "PUT" : "POST";
-
-  $.ajax({
-    url,
-    method,
-    contentType: "application/json",
-    data: JSON.stringify(dto),
-    success: function () {
-      $("#mappingModal").modal("hide");
-      loadMappings();
-      showToast(`Mapping ${id ? "updated" : "created"} successfully!`);
-    },
-  });
-});
-
-// 🖋 Edit Mapping
-$(document).on("click", ".editMapping", function () {
-  const id = $(this).data("id");
-  $.getJSON(`${ctx.API_BASE}/statutory-mappings/${id}`, function (m) {
-    $("#mappingId").val(m.id);
-    $("#mappingEmployeePercent").val(m.employeePercent);
-    $("#mappingEmployerPercent").val(m.employerPercent);
-    // $("#mappingCountry").val(m.countryCode);
-    // $("#mappingState").val(m.stateCode);
-    $("#mappingInclude").prop("checked", m.includeInCalculation);
-
-    // Load dropdowns with current selections
-    loadStatutoryComponentSelect(m.statutoryComponentId);
-    loadSalaryComponentSelect(m.salaryComponentId);
-
-    $("#mappingModal").modal("show");
-  });
-});
-
-// ❌ Delete Mapping
-$(document).on("click", ".deleteMapping", function () {
-  const id = $(this).data("id");
-  $.ajax({
-    url: `${ctx.API_BASE}/statutory-mappings/${id}/deactivate`,
-    method: "PATCH",
-    success: function () {
-      loadMappings();
-      showToast("Mapping removed!");
-    },
-  });
-});
-
-// When modal opens (for create)
-$("#mappingModal").on("show.bs.modal", function () {
-  if (!$("#mappingId").val()) {
-    loadStatutoryComponentSelect();
-    loadSalaryComponentSelect();
-  }
-});
 
   // ===========================
   //  💰 INCOME TAX SLABS
@@ -360,21 +360,21 @@ $("#mappingModal").on("show.bs.modal", function () {
         const slabId = slab.id || id;
 
         // 🧠 STEP 2: Detect deleted rules (optional enhancement)
-      const currentIds = $("#taxRuleTable tbody tr")
-        .map((_, tr) => $(tr).data("rule-id"))
-        .get()
-        .filter(Boolean); // filter out empty ones
+        const currentIds = $("#taxRuleTable tbody tr")
+          .map((_, tr) => $(tr).data("rule-id"))
+          .get()
+          .filter(Boolean); // filter out empty ones
 
-      const deleted = (window.existingTaxRuleIds || []).filter(
-        (id) => !currentIds.includes(id)
-      );
+        const deleted = (window.existingTaxRuleIds || []).filter(
+          (id) => !currentIds.includes(id)
+        );
 
-      deleted.forEach((id) => {
-        $.ajax({
-          url: `${ctx.API_BASE}/tax/rules/${id}`,
-          method: "DELETE",
+        deleted.forEach((id) => {
+          $.ajax({
+            url: `${ctx.API_BASE}/tax/rules/${id}`,
+            method: "DELETE",
+          });
         });
-      });
 
         $("#taxRuleTable tbody tr").each(function () {
           const row = $(this);
@@ -386,22 +386,22 @@ $("#mappingModal").on("show.bs.modal", function () {
             condition: row.find(".ruleCondition").val(),
           };
           if (ruleId) {
-          // ✅ Update existing rule
-          $.ajax({
-            url: `${ctx.API_BASE}/tax/rules/${ruleId}`,
-            method: "PUT",
-            contentType: "application/json",
-            data: JSON.stringify(ruleDto),
-          });
-        } else {
-          // ➕ Create new rule
-          $.ajax({
-            url: `${ctx.API_BASE}/tax/slabs/${slabId}/rules`,
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(ruleDto),
-          });
-        }
+            // ✅ Update existing rule
+            $.ajax({
+              url: `${ctx.API_BASE}/tax/rules/${ruleId}`,
+              method: "PUT",
+              contentType: "application/json",
+              data: JSON.stringify(ruleDto),
+            });
+          } else {
+            // ➕ Create new rule
+            $.ajax({
+              url: `${ctx.API_BASE}/tax/slabs/${slabId}/rules`,
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify(ruleDto),
+            });
+          }
         });
 
         $("#taxModal").modal("hide");
@@ -422,8 +422,8 @@ $("#mappingModal").on("show.bs.modal", function () {
       $("#taxRuleTable tbody").empty();
       $.getJSON(`${ctx.API_BASE}/tax/slabs/${t.id}/rules`, function (rules) {
 
-       window.existingTaxRuleIds = rules.map((r) => r.id); // store globally
-       rules.forEach((r) => addTaxRuleRow(r));
+        window.existingTaxRuleIds = rules.map((r) => r.id); // store globally
+        rules.forEach((r) => addTaxRuleRow(r));
       });
       $("#taxModal").modal("show");
     });

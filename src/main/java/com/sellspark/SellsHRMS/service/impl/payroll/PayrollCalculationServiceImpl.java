@@ -2,23 +2,15 @@ package com.sellspark.SellsHRMS.service.impl.payroll;
 
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipComponentDTO;
-import com.lowagie.text.Document;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.html.simpleparser.HTMLWorker;
-import com.lowagie.text.pdf.PdfWriter;
-import com.sellspark.SellsHRMS.dto.leave.LeaveBalanceResponse;
 import com.sellspark.SellsHRMS.dto.payroll.PayrollComputationRequest;
 import com.sellspark.SellsHRMS.entity.*;
 import com.sellspark.SellsHRMS.entity.payroll.*;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.repository.payroll.*;
-import com.sellspark.SellsHRMS.service.AttendanceService;
-import com.sellspark.SellsHRMS.service.LeaveService;
 import com.sellspark.SellsHRMS.service.helper.SalaryComponentDependencySorter;
+import com.sellspark.SellsHRMS.service.impl.payroll.StatutoryComputationEngineImpl.StatutoryResult;
 import com.sellspark.SellsHRMS.service.payroll.PayrollCalculationService;
-import com.sellspark.SellsHRMS.service.payroll.PayslipPdfService;
-import com.sellspark.SellsHRMS.service.payroll.SalarySlipTemplateService;
 import com.sellspark.SellsHRMS.service.payroll.StatutoryComputationEngineService;
 import com.sellspark.SellsHRMS.service.payroll.TaxComputationEngineService;
 import com.sellspark.SellsHRMS.utils.FormulaExpressionEvaluator;
@@ -26,16 +18,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,32 +30,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PayrollCalculationServiceImpl implements PayrollCalculationService {
 
-    @Value("${app.upload.base-dir}")
-    private String baseDir;
-
-    @Value("${app.base-url}")
-    private String baseUrl;
-
-    @Value("${app.upload.url-path}")
-    private String uploadUrlPath;
-
     private final OrganisationRepository organisationRepository;
-    @Autowired
-    private final PayslipPdfService payslipPdfService;
-    private final EmployeeRepository employeeRepository;
-    private final AttendanceService attendanceService;
-    private final EmployeeLeaveBalanceRepository leaveBalanceRepository;
     private final EmployeeSalaryAssignmentRepository assignmentRepository;
-    private final SalaryStructureRepository structureRepository;
     private final SalarySlipRepository slipRepository;
-    private final SalarySlipComponentRepository slipComponentRepository;
     private final StatutoryComputationEngineService statutoryEngine;
     private final TaxComputationEngineService taxEngine;
-    private final LeaveService leaveService;
     private final AttendanceSummaryRepository attendanceSummaryRepository;
-
-    // Inject SalarySlipTemplateService
-    private final SalarySlipTemplateService templateService;
 
     // ───────────────────────────────────────────────
     // Run Payroll for full organisation / pay run
@@ -132,45 +96,49 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         if (structure == null)
             throw new ResourceNotFoundException("Salary structure not assigned to employee");
 
-        // ───── Build runtime context for formulas ─────
-        Map<String, Object> context = buildContext(assignment, org);
-        log.info("🧾 Context before att computation: {}", context);
-
         LocalDate from = payRun.getStartDate();
         LocalDate to = payRun.getEndDate();
 
         // ───── Attendance derived days ─────
-        Map<String, Integer> att = calculateAttendanceStats(assignment.getEmployee().getId(), from, to);
+        Map<String, Double> att = calculateAttendanceStats(assignment.getEmployee().getId(), from, to);
 
         log.info("Attendance stats: {}", att);
-        double workingDays = (double) att.getOrDefault("WORKING_DAYS", 0);
-        double paymentDays = (double) att.getOrDefault("PAYMENT_DAYS", 0);
-        double lopDays = (double) att.getOrDefault("LOP_DAYS", 0);
+        double workingDays = att.getOrDefault("WORKING_DAYS", 0.0);
+        double paymentDays = att.getOrDefault("PAYMENT_DAYS", 0.0);
+        double lopDays = att.getOrDefault("LOP_DAYS", 0.0);
+
+        // ───── Build runtime context for formulas ─────
+        Map<String, Object> context = buildContext(assignment, org);
+        log.info("🧾 Context before att computation: {}", context);
 
         context.put("WORKING_DAYS", workingDays);
         context.put("PAYMENT_DAYS", paymentDays);
         context.put("LOP_DAYS", lopDays);
 
-        log.info("context after att {}", context);
-
-        double totalEarning = 0.0;
-        double totalDeduction = 0.0;
-
-        totalEarning += assignment.getBasePay(); // add base pay;
         List<SalarySlipComponent> slipComponents = new ArrayList<>();
-
         Map<SalaryComponent, Double> componentValueMap = new HashMap<>();
 
-        // ───── Step 1: Compute salary structure components ─────
+        double totalEarnings = 0.0;
+        double totalDeductions = 0.0;
+
+        // 1. Base Pay Pro-rata
+        double pratedBase = round(assignment.getBasePay() * (paymentDays / workingDays));
+        totalEarnings += pratedBase;
+        // Add Base Pay as the first component
+        slipComponents.add(createSlipComponent(null, "Base Pay", "BASE", "EARNING", pratedBase, "Pro-rated Base Pay"));
+
+        // Crucial: Add BASE to context so other components can use it
+        context.put("BASE", pratedBase);
+        context.put("COMP:BASE", pratedBase);
+
+        // ───── Step 2:Loop Salary Structure Components ─────
         List<SalaryComponent> orderedComponents = SalaryComponentDependencySorter
                 .sortByDependencies(structure.getComponents());
 
         for (SalaryComponent comp : orderedComponents) {
             if (Boolean.FALSE.equals(comp.getActive()))
                 continue;
-
-            boolean applicable = FormulaExpressionEvaluator.evaluateCondition(comp.getComponentCondition(), context);
-            if (!applicable)
+            if (!FormulaExpressionEvaluator.evaluateCondition(comp.getComponentCondition(), context))
                 continue;
 
             double amount = computeComponentAmount(comp, context);
@@ -179,103 +147,88 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
 
             // Apply pro-rata if depends on payment days
             if (Boolean.TRUE.equals(comp.getDependsOnPaymentDays()) && workingDays > 0) {
-                double ratio = paymentDays / workingDays;
-                amount *= ratio;
-                log.info("component {} -> pro-rata amount {}", comp.getAbbreviation(), amount); // pro-rata calc
+                amount = amount * (paymentDays / workingDays);
             }
+            amount = round(amount);
 
             // Add to context for formulas
             context.put(comp.getAbbreviation(), amount); // for formula references
             context.put("COMP:" + comp.getAbbreviation(), amount); // for COMP:XXX references
             componentValueMap.put(comp, amount);
 
+            slipComponents.add(createSlipComponent(comp, comp.getName(), comp.getAbbreviation(), comp.getType().name(),
+                    amount, comp.getFormula()));
+
             log.info("component computed map -> {}", componentValueMap);
-            SalarySlipComponent slipComp = new SalarySlipComponent();
-            slipComp.setComponent(comp);
-            slipComp.setComponentName(comp.getName());
-            slipComp.setComponentAbbreviation(comp.getAbbreviation());
-            slipComp.setComponentType(comp.getType().name());
-            slipComp.setAmount(round(amount));
-            slipComp.setCalculationLog(comp.getFormula());
-            slipComponents.add(slipComp);
 
             if (comp.getType() == SalaryComponent.ComponentType.EARNING)
-                totalEarning += amount;
-            else if (comp.getType() == SalaryComponent.ComponentType.DEDUCTION)
-                totalDeduction += amount;
+                totalEarnings += amount;
+            else
+                totalDeductions += amount;
         }
 
-        // ───── Step 2: Statutory deductions ─────
-        Map<String, Double> statutoryDeductions = statutoryEngine.compute(assignment.getEmployee(), componentValueMap,
-                org);
-        for (Map.Entry<String, Double> entry : statutoryDeductions.entrySet()) {
-            double empDeduction = entry.getValue();
+        // ───── Step 3: Statutory deductions ─────
+        Map<String, StatutoryResult> statutoryMap = statutoryEngine.computeDetailed(assignment,
+                componentValueMap, org);
 
-            // Apply pro-rata if needed
-            if (workingDays > 0) {
-                empDeduction *= paymentDays / workingDays;
-            }
+        double totalEmployerContribution = 0.0;
 
-            SalarySlipComponent statComp = new SalarySlipComponent();
-            statComp.setIsStatutory(true);
-            statComp.setComponentName(entry.getKey());
-            statComp.setComponentType("DEDUCTION");
-            statComp.setAmount(round(empDeduction));
-            statComp.setCalculationLog("Auto computed by Statutory Engine");
-            slipComponents.add(statComp);
-
-            totalDeduction += empDeduction;
+        for (var entry : statutoryMap.entrySet()) {
+            StatutoryResult result = entry.getValue();
+            double empDed = round(result.employeeDeduction());
+            // 1. Employee Part (Deduction)
+            totalDeductions += empDed;
+            slipComponents.add(createStatutoryComponent(entry.getKey(), empDed, "Statutory"));
+            // 2. Employer Part (Contribution - NOT a deduction)
+            totalEmployerContribution += round(result.employerContribution());
         }
 
-        // ───── Step 3: Income tax (TDS) ─────
-        double tds = taxEngine.compute(assignment.getEmployee(), assignment, totalEarning);
+        // ───── Step 4: Income tax (TDS) ─────
+        double tds = round(taxEngine.compute(assignment.getEmployee(), assignment, totalEarnings));
         log.info("tds {}", tds);
-
-        // Remove old TDS if any (for re-runs)
-        slipComponents.removeIf(c -> "INCOME TAX (TDS)".equals(c.getComponentName()));
-        totalDeduction = totalDeduction - slipComponents.stream()
-                .filter(c -> "INCOME TAX (TDS)".equals(c.getComponentName()))
-                .mapToDouble(SalarySlipComponent::getAmount).sum();
-
         if (tds > 0) {
-            SalarySlipComponent tdsComp = new SalarySlipComponent();
-            tdsComp.setIsStatutory(false);
-            tdsComp.setComponentName("INCOME TAX (TDS)");
-            tdsComp.setComponentType("DEDUCTION");
-            tdsComp.setAmount(round(tds));
-            tdsComp.setCalculationLog("Auto computed by Tax Engine");
-            slipComponents.add(tdsComp);
-            totalDeduction += tds;
+            totalDeductions += tds;
+            slipComponents.add(createStatutoryComponent("INCOME TAX (TDS)", tds, "Income Tax Slab Calculation"));
         }
 
-        // ───── Step 4: Net Pay ─────
-        double netPay = round(totalEarning - totalDeduction);
+        // // Remove old TDS if any (for re-runs)
+        // slipComponents.removeIf(c -> "INCOME TAX
+        // (TDS)".equals(c.getComponentName()));
+        // totalDeduction = totalDeduction - slipComponents.stream()
+        // .filter(c -> "INCOME TAX (TDS)".equals(c.getComponentName()))
+        // .mapToDouble(SalarySlipComponent::getAmount).sum();
 
-        // ───── Step 5: Build and save slip ─────
-        SalarySlip slip = new SalarySlip();
-        slip.setStatus(SalarySlip.SlipStatus.GENERATED);
-        slip.setOrganisation(org);
-        slip.setEmployee(assignment.getEmployee());
-        slip.setAssignment(assignment);
-        slip.setPayRun(payRun);
-        slip.setFromDate(from);
-        slip.setToDate(to);
-        slip.setWorkingDays(workingDays);
-        slip.setPaymentDays(paymentDays);
-        slip.setLopDays(lopDays);
-        slip.setGrossPay(round(totalEarning));
-        slip.setTotalDeductions(round(totalDeduction));
-        slip.setNetPay(netPay);
+        // ───── Step 5:Final Net ─────
+        // double netPay = round(totalEarnings - totalDeductions);
+
+        // ───── Step 6: Build and save slip ─────
+        SalarySlip slip = SalarySlip.builder()
+                .grossPay(round(totalEarnings))
+                .status(SalarySlip.SlipStatus.GENERATED)
+                .organisation(org)
+                .employee(assignment.getEmployee())
+                .assignment(assignment)
+                .payRun(payRun)
+                .workingDays(workingDays)
+                .paymentDays(paymentDays)
+                .lopDays(lopDays)
+                .grossPay(round(totalEarnings))
+                .totalDeductions(round(totalDeductions))
+                .statutoryContributionOrg(round(totalEmployerContribution))
+                .netPay(round(totalEarnings - totalDeductions))
+                .components(slipComponents)
+                .build();
+        // Then set slip reference for components
+        slipComponents.forEach(c -> c.setSalarySlip(slip));
         slip.setComponents(slipComponents);
 
+        // save components
         slipRepository.save(slip);
-        slipComponents.forEach(c -> c.setSalarySlip(slip));
-        slipComponentRepository.saveAll(slipComponents);
 
         SalarySlipDTO dto = mapToDTO(slip);
         log.info("Salary slip DTO: {}", dto);
 
-        generateAndStorePdf(slip, dto, org, payRun); // PDF generation
+        // generateAndStorePdf(slip, dto, org, payRun); // PDF generation
 
         return dto;
     }
@@ -308,7 +261,8 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     // ───────────────────────────────────────────────
     // Formula / Fixed / Percentage calculation
     // ───────────────────────────────────────────────
-    private double computeComponentAmount(SalaryComponent comp, Map<String, Object> context) {
+    @Override
+    public double computeComponentAmount(SalaryComponent comp, Map<String, Object> context) {
         return switch (comp.getCalculationType()) {
             case FIXED -> Optional.ofNullable(comp.getAmount()).orElse(0.0);
             case FORMULA -> FormulaExpressionEvaluator.evaluate(comp.getFormula(), context);
@@ -330,11 +284,11 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     // ───────────────────────────────────────────────
     // Attendance stats: Working, Payment, LOP
     // ───────────────────────────────────────────────
-    private Map<String, Integer> calculateAttendanceStats(Long employeeId, LocalDate from, LocalDate to) {
+    private Map<String, Double> calculateAttendanceStats(Long employeeId, LocalDate from, LocalDate to) {
         List<AttendanceSummary> records = attendanceSummaryRepository
                 .findByEmployeeIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(employeeId, from, to);
 
-        int present = 0, half = 0, holiday = 0, weekOff = 0, onLeave = 0, absent = 0;
+        double present = 0, half = 0, holiday = 0, weekOff = 0, onLeave = 0, absent = 0;
 
         for (AttendanceSummary rec : records) {
             if (rec.getStatus() == null)
@@ -347,18 +301,23 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 case WEEK_OFF -> weekOff++;
                 case ABSENT -> absent++;
                 case ON_LEAVE -> onLeave++;
+                default -> throw new IllegalArgumentException("Unexpected value: " + rec.getStatus()); // this change is
+                                                                                                       // made
 
             }
         }
 
-        // later convert int to double for precision days, and handling half days
-        int totalDays = records.size();
-        int workingDays = totalDays; // keep month full — includes holidays/weekoffs
-        int paymentDays = present + onLeave + holiday + weekOff + (half / 2);
-        int lopDays = absent + Math.max(0, workingDays - paymentDays);
+        // 1. Calculate days in the pay period (e.g., 30 days)
+        long daysInPeriod = java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1;
 
-        Map<String, Integer> map = new HashMap<>();
-        map.put("WORKING_DAYS", workingDays);
+        // 2. Use double for precision (half / 2.0 = 0.5)
+        double paymentDays = present + onLeave + holiday + weekOff + (half / 2.0);
+
+        // 3. LOP is the difference
+        double lopDays = daysInPeriod - paymentDays;
+
+        Map<String, Double> map = new HashMap<>();
+        map.put("WORKING_DAYS", (double) daysInPeriod);
         map.put("PAYMENT_DAYS", paymentDays);
         map.put("LOP_DAYS", lopDays);
         return map;
@@ -368,15 +327,38 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     // Convert to DTO
     // ───────────────────────────────────────────────
     private SalarySlipDTO mapToDTO(SalarySlip slip) {
+        EmployeeSalaryAssignment assignment = slip.getAssignment();
+        Employee emp = slip.getEmployee();
+        EmployeeBank bank = emp.getPrimaryBankAccount();
         return SalarySlipDTO.builder()
                 .id(slip.getId())
                 .employeeId(slip.getEmployee().getId())
+                .employeeName(emp.getFirstName() + " " + emp.getLastName())
+                .employeeCode(emp.getEmployeeCode())
+                .departmentName(emp.getDepartment().getName())
+                .designationName(emp.getDesignation().getTitle())
+                .panNumber(emp.getPanNumber())
+                .uanNumber(emp.getUanNumber())
                 .assignmentId(slip.getAssignment().getId())
                 .payRunId(slip.getPayRun().getId())
                 .basePay(slip.getAssignment().getBasePay())
                 .grossPay(slip.getGrossPay())
-                .totalDeductions(slip.getTotalDeductions())
                 .netPay(slip.getNetPay())
+                .totalDeductions(slip.getTotalDeductions())
+                // Pulling from Assignment
+                .monthlyGrossTarget(assignment.getMonthlyGrossTarget())
+                .monthlyNetTarget(assignment.getMonthlyNetTarget())
+                .annualCtc(assignment.getAnnualCtc())
+                .targetBreakdownJson(assignment.getTargetBreakdownJson())
+                // Bank Info
+                .bankName(bank != null ? bank.getBankName() : null)
+                .bankBranch(bank != null ? bank.getBranch() : null)
+                .bankAccountNumber(bank != null ? bank.getAccountNumber() : null)
+                .bankIfscCode(bank != null ? bank.getIfscCode() : null)
+                // Attendance Info
+                .workingDays(slip.getWorkingDays())
+                .paymentDays(slip.getPaymentDays())
+                .lopDays(slip.getLopDays())
                 .fromDate(slip.getFromDate())
                 .toDate(slip.getToDate())
                 .pdfUrl(slip.getPdfUrl())
@@ -439,56 +421,28 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         return null; // future enhancement
     }
 
-    private void generateAndStorePdf(SalarySlip slip, SalarySlipDTO dto, Organisation org, PayRun payRun) {
-        try {
-            // Step 1: Render the HTML using the organisation’s default template
-            String html = templateService.renderSalarySlip(slip.getId(), org.getId());
-
-            // Step 2: Convert HTML → PDF
-            byte[] pdfBytes = convertHtmlToPdf(html);
-
-            // Step 3: Store PDF file
-            String folderPath = "org-" + org.getId() + "/payslips";
-            String safePeriodLabel = payRun.getPeriodLabel().replace(" ", "-");
-            String fileName = "payslip-" + slip.getEmployee().getEmployeeCode() + "-" + payRun.getId() + "-"
-                    + safePeriodLabel + ".pdf";
-
-            String relativePath = folderPath + "/" + fileName;
-            // String pdfUrl = uploadUrlPath + "/" + relativePath;
-
-            // Public URL (for frontend)
-            String pdfUrl = baseUrl + uploadUrlPath + "/" + relativePath;
-
-            Path dir = Paths.get(baseDir).resolve(folderPath);
-            Files.createDirectories(dir);
-            Path filePath = dir.resolve(fileName);
-            Files.write(filePath, pdfBytes);
-
-            slip.setPdfPath(relativePath); // filesystem relative path
-            slip.setPdfUrl(pdfUrl); // public URL for frontend
-            slip.setStatus(SalarySlip.SlipStatus.GENERATED);
-            slipRepository.save(slip);
-
-            log.info("Payslip PDF generated for empCode={}, payRun={}, path={}, url={}",
-                    slip.getEmployee().getEmployeeCode(), payRun.getId(), slip.getPdfPath(), slip.getPdfUrl());
-        } catch (Exception e) {
-            log.error("Failed to generate/store PDF for employee {}: {}",
-                    slip.getEmployee().getEmployeeCode(), e.getMessage(), e);
-        }
+    private SalarySlipComponent createSlipComponent(SalaryComponent comp, String name, String abbr, String type,
+            double amount, String formula) {
+        SalarySlipComponent slipComp = new SalarySlipComponent();
+        slipComp.setComponent(comp); // Can be null for Base Pay
+        slipComp.setComponentName(name);
+        slipComp.setComponentAbbreviation(abbr);
+        slipComp.setComponentType(type);
+        slipComp.setAmount(round(amount));
+        slipComp.setCalculationLog(formula);
+        slipComp.setIsStatutory(false);
+        return slipComp;
     }
 
-    private byte[] convertHtmlToPdf(String htmlContent) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Document document = new Document(PageSize.A4);
-
-        PdfWriter.getInstance(document, baos);
-        document.open();
-
-        HTMLWorker htmlWorker = new HTMLWorker(document);
-        htmlWorker.parse(new StringReader(htmlContent));
-
-        document.close();
-        return baos.toByteArray();
+    private SalarySlipComponent createStatutoryComponent(String name, double amount, String log) {
+        SalarySlipComponent statComp = new SalarySlipComponent();
+        statComp.setComponentName(name);
+        statComp.setComponentAbbreviation(name); // Usually PF, ESI, TDS
+        statComp.setComponentType("DEDUCTION");
+        statComp.setAmount(round(amount));
+        statComp.setCalculationLog(log);
+        statComp.setIsStatutory(true);
+        return statComp;
     }
 
 }

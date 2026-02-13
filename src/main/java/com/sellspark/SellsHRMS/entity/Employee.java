@@ -42,6 +42,11 @@ public class Employee {
 
     private LocalDate dob;
 
+    // ------------- IDENTITY DOCUMENTS ----------------
+    private String aadharNumber;
+    private String panNumber;
+    private String uanNumber;
+
     // ------------- EMPLOYMENT INFO ----------------
     private LocalDate dateOfJoining;
     private LocalDate dateOfExit;
@@ -185,6 +190,21 @@ public class Employee {
 
     public boolean isConfirmed() {
         return confirmationDate != null && !LocalDate.now().isBefore(confirmationDate);
+    }
+
+    public EmployeeBank getPrimaryBankAccount() {
+        if (bankAccounts == null || bankAccounts.isEmpty()) {
+            return null;
+        }
+
+        for (EmployeeBank bank : bankAccounts) {
+            if (Boolean.TRUE.equals(bank.getIsPrimaryAccount())) {
+                return bank;
+            }
+        }
+
+        // Fallback: return first if no primary marked
+        return bankAccounts.get(0);
     }
 
 }

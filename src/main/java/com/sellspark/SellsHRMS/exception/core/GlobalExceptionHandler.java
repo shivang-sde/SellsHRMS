@@ -7,9 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -20,6 +23,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -158,6 +162,32 @@ public class GlobalExceptionHandler {
                                 translated.getMessage(),
                                 getPath(request));
 
+                return new ResponseEntity<>(errorResponse, translated.getHttpStatus());
+        }
+
+        @ExceptionHandler({ InvalidDataAccessResourceUsageException.class,
+                        SQLSyntaxErrorException.class,
+                        JpaSystemException.class
+        })
+        public ResponseEntity<ErrorResponse> handleInvalidSql(InvalidDataAccessResourceUsageException ex,
+                        WebRequest request) {
+
+                HRMSException translated = DbExceptionTranslator.translate(ex);
+
+                if (translated == null) {
+                        translated = new HRMSException(
+                                        "Internal database query syntax error. Please contact support.",
+                                        "SQL_SYNTAX_ERROR",
+                                        HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                log.error("Database query syntax error: {}", translated.getMessage(), ex);
+
+                ErrorResponse errorResponse = ErrorResponse.of(
+                                translated.getHttpStatus().value(),
+                                translated.getHttpStatus().getReasonPhrase(),
+                                translated.getErrorCode(),
+                                translated.getMessage(),
+                                getPath(request));
                 return new ResponseEntity<>(errorResponse, translated.getHttpStatus());
         }
 

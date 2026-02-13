@@ -9,10 +9,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "tbl_ticket", indexes = {
-    @Index(name = "idx_ticket_project", columnList = "project_id"),
-    @Index(name = "idx_ticket_status", columnList = "status")
+        @Index(name = "idx_ticket_project", columnList = "project_id"),
+        @Index(name = "idx_ticket_status", columnList = "status")
 })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Ticket {
 
     @Id
@@ -27,7 +31,7 @@ public class Ticket {
     @JoinColumn(name = "created_by_id", nullable = false)
     private Employee createdBy;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id", nullable = false)
     Organisation organisation;
 
@@ -41,15 +45,14 @@ public class Ticket {
     @Column(nullable = false, length = 30)
     private TicketStatus status;
 
-     // Planned timeline
+    // Planned timeline
     private LocalDate startDate;
     private LocalDate endDate;
-    
-      // Actual lifecycle timestamps
+
+    // Actual lifecycle timestamps
     private LocalDate assignedAt;
     private LocalDate actualStartDate;
     private LocalDate actualCompletionDate;
-
 
     @Builder.Default
     private Boolean isActive = true;
@@ -62,27 +65,23 @@ public class Ticket {
 
     // Many employees can work on a ticket
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "tbl_ticket_assignees",
-        joinColumns = @JoinColumn(name = "ticket_id"),
-        inverseJoinColumns = @JoinColumn(name = "employee_id")
-    )
+    @JoinTable(name = "tbl_ticket_assignees", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "employee_id"))
     @Builder.Default
     private List<Employee> assignees = new ArrayList<>();
-
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Task> tasks = new ArrayList<>();
 
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.PERSIST, orphanRemoval = true)
     @Builder.Default
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
     private List<TicketAttachment> attachments = new ArrayList<>();
 
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();
-        if (status == null) status = TicketStatus.OPEN;
+        if (status == null)
+            status = TicketStatus.OPEN;
     }
 
     @PreUpdate
@@ -99,12 +98,17 @@ public class Ticket {
     }
 
     public enum TicketStatus {
-    OPEN,           // Ticket created, not started yet
-    ASSIGNED,       // Assigned but employee not started
-    IN_PROGRESS,    // Employee started working
-    ON_HOLD,        // Work paused (waiting on something)
-    COMPLETED,      // Employee completed work
-    CANCELLED       // Ticket closed without completion 
+        OPEN, // Ticket created, not started yet
+        ASSIGNED, // Assigned but employee not started
+        IN_PROGRESS, // Employee started working
+        ON_HOLD, // Work paused (waiting on something)
+        COMPLETED, // Employee completed work
+        CANCELLED // Ticket closed without completion
+    }
+
+    public void addAttachment(TicketAttachment attachment) {
+        attachments.add(attachment);
+        attachment.setTicket(this);
     }
 
 }

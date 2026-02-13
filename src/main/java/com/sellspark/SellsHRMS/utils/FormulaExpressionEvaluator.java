@@ -9,22 +9,27 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Unified Formula Evaluation Engine for Payroll, Tax, and Statutory computations.
+ * Unified Formula Evaluation Engine for Payroll, Tax, and Statutory
+ * computations.
  * Supports formulas like:
- *  - "BASE * 0.4"
- *  - "(BASE + HRA) * 0.12"
- *  - "COMP:BASIC * 0.4"
- *  - "(GROSS > 20000) ? BASE * 0.1 : BASE * 0.05"
+ * - "BASE * 0.4"
+ * - "(BASE + HRA) * 0.12"
+ * - "COMP:BASIC * 0.4"
+ * - "(GROSS > 20000) ? BASE * 0.1 : BASE * 0.05"
  */
 
 @Slf4j
 public class FormulaExpressionEvaluator {
 
     private static final ExpressionParser parser = new SpelExpressionParser();
+    // Cache parsed expressions to avoid re-parsing the same formula 10,000 times
+    // private static final Map<String, Expression> expressionCache = new
+    // ConcurrentHashMap<>(); later performance improvement
     private static final Pattern COMP_PATTERN = Pattern.compile("COMP:([A-Z0-9_]+)");
     private static final Pattern TOKEN_PATTERN = Pattern.compile("\\b[A-Z0-9_]+\\b");
 
@@ -32,7 +37,8 @@ public class FormulaExpressionEvaluator {
      * Evaluate any payroll formula with the provided context.
      */
     public static double evaluate(String formula, Map<String, Object> context) {
-        if (formula == null || formula.isBlank()) return 0.0;
+        if (formula == null || formula.isBlank())
+            return 0.0;
 
         try {
             // Step 1️⃣: Replace COMP: references with actual values
@@ -46,15 +52,16 @@ public class FormulaExpressionEvaluator {
             evalContext.addPropertyAccessor(new MapAccessor());
             evalContext.setRootObject(context);
             Object value = parser.parseExpression(parsedFormula).getValue(evalContext);
-            if (value instanceof Number num) return num.doubleValue();
+            if (value instanceof Number num)
+                return num.doubleValue();
             return 0.0;
 
         } catch (SpelEvaluationException e) {
-            log.info("⚠️ Formula evaluation error ( {} ): {}", formula,  e.getMessage());
-    
+            log.info("⚠️ Formula evaluation error ( {} ): {}", formula, e.getMessage());
+
             return 0.0;
         } catch (Exception e) {
-            log.error("⚠️ Unexpected formula error ( {} ): {}", formula,  e.getMessage());
+            log.error("⚠️ Unexpected formula error ( {} ): {}", formula, e.getMessage());
             return 0.0;
         }
     }
@@ -63,7 +70,8 @@ public class FormulaExpressionEvaluator {
      * Validate a formula safely.
      */
     public static boolean validateFormula(String formula, Map<String, Object> sampleContext) {
-        if (formula == null || formula.isBlank()) return false;
+        if (formula == null || formula.isBlank())
+            return false;
         try {
             String parsed = replaceComponentRefs(formula, sampleContext);
             parsed = replaceMissingTokens(parsed, sampleContext);
@@ -80,16 +88,23 @@ public class FormulaExpressionEvaluator {
      * Evaluate conditions like "GROSS > 20000 && COUNTRY == 'IN'".
      */
     public static boolean evaluateCondition(String condition, Map<String, Object> context) {
-        if (condition == null || condition.isBlank()) return true;
+        if (condition == null || condition.isBlank())
+            return true;
         try {
+            // Step 1: Same preprocessing as evaluate()
             String parsed = replaceComponentRefs(condition, context);
             parsed = replaceMissingTokens(parsed, context);
-            StandardEvaluationContext ctx = new StandardEvaluationContext();
-            context.forEach((k, v) -> ctx.setVariable(k, v != null ? v : 0.0));
+
+            // Step 2: Use the Map as the Root Object
+            // This allows SpEL to resolve "BASE" directly from the map keys
+            StandardEvaluationContext ctx = new StandardEvaluationContext(context);
+            ctx.addPropertyAccessor(new MapAccessor());
+            ctx.setRootObject(context);
+
             Object result = parser.parseExpression(parsed).getValue(ctx);
             return Boolean.TRUE.equals(result);
         } catch (Exception e) {
-            System.err.println("⚠️ Condition evaluation failed (" + condition + "): " + e.getMessage());
+            log.error("⚠️ Condition evaluation failed ( {} ): {}", condition, e.getMessage());
             return false;
         }
     }

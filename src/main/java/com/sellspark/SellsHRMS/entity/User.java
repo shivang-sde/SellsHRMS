@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
@@ -61,6 +60,8 @@ public class User {
         SUPER_ADMIN,
         ORG_ADMIN,
         EMPLOYEE,
-        SYSTEM_ACCOUNT
+        SYSTEM_ACCOUNT,
+        ACCOUNTANT
+
     }
 }

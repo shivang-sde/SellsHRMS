@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellspark.SellsHRMS.entity.Employee;
@@ -24,93 +23,106 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StatutoryComputationEngineImpl implements StatutoryComputationEngineService {
 
-    private final StatutoryRuleRepository ruleRepository;
-    private final StatutoryComponentMappingRepository mappingRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+        private final StatutoryRuleRepository ruleRepository;
+        private final StatutoryComponentMappingRepository mappingRepository;
+        private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Override
-    public Map<String, Double> compute(Employee employee, Map<SalaryComponent, Double> componentValues, Organisation organisation) {
-        Map<String, Double> result = new LinkedHashMap<>();
-
-        // Fetch all active statutory mappings for this org
-        List<StatutoryComponentMapping> mappings = mappingRepository.findByOrganisationIdAndActiveTrue(organisation.getId());
-
-        for (StatutoryComponentMapping mapping : mappings) {
-            StatutoryComponent statutory = mapping.getStatutoryComponent();
-
-            
-
-            // Find active rules for this component & location
-            List<StatutoryRule> rules = ruleRepository.findByStatutoryComponentId(statutory.getId());
-
-            if (rules.isEmpty()) continue;
-
-            // Filter salary components this statutory applies to
-            List<SalaryComponent> applicableComponents = mappings.stream()
-                    .filter(m -> Objects.equals(m.getStatutoryComponent().getId(), statutory.getId()))
-                    .map(StatutoryComponentMapping::getSalaryComponent)
-                    .collect(Collectors.toList());
-
-            // Compute total base for statutory
-            double totalBase = applicableComponents.stream()
-                    .mapToDouble(c -> componentValues.getOrDefault(c, 0.0))
-                    .sum();
-
-                log.info("total abse statutory rule {}", totalBase);
-
-            if (totalBase <= 0) continue;
-
-            StatutoryRule rule = getEffectiveRule(rules);
-
-            // Apply min/max limits
-            double effectiveBase = Math.min(Math.max(totalBase, rule.getMinApplicableSalary() != null ? rule.getMinApplicableSalary() : 0),
-                    rule.getMaxApplicableSalary() != null ? rule.getMaxApplicableSalary() : totalBase);
-
-            // Compute contributions
-            double empPercent = Optional.ofNullable(mapping.getEmployeePercent()).orElse(rule.getEmployeeContributionPercent());
-            double orgPercent = Optional.ofNullable(mapping.getEmployerPercent()).orElse(rule.getEmployerContributionPercent());
-
-            double empContribution = effectiveBase * (empPercent / 100);
-            double orgContribution = effectiveBase * (orgPercent / 100);
-
-
-            
-
-            // Optional pro-rata adjustment,  for paymentdays and working days you have to look for attendance summary thing.
-            // if (Boolean.TRUE.equals(rule.getApplyProRata()) && employee.getWorkingDays() != null && employee.getPaymentDays() != null) {
-            //     double ratio = (double) employee.getPaymentDays() / employee.getWorkingDays();
-            //     empContribution *= ratio;
-            //     orgContribution *= ratio;
-            // }
-
-            double totalDeduction = empContribution; // for now employee side deducted from pay
-            result.put(statutory.getCode(), roundToTwoDecimal(totalDeduction));
-
-            log.info("statutory code {} -> empPercent {}, orgPercent {}, empContri {}, org Contri {}", statutory.getCode(), empPercent, orgPercent, empContribution, orgContribution);
-
-            // Optional logging for audit (if additional_config JSON present)
-            if (rule.getAdditionalConfig() != null) {
-                try {
-                    JsonNode cfg = objectMapper.readTree(rule.getAdditionalConfig());
-                    // Example: handle country-specific exemptions or max caps
-                } catch (Exception ignored) {}
-            }
+        public record StatutoryResult(double employeeDeduction, double employerContribution) {
         }
 
-        return result;
-    }
+        @Override
+        public Map<String, StatutoryResult> computeDetailed(EmployeeSalaryAssignment assignment,
+                        Map<SalaryComponent, Double> componentValues,
+                        Organisation organisation) {
+                log.info("🔍 Analyzing Statutory for Employee: {}", assignment.getEmployee().getEmployeeCode());
+                Map<String, StatutoryResult> result = new LinkedHashMap<>();
 
-    private StatutoryRule getEffectiveRule(List<StatutoryRule> rules) {
-        LocalDate today = LocalDate.now();
-        return rules.stream()
-                .filter(r -> (r.getEffectiveFrom() == null || !today.isBefore(r.getEffectiveFrom())) &&
-                             (r.getEffectiveTo() == null || !today.isAfter(r.getEffectiveTo())))
-                .findFirst()
-                .orElse(rules.get(0));
-    }
+                // 1. Fetch all active statutory mappings for this org
+                List<StatutoryComponentMapping> mappings = mappingRepository
+                                .findByOrganisationIdAndActiveTrue(organisation.getId());
 
-    private double roundToTwoDecimal(double val) {
-        return Math.round(val * 100.0) / 100.0;
-    }
+                // 2. Group mappings by the Statutory Component ID (e.g., PF id=1)
+                // This ensures we only calculate PF once even if it has multiple component
+                // mappings
+                Map<Long, List<StatutoryComponentMapping>> groupedMappings = mappings.stream()
+                                .collect(Collectors.groupingBy(m -> m.getStatutoryComponent().getId()));
+
+                for (var entry : groupedMappings.entrySet()) {
+                        List<StatutoryComponentMapping> group = entry.getValue();
+                        // Get the statutory metadata from the first mapping in the group
+                        StatutoryComponent statutory = group.get(0).getStatutoryComponent();
+
+                        // 3. DEFAULT LOGIC: Start with Base Pay from the assignment
+                        double totalBase = (assignment != null && assignment.getBasePay() != null)
+                                        ? assignment.getBasePay()
+                                        : 0.0;
+
+                        // 4. MAPPING LOGIC: Add values of all explicitly mapped components (HRA, DA,
+                        // etc.)
+                        for (StatutoryComponentMapping mapping : group) {
+                                if (mapping.getSalaryComponent() != null) {
+                                        totalBase += componentValues.getOrDefault(mapping.getSalaryComponent(), 0.0);
+                                }
+                        }
+
+                        log.info("🔹 Statutory [{}] Consolidated Total Base: {}", statutory.getCode(), totalBase);
+
+                        // Skip if there are no earnings to calculate against
+                        if (totalBase <= 0)
+                                continue;
+
+                        // 5. Fetch rules for this specific statutory component
+                        List<StatutoryRule> rules = ruleRepository.findByStatutoryComponentId(statutory.getId());
+                        if (rules.isEmpty())
+                                continue;
+                        StatutoryRule rule = getEffectiveRule(rules, LocalDate.now());
+
+                        // 6. Apply Statutory Limits
+                        double minSal = rule.getMinApplicableSalary() != null ? rule.getMinApplicableSalary() : 0;
+                        double maxSal = rule.getMaxApplicableSalary() != null ? rule.getMaxApplicableSalary()
+                                        : totalBase;
+
+                        double effectiveBase = totalBase;
+                        if (totalBase < minSal) {
+                                log.warn("⚠️ Base {} is below threshold {}. Setting to 0.", totalBase, minSal);
+                                effectiveBase = 0;
+                        } else {
+                                effectiveBase = Math.min(totalBase, maxSal);
+                        }
+
+                        // 7. Compute Contributions using percentage from mapping (if overridden) or
+                        // rule
+                        // We take the first mapping's percent as the primary override for the group
+                        double empPercent = Optional.ofNullable(group.get(0).getEmployeePercent())
+                                        .orElse(rule.getEmployeeContributionPercent());
+                        double orgPercent = Optional.ofNullable(group.get(0).getEmployerPercent())
+                                        .orElse(rule.getEmployerContributionPercent());
+
+                        double empContribution = effectiveBase * (empPercent / 100);
+                        double orgContribution = effectiveBase * (orgPercent / 100);
+
+                        result.put(statutory.getCode(), new StatutoryResult(
+                                        roundToTwoDecimal(empContribution),
+                                        roundToTwoDecimal(orgContribution)));
+
+                        log.info("✅ Statutory [{}] Result -> Emp: {} | Org: {}",
+                                        statutory.getCode(), empContribution, orgContribution);
+                }
+
+                return result;
+        }
+
+        private StatutoryRule getEffectiveRule(List<StatutoryRule> rules, LocalDate processingDate) {
+                return rules.stream()
+                                .filter(r -> (r.getEffectiveFrom() == null
+                                                || !processingDate.isBefore(r.getEffectiveFrom())) &&
+                                                (r.getEffectiveTo() == null
+                                                                || !processingDate.isAfter(r.getEffectiveTo())))
+                                .findFirst()
+                                .orElse(rules.get(0));
+        }
+
+        private double roundToTwoDecimal(double val) {
+                return Math.round(val * 100.0) / 100.0;
+        }
 }
-

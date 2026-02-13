@@ -1,10 +1,11 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import com.sellspark.SellsHRMS.dto.payroll.SalarySlipComponentDTO;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.entity.payroll.SalarySlip;
+import com.sellspark.SellsHRMS.mapper.SalarySlipMapper;
 import com.sellspark.SellsHRMS.repository.payroll.SalarySlipRepository;
+import com.sellspark.SellsHRMS.service.payroll.SalarySlipService;
 import com.sellspark.SellsHRMS.service.payroll.SalarySlipTemplateService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,100 +26,47 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class SalarySlipServiceImpl {
+public class SalarySlipServiceImpl implements SalarySlipService {
 
     private final SalarySlipRepository slipRepo;
     private final SalarySlipTemplateService salarySlipTemplateService;
+    private final SalarySlipMapper salarySlipMapper;
 
     /** ---------------- Get Slip DTO ---------------- **/
-    public SalarySlipDTO getSlipDtoById(Long id) {
+    @Override
+    public SalarySlipDTO getSalarySlipDtoById(Long id) {
         SalarySlip slip = slipRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Salary Slip not found"));
 
-        return toDTO(slip);
+        return salarySlipMapper.toDTO(slip);
     }
 
+    @Override
     public SalarySlip saveSlip(SalarySlip slip) {
         return slipRepo.save(slip);
     }
 
+    @Override
     public List<SalarySlip> getEmployeeSlips(Long empId) {
-        return slipRepo.findByEmployee_IdOrderByFromDateDesc(empId);
+        return slipRepo.findByEmployee_IdOrderByPayRun_YearDescPayRun_MonthDesc(empId);
     }
 
+    @Override
     public SalarySlip getSlip(Long slipId) {
         return slipRepo.findById(slipId)
                 .orElseThrow(() -> new RuntimeException("Salary Slip not found"));
     }
 
+    @Override
     public List<SalarySlipDTO> getAllByEmployee(Long empId) {
         return slipRepo.findByEmployee_IdOrderByPayRun_YearDescPayRun_MonthDesc(empId)
                 .stream()
-                .map(this::toDTO)
+                .map(salarySlipMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    private SalarySlipDTO toDTO(SalarySlip slip) {
-    return SalarySlipDTO.builder()
-            .id(slip.getId())
-            .employeeId(slip.getEmployee().getId())
-            .employeeName(slip.getEmployee().getFirstName() + " " + slip.getEmployee().getLastName())
-            .grossPay(slip.getGrossPay())
-            .totalDeductions(slip.getTotalDeductions())
-            .netPay(slip.getNetPay())
-            .fromDate(slip.getFromDate())
-            .toDate(slip.getToDate())
-            .pdfUrl(slip.getPdfUrl())
-            .payRunId(slip.getPayRun() != null ? slip.getPayRun().getId() : null)
-            .components(
-                    slip.getComponents().stream()
-                            .map(c -> {
-                                String componentName = null;
-                                String componentType = null;
-                                Long componentId = null;
-
-                                // Handle SalaryComponent
-                                if (c.getComponent() != null) {
-                                    componentId = c.getComponent().getId();
-                                    componentName = c.getComponentName() != null
-                                            ? c.getComponentName()
-                                            : c.getComponent().getName();
-                                    componentType = c.getComponentType() != null
-                                            ? c.getComponentType()
-                                            : (c.getComponent().getType() != null
-                                                ? c.getComponent().getType().name()
-                                                : null);
-                                }
-
-                                // Handle StatutoryComponent
-                                else if (c.getStatutoryComponent() != null) {
-                                    componentId = c.getStatutoryComponent().getId();
-                                    componentName = c.getStatutoryComponent().getName();
-                                    componentType = c.getComponentType(); // already stored in DB
-                                }
-
-                                // Fallback for manual or tax components
-                                else {
-                                    componentName = c.getComponentName();
-                                    componentType = c.getComponentType();
-                                }
-
-                                return SalarySlipComponentDTO.builder()
-                                        .id(c.getId())
-                                        .componentId(componentId)
-                                        .componentName(componentName)
-                                        .componentType(componentType)
-                                        .amount(c.getAmount())
-                                        .calculationLog(c.getCalculationLog())
-                                        .build();
-                            })
-                            .collect(Collectors.toList())
-            )
-            .build();
-}
-
-
     /** ---------------- PDF Generation ---------------- **/
+    @Override
     public SalarySlip generatePdfForSlip(Long slipId, Long orgId) {
         SalarySlip slip = getSlip(slipId);
         try {
@@ -156,4 +104,5 @@ public class SalarySlipServiceImpl {
             throw new RuntimeException("Failed to generate PDF: " + e.getMessage(), e);
         }
     }
+
 }

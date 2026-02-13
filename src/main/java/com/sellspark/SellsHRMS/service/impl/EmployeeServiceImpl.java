@@ -35,7 +35,6 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Service
@@ -237,6 +236,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         emp.setDob(req.getDob());
         emp.setPhotoUrl(req.getPhotoUrl());
 
+        // IDENTITY DOCUMENTS
+        emp.setAadharNumber(req.getAadharNumber());
+        emp.setPanNumber(req.getPanNumber());
+        emp.setUanNumber(req.getUanNumber());
+
         emp.setGender(Employee.Gender.valueOf(req.getGender()));
         emp.setEmploymentType(EmploymentType.valueOf(req.getEmploymentType()));
         emp.setStatus(EmployeeStatus.valueOf(req.getStatus()));
@@ -359,6 +363,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         res.setFatherName(emp.getFatherName());
         res.setMaritalStatus(emp.getMaritalStatus());
         res.setNationality(emp.getNationality());
+
+        // IDENTITY DOCUMENTS
+        res.setAadharNumber(emp.getAadharNumber());
+        res.setPanNumber(emp.getPanNumber());
+        res.setUanNumber(emp.getUanNumber());
 
         if (emp.getAlternatePhone() != null) {
             res.setAlternatePhone(emp.getAlternatePhone());

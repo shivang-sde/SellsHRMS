@@ -6,8 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tbl_employee_document",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "document_type"}))
+@Table(name = "tbl_employee_document", uniqueConstraints = @UniqueConstraint(columnNames = { "employee_id",
+        "document_type" }))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
 @Builder
 public class EmployeeDocument {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,15 +27,16 @@ public class EmployeeDocument {
     private String documentType; // e.g. RESUME, OFFER, JOINING, AGREEMENT, OTHER
 
     @Column(name = "file_url", length = 1024)
-    private String fileUrl;      // served URL, like /uploads/{empId}/{file}
+    private String fileUrl; // served URL, like /uploads/{empId}/{file}
 
     @Column(name = "external_url", length = 1024)
-    private String externalUrl;  // Dropbox/Google link
+    private String externalUrl; // Dropbox/Google link
 
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
 
     @Column(name = "verified")
+    @Builder.Default
     private Boolean verified = false;
 
     // other metadata columns can be added (size, mime, original filename)

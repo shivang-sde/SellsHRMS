@@ -47,29 +47,6 @@ public class HolidayRestController {
     public ResponseEntity<List<HolidayResponse>> createBulk(
             @PathVariable Long orgId,
             @RequestBody List<HolidayRequest> requests) {
-        // Service handles the logic
-        // We need to inject HolidayService instead of Repo?
-        // Wait, the controller is using Repositories currently?
-        // The snippet in prompt shows `HolidayRepository` and `OrganisationRepository`.
-        // BUT there is a `HolidayService`. I should refactor to use Service ideally,
-        // OR just implement logic here?
-        // The prompt says "I want to add feature...".
-        // The `HolidayServiceImpl` I just modified IS the service.
-        // The controller in prompt `HolidayRestController` uses REPOS directly?
-        // Let's check the controller imports/fields in the prompt carefully.
-        // Yes, `private final HolidayRepository holidayRepo; private final
-        // OrganisationRepository orgRepo;`
-        // It does NOT use `HolidayService`.
-        // This is inconsistent. I should check if the user WANTS me to refactor or just
-        // add features.
-        // The user edited `HolidayServiceImpl`, so there IS a service.
-        // I should update the Controller to USE the Service for this new feature at
-        // least,
-        // to avoid duplicating the Upsert logic I just wrote in Service.
-
-        // I need to Inject `HolidayService` into `HolidayRestController`.
-        // The current controller uses `@RequiredArgsConstructor`.
-        // I will add `private final HolidayService holidayService;` to the fields.
 
         return ResponseEntity.ok(holidayService.createBulkHolidays(orgId, requests));
     }

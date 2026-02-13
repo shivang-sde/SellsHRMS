@@ -1,4 +1,5 @@
 package com.sellspark.SellsHRMS.controller.api.payroll;
+
 import com.sellspark.SellsHRMS.dto.payroll.SalaryStructureDTO;
 import com.sellspark.SellsHRMS.service.payroll.SalaryStructureService;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +29,21 @@ public class SalaryStructureRestController {
         }
     }
 
+    @PostMapping("/{id}/preview-impact")
+    public ResponseEntity<?> previewImpact(@PathVariable Long id, @RequestBody List<Long> componentIds) {
+        try {
+            return ResponseEntity.ok(service.previewImpact(id, componentIds));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + ex.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SalaryStructureDTO dto) {
         try {
-            return ResponseEntity.ok(service.updateStructure(id, dto));
+            return ResponseEntity.ok(service.updateStructureWithVersion(id, dto));
         } catch (Exception ex) {
+            log.error("Update failed: ", ex);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + ex.getMessage());
         }
     }

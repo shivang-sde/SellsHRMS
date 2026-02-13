@@ -254,6 +254,8 @@ $(document).ready(function () {
         const lines = csv.split('\n');
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         const result = [];
+        const currentYear = new Date().getFullYear();
+        const failedRows = [];
 
         for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
@@ -269,6 +271,10 @@ $(document).ready(function () {
             // Assuming order: Date, Name, Type, Mandatory, Description
 
             if (currentLine.length < 2) continue;
+            if (currentLine[0].trim().getFullYear() !== currentYear) {
+                failedRows.push(currentLine);
+                continue;
+            }
 
             const obj = {
                 holidayDate: (currentLine[0] || '').trim(),

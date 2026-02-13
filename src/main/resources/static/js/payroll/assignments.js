@@ -12,7 +12,7 @@ const SalaryAssignments = (() => {
     const init = () => {
         assignmentModal = new bootstrap.Modal(document.getElementById('assignmentModal'));
         viewModal = new bootstrap.Modal(document.getElementById('viewAssignmentModal'));
-        
+
         attachEventListeners();
         loadInitialData();
     };
@@ -65,7 +65,6 @@ const SalaryAssignments = (() => {
                 data: { orgId: window.APP.ORG_ID, status: 'ACTIVE' }
             });
             employeesData = response.data || response || [];
-            console.log("Emp data", response)
             populateEmployeeDropdown();
         } catch (error) {
             console.error('Error loading employees:', error);
@@ -103,9 +102,11 @@ const SalaryAssignments = (() => {
     };
 
     const createAssignmentRow = (assignment) => {
+        //   add later        <td class="text-end"><strong>₹${formatCurrency(assignment.totalCTC)}</strong></td>  
+        console.log("assignment", assignment)
         const statusClass = assignment.active ? 'success' : 'secondary';
         return `
-            <tr>
+            <trp>
                 <td>
                     <strong>${assignment.employeeName}</strong>
                     <br><small class="text-muted">${assignment.employeeCode}</small>
@@ -113,8 +114,10 @@ const SalaryAssignments = (() => {
                 <td>${assignment.employeeDepartmentName || '-'}</td>
                 <td>${assignment.salaryStructureName}</td>
                 <td class="text-end">₹${formatCurrency(assignment.basePay)}</td>
-                <td class="text-end">₹${formatCurrency(assignment.variablePay || 0)}</td>
-                <td class="text-end"><strong>₹${formatCurrency(assignment.totalCTC)}</strong></td>
+                <td class="text-end">₹${formatCurrency(assignment.monthlyGrossTarget)}</td>
+                <td class="text-end">₹${formatCurrency(assignment.monthlyNetTarget)}</td>
+                <td class="text-end">₹${formatCurrency(assignment.annualCtc)}</td>
+
                 <td>${formatDate(assignment.effectiveFrom)}</td>
                 <td><span class="badge bg-${statusClass}">${assignment.active ? 'Active' : 'Inactive'}</span></td>
                 <td class="text-end">
@@ -190,6 +193,7 @@ const SalaryAssignments = (() => {
     const openAssignmentModal = (assignment = null) => {
         resetForm();
         if (assignment) {
+            console.log("assignment", assignment)
             currentAssignmentId = assignment.id;
             $('#assignmentModalTitle').html('<i class="fas fa-edit me-2"></i>Edit Salary Assignment');
             $('#employeeSelect').val(assignment.employeeId).trigger('change').prop('disabled', true);
@@ -251,9 +255,8 @@ const SalaryAssignments = (() => {
         const content = `
             <div class="col-md-6"><strong>Employee:</strong><p>${data.employeeName}</p></div>
             <div class="col-md-6"><strong>Structure:</strong><p>${data.salaryStructureName}</p></div>
-            <div class="col-md-4"><strong>Base:</strong><p>₹${formatCurrency(data.baseSalary)}</p></div>
+            <div class="col-md-4"><strong>Base:</strong><p>₹${formatCurrency(data.basePay)}</p></div>
             <div class="col-md-4"><strong>Variable:</strong><p>₹${formatCurrency(data.variablePay)}</p></div>
-            <div class="col-md-4"><strong>Total CTC:</strong><p class="text-primary fw-bold">₹${formatCurrency(data.totalCTC)}</p></div>
             <div class="col-md-6"><strong>Effective From:</strong><p>${formatDate(data.effectiveFrom)}</p></div>
             <div class="col-md-6"><strong>Status:</strong><p>${data.active ? 'Active' : 'Inactive'}</p></div>
             <div class="col-12"><strong>Remarks:</strong><p>${data.remarks || 'N/A'}</p></div>
@@ -269,17 +272,17 @@ const SalaryAssignments = (() => {
 
     const deactivateAssignment = async (id) => {
         const assignment = assignmentsData.find(a => a.id = id)
-        if(!assignment) return;
+        if (!assignment) return;
 
         const confirmed = await window.showConfirmation({
             title: 'Deactivate Salary Assignments',
             message: `Are you sure you want to remove salary structure assigned to the employee?`,
             confirmText: 'Deactivate',
             confirmClass: 'btn-danger'
-            }
+        }
         )
         console.log("cinfirmation result ", confirmed)
-        if(!confirmed) return;
+        if (!confirmed) return;
         try {
             await $.ajax({
                 url: `${window.APP.CONTEXT_PATH}/api/payroll/assignments/${id}/deactivate`,

@@ -1,5 +1,7 @@
 package com.sellspark.SellsHRMS.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,5 +40,23 @@ public class EmployeeBank {
     private String branch;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isPrimaryAccount = false;
+
+
+    public static EmployeeBank findPrimaryBank(List<EmployeeBank> banks) {
+    if (banks == null || banks.isEmpty()) {
+        return null;
+    }
+
+    // Option 1: If you have a flag
+    for (EmployeeBank bank : banks) {
+        if (Boolean.TRUE.equals(bank.getIsPrimaryAccount())) {
+            return bank;
+        }
+    }
+
+    // Option 2: If first one is always primary, or oni
+    return banks.get(0);
+}
 }

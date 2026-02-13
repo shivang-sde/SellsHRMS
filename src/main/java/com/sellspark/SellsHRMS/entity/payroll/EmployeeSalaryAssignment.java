@@ -38,14 +38,20 @@ public class EmployeeSalaryAssignment {
     private Double basePay;
     private Double variablePay;
 
+    private Double monthlyGrossTarget; // Calculated once during assignment
+    private Double monthlyNetTarget;
+    private Double annualCtc; // monthlyGrossTarget * 12
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 
     private String remarks;
+
+    // Optional: Store the component breakdown as a JSON for quick UI display
+    @Column(columnDefinition = "TEXT")
+    private String targetBreakdownJson;
 
     private Boolean active = true;
 
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL)
     private List<SalarySlip> salarySlips = new ArrayList<>();
 }
-

@@ -2,8 +2,6 @@ package com.sellspark.SellsHRMS.service;
 
 import com.sellspark.SellsHRMS.entity.User;
 
-import jakarta.security.auth.message.AuthException;
-
 public interface UserService {
     User findByEmail(String email);
 
@@ -12,6 +10,8 @@ public interface UserService {
     void deactivateUser(Long userId);
 
     void activateUser(Long userId);
+
+    User createAccountantUser(String email, String rawPassword, Long organisationId);
 
     User createUser(String email, String rawPassword, String systemRole, String roleName, Long organisationId);
 

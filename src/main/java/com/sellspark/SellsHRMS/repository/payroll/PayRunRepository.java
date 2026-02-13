@@ -17,14 +17,16 @@ public interface PayRunRepository extends JpaRepository<PayRun, Long> {
     // 🔹 All pay runs for an organisation
     List<PayRun> findByOrganisation_IdOrderByStartDateDesc(Long organisationId);
 
-    PayRun findByOrganisation_IdAndMonthAndYear(Long organisationId, Integer month, Integer year);
+    Optional<PayRun> findByOrganisation_IdAndMonthAndYear(Long orgId, Integer month, Integer year);
+
+    Optional<PayRun> findTopByOrganisation_IdOrderByYearDescMonthDesc(Long orgId);
 
     @Query("""
-        SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
-        FROM PayRun p
-        WHERE p.organisation.id = :orgId
-        AND (p.startDate <= :cycleEnd AND p.endDate >= :cycleStart)
-    """)
+                SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
+                FROM PayRun p
+                WHERE p.organisation.id = :orgId
+                AND (p.startDate <= :cycleEnd AND p.endDate >= :cycleStart)
+            """)
     boolean existsOverlap(Long orgId, LocalDate cycleStart, LocalDate cycleEnd);
 
     // 🔹 Active/Ready pay runs
@@ -33,8 +35,9 @@ public interface PayRunRepository extends JpaRepository<PayRun, Long> {
     boolean existsByOrganisation_IdAndMonthAndYear(Long organisationId, Integer month, Integer year);
 
     // 🔹 Check if a pay run already exists for the same period
-    Optional<PayRun> findByOrganisation_IdAndStartDateAndEndDate(Long organisationId, LocalDate startDate, LocalDate endDate);
+    Optional<PayRun> findByOrganisation_IdAndStartDateAndEndDate(Long organisationId, LocalDate startDate,
+            LocalDate endDate);
 
-     @EntityGraph(attributePaths = {"salarySlips", "salarySlips.employee", "salarySlips.components"})
+    @EntityGraph(attributePaths = { "salarySlips", "salarySlips.employee", "salarySlips.components" })
     Optional<PayRun> findById(Long id);
 }

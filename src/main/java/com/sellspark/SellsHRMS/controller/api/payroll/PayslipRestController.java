@@ -38,7 +38,7 @@ public class PayslipRestController {
     // ✅ Get Salary Slip DTO (for UI or API display)
     @GetMapping("/{id}")
     public ResponseEntity<SalarySlipDTO> getSlip(@PathVariable Long id) {
-        return ResponseEntity.ok(slipService.getSlipDtoById(id));
+        return ResponseEntity.ok(slipService.getSalarySlipDtoById(id));
     }
 
     @PostMapping("/{id}/generate-pdf")

@@ -11,11 +11,13 @@ import java.util.List;
 public interface SalaryStructureRepository extends JpaRepository<SalaryStructure, Long> {
 
     @Query("SELECT DISTINCT s FROM SalaryStructure s " +
-           "LEFT JOIN FETCH s.components " +
-           "WHERE s.organisation.id = :orgId AND s.active = true")
+            "LEFT JOIN FETCH s.components " +
+            "WHERE s.organisation.id = :orgId AND s.active = true")
     List<SalaryStructure> findByOrganisationIdAndActiveTrue(@Param("orgId") Long orgId);
 
     List<SalaryStructure> findByCountryCodeAndActiveTrue(String countryCode);
+
+    List<SalaryStructure> findByIdAndActiveTrue(Long structureId);
 
     boolean existsByNameAndOrganisationId(String name, Long organisationId);
 }

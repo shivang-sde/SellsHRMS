@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,43 +27,36 @@ public class SalarySlipComponent {
     @ManyToOne(fetch = FetchType.LAZY)
     private SalaryComponent component;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "statutory_component_id")
     private StatutoryComponent statutoryComponent; // e.g. PF, ESI, PT
 
-     @Builder.Default
+    @Builder.Default
     private Boolean isStatutory = false;
-
 
     @Column(length = 20)
     private String componentType; // EARNING or DEDUCTION
-
 
     @Column(length = 100)
     private String componentName;
     private Double amount;
 
-    
     @Column(length = 20)
     private String componentAbbreviation;
 
-
     private String sourceEngine; // FORMULA_ENGINE, STATUTORY_ENGINE, TAX_ENGINE, MANUAL
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-
-
 
     @Column(columnDefinition = "TEXT")
     private String calculationLog; // explanation of computation
-    
+
     /*
-    {
-        "formula": "(BASIC + DA) * 0.12",
-        "inputs": {"BASIC": 50000, "DA": 5000},
-        "result": 6600    
-    }
-
-    */
+     * {
+     * "formula": "(BASIC + DA) * 0.12",
+     * "inputs": {"BASIC": 50000, "DA": 5000},
+     * "result": 6600
+     * }
+     * 
+     */
 }
-

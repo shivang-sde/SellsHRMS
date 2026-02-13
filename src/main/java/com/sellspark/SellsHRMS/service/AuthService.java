@@ -2,7 +2,6 @@ package com.sellspark.SellsHRMS.service;
 
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.User;
-import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.UserRepository;
 import com.sellspark.SellsHRMS.config.UserPrincipal;
 import lombok.RequiredArgsConstructor;

@@ -13,13 +13,17 @@ public class EmployeeSalaryAssignmentDTO {
     private Long id;
 
     private Long employeeId;
-    private String  employeeName;
+    private String employeeName;
     private String employeeDepartmentName;
     private String employeeCode;
     private Long organisationId;
     private Long salaryStructureId;
     private String salaryStructureName;
     private Long taxSlabId;
+
+    private Double monthlyGrossTarget; // Calculated once during assignment
+    private Double monthlyNetTarget;
+    private Double annualCtc; // monthlyGrossTarget * 12
 
     private Double basePay;
     private Double variablePay;

@@ -3,7 +3,10 @@ package com.sellspark.SellsHRMS.service.payroll;
 import com.sellspark.SellsHRMS.dto.payroll.PayrollComputationRequest;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.entity.payroll.PayRun;
+import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
+
 import java.util.List;
+import java.util.Map;
 
 public interface PayrollCalculationService {
 
@@ -26,4 +29,9 @@ public interface PayrollCalculationService {
      * Recompute tax or statutory deductions for updated employee data.
      */
     SalarySlipDTO recalculateDeductions(Long employeeId, Long payRunId);
+
+    /**
+     * Compute amount for a single salary component based on formula and context.
+     */
+    double computeComponentAmount(SalaryComponent comp, Map<String, Object> context);
 }

@@ -23,6 +23,11 @@ public class EmployeeCreateRequest {
     private String referenceName;
     private String referencePhone;
 
+    // IDENTITY DOCUMENTS
+    private String aadharNumber;
+    private String panNumber;
+    private String uanNumber;
+
     // ADDRESS
     private AddressDTO localAddress;
     private AddressDTO permanentAddress;

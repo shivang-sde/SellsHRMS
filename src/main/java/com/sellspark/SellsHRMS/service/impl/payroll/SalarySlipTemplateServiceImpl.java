@@ -1,9 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.html.simpleparser.HTMLWorker;
-import com.lowagie.text.pdf.PdfWriter;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipTemplateDTO;
 import com.sellspark.SellsHRMS.dto.payroll.TemplatePreviewRequest;

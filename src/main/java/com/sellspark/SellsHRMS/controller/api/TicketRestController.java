@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.controller.api;
 
+import com.sellspark.SellsHRMS.dto.files.FileUploadResponseDTO;
 import com.sellspark.SellsHRMS.dto.project.*;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Ticket;
@@ -10,6 +11,8 @@ import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.TicketActivityRepository;
 import com.sellspark.SellsHRMS.repository.TicketRepository;
 import com.sellspark.SellsHRMS.service.TicketService;
+import com.sellspark.SellsHRMS.service.files.FileUploadService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,15 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * REST controller for managing Tickets, their attachments, and activity logs.
@@ -41,6 +38,8 @@ public class TicketRestController {
     private final TicketActivityRepository ticketActivityRepo;
     private final TicketRepository ticketRepo;
     private final EmployeeRepository employeeRepo;
+
+    private final FileUploadService fileUploadService;
 
     // ----------------------------------------------------------------
     // CREATE
@@ -221,6 +220,9 @@ public class TicketRestController {
             @RequestParam(value = "descriptions", required = false) List<String> descriptions,
             @RequestParam Long employeeId) {
 
+        // -------------------------
+        // 1️⃣ Validate entities
+        // -------------------------
         Employee uploader = employeeRepo.findById(employeeId)
                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
 
@@ -228,43 +230,41 @@ public class TicketRestController {
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
         Long orgId = uploader.getOrganisation().getId();
-        Path basePath = Paths.get("uploads", "org-" + orgId, "tickets", "ticket-" + ticket.getId());
 
-        try {
-            Files.createDirectories(basePath);
+        // -------------------------
+        // 2️⃣ Upload all files centrally (no manual Files.copy)
+        // -------------------------
+        List<FileUploadResponseDTO> uploadedFiles = fileUploadService.uploadMultipartFiles(
+                files,
+                "tickets",
+                "org-" + orgId + "/tickets/ticket-" + ticket.getId());
 
-            List<TicketAttachmentDTO> dtos = IntStream.range(0, files.size())
-                    .mapToObj(i -> {
-                        MultipartFile file = files.get(i);
-                        String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
+        // -------------------------
+        // 3️⃣ Build DTOs and persist each attachment
+        // -------------------------
+        List<TicketAttachmentDTO> savedAttachments = new ArrayList<>();
 
-                        String originalName = file.getOriginalFilename();
-                        Path dest = basePath.resolve(originalName);
+        for (int i = 0; i < uploadedFiles.size(); i++) {
+            FileUploadResponseDTO fileResp = uploadedFiles.get(i);
+            String desc = (descriptions != null && descriptions.size() > i) ? descriptions.get(i) : null;
 
-                        try (InputStream is = file.getInputStream()) {
-                            Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
-                        } catch (IOException e) {
-                            throw new RuntimeException("Failed to store file: " + originalName, e);
-                        }
+            TicketAttachmentDTO dto = TicketAttachmentDTO.builder()
+                    .fileName(fileResp.getFileName())
+                    .fileUrl(fileResp.getFileUrl())
+                    .fileType(fileResp.getFileType())
+                    .fileSizeKB(fileResp.getFileSizeKB())
+                    .description(desc)
+                    .build();
 
-                        String url = "/uploads/org-" + orgId + "/tickets/ticket-" + ticketId + "/" + originalName;
-
-                        return TicketAttachmentDTO.builder()
-                                .fileName(originalName)
-                                .fileType(file.getContentType())
-                                .fileSizeKB((double) file.getSize() / 1024)
-                                .description(desc)
-                                .fileUrl(url)
-                                .build();
-                    })
-                    .collect(Collectors.toList());
-
-            List<TicketAttachmentDTO> saved = ticketService.addAttachments(ticketId, dtos, employeeId);
-            return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", saved));
-
-        } catch (IOException e) {
-            throw new RuntimeException("Could not store attachments", e);
+            // ✅ Each saved in REQUIRES_NEW transaction → no deadlocks
+            TicketAttachmentDTO savedDto = ticketService.saveAttachmentIsolated(ticketId, dto, employeeId);
+            savedAttachments.add(savedDto);
         }
+
+        // -------------------------
+        // 4️⃣ Return unified response
+        // -------------------------
+        return ResponseEntity.ok(ApiResponse.ok("Attachments uploaded successfully", savedAttachments));
     }
 
     // ----------------------------------------------------------------

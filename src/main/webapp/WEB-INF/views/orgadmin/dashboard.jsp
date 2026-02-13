@@ -1,43 +1,43 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<div class="container-fluid mt-4">
+        <div class="container-fluid mt-4">
 
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold">Organisation Admin Dashboard</h3>
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Organisation Admin Dashboard</h3>
 
-        <button class="btn btn-primary" onclick="location.href='/org/create-employee'">
-            <i class="fas fa-user-plus"></i> Add Employee
-        </button>
-    </div>
-
-
-    <div class="row g-3">
-
-
-    <!-- STAT CARDS -->
-    <div class="row g-3">
-
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6>Total Employees</h6>
-                    <h3 id="countEmployees">0</h3>
-                </div>
+                <button class="btn btn-primary" onclick="location.href='/org/create-employee'">
+                    <i class="fas fa-user-plus"></i> Add Employee
+                </button>
             </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6>Departments</h6>
-                    <h3 id="countDepartments">0</h3>
-                </div>
-            </div>
-        </div>
 
-        <!-- <div class="col-md-3">
+            <div class="row g-3">
+
+
+                <!-- STAT CARDS -->
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <h6>Total Employees</h6>
+                                <h3 id="countEmployees">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <h6>Departments</h6>
+                                <h3 id="countDepartments">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- <div class="col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h6>Designations</h6>
@@ -46,36 +46,41 @@
             </div>
         </div> -->
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6>Max Employee Limit</h6>
-                    <h3 id="maxEmpLimit">--</h3>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <h6>Max Employee Limit</h6>
+                                <h3 id="maxEmpLimit">--</h3>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-<jsp:include page="/WEB-INF/views/organisation/dashboard-sections.jsp"/>
+                <jsp:include page="/WEB-INF/views/organisation/dashboard-sections.jsp" />
 
 
 
-    <!-- QUICK ACTIONS -->
-    <div class="card mt-4 shadow-sm border-0">
-        <div class="card-header bg-light">
-            <h5 class="m-0">Quick Actions</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-3">
-                <a href="/org/departments" class="btn btn-outline-primary"><i class="fas fa-building"></i> Manage Departments</a>
-                <a href="/org/designations" class="btn btn-outline-primary"><i class="fas fa-id-badge"></i> Manage Designations</a>
-                <a href="/org/employees" class="btn btn-outline-primary"><i class="fas fa-users"></i> Employee List</a>
-            </div>
-        </div>
-    </div>
+                <!-- QUICK ACTIONS -->
+                <div class="card mt-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="m-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-3">
+                            <a href="/org/departments" class="btn btn-outline-primary"><i class="fas fa-building"></i>
+                                Manage Departments</a>
+                            <a href="/org/designations" class="btn btn-outline-primary"><i class="fas fa-id-badge"></i>
+                                Manage Designations</a>
+                            <a href="/org/employees" class="btn btn-outline-primary"><i class="fas fa-users"></i>
+                                Employee List</a>
+                            <a href="/accountant/user" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add
+                                Accountant</a>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- RECENT EMPLOYEES -->
-    <!-- <div class="card mt-4 shadow-sm border-0">
+                <!-- RECENT EMPLOYEES -->
+                <!-- <div class="card mt-4 shadow-sm border-0">
         <div class="card-header bg-light">
             <h5 class="m-0">Recently Added Employees</h5>
         </div>
@@ -97,6 +102,4 @@
         </div>
     </div> -->
 
-</div>
-
-
+            </div>

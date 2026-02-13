@@ -6,7 +6,7 @@
 const ORG_ID = $("#globalOrgId").val() || window.APP.ORG_ID;
 
 // Initialize on document ready
-$(document).ready(function() {
+$(document).ready(function () {
     loadAllTemplates();
     setupSearchFilter();
 });
@@ -16,21 +16,21 @@ $(document).ready(function() {
  */
 function loadAllTemplates() {
     showLoading();
-    
+
     $.ajax({
         url: `/api/salary-slip-template/${ORG_ID}/list`,
         type: 'GET',
-        success: function(response) {
+        success: function (response) {
             console.log("salary template list ", response);
             hideLoading();
-            
+
             if (response.success) {
                 renderTemplateTable(response.data);
             } else {
                 showError('Failed to load templates: ' + response.message);
             }
         },
-        error: function(xhr) {
+        error: function (xhr) {
             hideLoading();
             showError('Failed to load templates. Please refresh the page.');
             console.error('Error loading templates:', xhr);
@@ -44,15 +44,15 @@ function loadAllTemplates() {
 function renderTemplateTable(templates) {
     const tbody = $('#templateTableBody');
     tbody.empty();
-    
+
     if (!templates || templates.length === 0) {
         showEmptyState();
         return;
     }
-    
+
     $('#emptyState').hide();
     $('#tableContent').show();
-    
+
     templates.forEach(template => {
         const row = `
             <tr data-template-id="${template.id}">
@@ -65,7 +65,6 @@ function renderTemplateTable(templates) {
                         </div>
                     </div>
                 </td>
-                <td>${template.createdBy || '-'}</td>
                 <td>${formatDate(template.createdDate)}</td>
                 <td>${formatDate(template.updatedDate)}</td>
                 <td class="text-center">
@@ -92,9 +91,9 @@ function renderTemplateTable(templates) {
         `;
         tbody.append(row);
     });
-    
+
     // Add click handler for rows
-    $('#templateTableBody tr').on('click', function(e) {
+    $('#templateTableBody tr').on('click', function (e) {
         if (!$(e.target).closest('button').length) {
             const templateId = $(this).data('template-id');
             editTemplate(templateId);
@@ -135,11 +134,11 @@ function showError(message) {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     $('.card-body').prepend(alertHtml);
-    
-    setTimeout(function() {
-        $('.alert').fadeOut(function() {
+
+    setTimeout(function () {
+        $('.alert').fadeOut(function () {
             $(this).remove();
         });
     }, 5000);
@@ -149,19 +148,19 @@ function showError(message) {
  * Setup search filter
  */
 function setupSearchFilter() {
-    $('#searchTemplate').on('input', function() {
+    $('#searchTemplate').on('input', function () {
         const searchTerm = $(this).val().toLowerCase();
-        
-        $('#templateTableBody tr').each(function() {
+
+        $('#templateTableBody tr').each(function () {
             const templateName = $(this).find('td:first strong').text().toLowerCase();
-            
+
             if (templateName.includes(searchTerm)) {
                 $(this).show();
             } else {
                 $(this).hide();
             }
         });
-        
+
         // Show/hide empty state based on visible rows
         const visibleRows = $('#templateTableBody tr:visible').length;
         if (visibleRows === 0) {
@@ -200,7 +199,7 @@ function setAsDefault(id) {
     $.ajax({
         url: `/api/salary-slip-template/${ORG_ID}/template/${id}/set-default`,
         type: 'PUT',
-        success: function(response) {
+        success: function (response) {
             if (response.success) {
                 showSuccessMessage('Template set as default successfully');
                 loadAllTemplates(); // Reload to update badges
@@ -208,7 +207,7 @@ function setAsDefault(id) {
                 showError(response.message);
             }
         },
-        error: function(xhr) {
+        error: function (xhr) {
             showError('Failed to set template as default');
             console.error('Set default error:', xhr);
         }
@@ -221,7 +220,7 @@ function setAsDefault(id) {
 function showDeleteConfirm(id, name) {
     $('#templateIdToDelete').val(id);
     $('#templateNameToDelete').text(name);
-    
+
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
     deleteModal.show();
 }
@@ -231,23 +230,23 @@ function showDeleteConfirm(id, name) {
  */
 function confirmDelete() {
     const templateId = $('#templateIdToDelete').val();
-    
+
     $.ajax({
         url: `/api/salary-slip-template/${ORG_ID}/template/${templateId}`,
         type: 'DELETE',
-        success: function(response) {
+        success: function (response) {
             if (response.success) {
                 // Hide modal
                 const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
                 deleteModal.hide();
-                
+
                 showSuccessMessage('Template deleted successfully');
                 loadAllTemplates(); // Reload table
             } else {
                 showError(response.message);
             }
         },
-        error: function(xhr) {
+        error: function (xhr) {
             showError('Failed to delete template');
             console.error('Delete error:', xhr);
         }
@@ -265,11 +264,11 @@ function showSuccessMessage(message) {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     $('body').append(alertHtml);
-    
-    setTimeout(function() {
-        $('.alert.position-fixed').fadeOut(function() {
+
+    setTimeout(function () {
+        $('.alert.position-fixed').fadeOut(function () {
             $(this).remove();
         });
     }, 3000);
@@ -281,9 +280,9 @@ function showSuccessMessage(message) {
 function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-        year: 'numeric', 
-        month: 'short', 
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'

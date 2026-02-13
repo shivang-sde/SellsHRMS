@@ -32,15 +32,6 @@ const apiClient = {
   delete(endpoint) {
     return this.request(endpoint, { method: "DELETE" });
   },
-  upload(endpoint, formData) {
-    return fetch(this.baseURL + endpoint, { method: "POST", body: formData })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data || data.status !== "OK")
-          throw new Error(data.message || "Upload failed");
-        return data.data;
-      });
-  },
   // File upload with FormData
   async upload(endpoint, formData) {
     try {

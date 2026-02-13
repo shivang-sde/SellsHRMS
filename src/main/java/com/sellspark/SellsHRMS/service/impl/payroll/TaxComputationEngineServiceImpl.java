@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.payroll.EmployeeSalaryAssignment;
 import com.sellspark.SellsHRMS.entity.payroll.IncomeTaxRule;
@@ -34,26 +33,32 @@ public class TaxComputationEngineServiceImpl implements TaxComputationEngineServ
     @Override
     public double compute(Employee employee, EmployeeSalaryAssignment assignment, double grossMonthly) {
 
-         if (assignment == null || assignment.getTaxSlab() == null) {
+        if (assignment == null || assignment.getTaxSlab() == null) {
             log.warn("⚠️ No tax slab assigned for employee {}", employee.getId());
             return 0.0;
         }
 
-        IncomeTaxSlab slab = taxSlabRepository.findById(assignment.getTaxSlab().getId()).orElseThrow(() -> new ResourceNotFoundException("Tax Slab", "Id", assignment.getTaxSlab().getId()));
-           // dentify applicable tax slab for employee country/org
+        IncomeTaxSlab slab = taxSlabRepository.findById(assignment.getTaxSlab().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tax Slab", "Id", assignment.getTaxSlab().getId()));
+        // dentify applicable tax slab for employee country/org
         String countryCode = assignment.getOrganisation().getCountryCode();
         int remainingMonths = getRemainingMonths(countryCode);
         double annualGross = grossMonthly * remainingMonths;
-        
-        
+
+        String empCode = employee.getEmployeeCode();
+        log.info("📑 TDS Calculation for {}: Gross Monthly: {} | Remaining Months: {}",
+                empCode, grossMonthly, remainingMonths);
+
         // Apply standard exemption
         double exemption = Optional.ofNullable(slab.getStandardExemptionLimit()).orElse(0.0);
         double taxableIncome = Math.max(0, annualGross - exemption);
 
-
-         // Apply provisional declared exemptions (future extension)
+        // Apply provisional declared exemptions (future extension)
         double declaredExemptions = getProvisionalDeclarations(employee, taxableIncome);
         taxableIncome = Math.max(0, taxableIncome - declaredExemptions);
+
+        log.info("📑 {} Taxable Income Calc: Annualized: {} - Exemption: {} - Declarations: {} = Taxable: {}",
+                empCode, annualGross, exemption, declaredExemptions, taxableIncome);
 
         List<IncomeTaxRule> rules = taxRuleRepository.findByTaxSlabId(slab.getId());
         if (rules.isEmpty()) {
@@ -100,8 +105,8 @@ public class TaxComputationEngineServiceImpl implements TaxComputationEngineServ
                     double portionTax = taxablePortion * (taxRate / 100.0);
                     tax += portionTax;
 
-                    log.debug("🧮 Rule: {} - {} @ {}% = {}",
-                            min, max == Double.MAX_VALUE ? "∞" : max, taxRate, portionTax);
+                    log.info("      ⚖️ Tax Slab Match: Range[{} - {}] | Rate: {}% | Tax for this slice: {}",
+                            min, (max == Double.MAX_VALUE ? "Above" : max), taxRate, portionTax);
                 }
             }
         }

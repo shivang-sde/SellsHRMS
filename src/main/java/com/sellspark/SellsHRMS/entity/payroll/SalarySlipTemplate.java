@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.sellspark.SellsHRMS.entity.Organisation;
@@ -40,6 +39,10 @@ public class SalarySlipTemplate {
 
     @Column(name = "is_default", nullable = false)
     private Boolean isDefault = false;
+
+    @Column(name = "version", nullable = false)
+private Integer version = 1;
+
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;

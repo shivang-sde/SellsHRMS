@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.controller.api.payroll;
 
+import com.sellspark.SellsHRMS.dto.common.ApiResponse;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipTemplateDTO;
 import com.sellspark.SellsHRMS.dto.payroll.TemplatePreviewRequest;
 import com.sellspark.SellsHRMS.service.payroll.SalarySlipTemplateService;
@@ -25,17 +26,18 @@ public class SalarySlipTemplateRestController {
     // Get all templates
     // ───────────────────────────────────────────────
     @GetMapping("/{orgId}/list")
-public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
-    try {
-        if (orgId == null) throw new RuntimeException("User not authenticated");
-        List<SalarySlipTemplateDTO> templates = templateService.getAllTemplates(orgId);
-        return ResponseEntity.ok(Map.of("success", true, "data", templates));
-    } catch (Exception ex) {
-        log.error("Error fetching templates list", ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "error", ex.getMessage()));
+    public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
+        try {
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
+            List<SalarySlipTemplateDTO> templates = templateService.getAllTemplates(orgId);
+            return ResponseEntity.ok(Map.of("success", true, "data", templates));
+        } catch (Exception ex) {
+            log.error("Error fetching templates list", ex);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", ex.getMessage()));
+        }
     }
-}
 
     // ───────────────────────────────────────────────
     // Get template by ID
@@ -43,7 +45,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/template/{id}")
     public ResponseEntity<?> getTemplateById(@PathVariable Long orgId, @PathVariable Long id) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             SalarySlipTemplateDTO dto = templateService.getTemplateById(id, orgId);
             if (dto == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -52,18 +55,15 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                  "data", dto
-                ));
+                    "data", dto));
         } catch (Exception ex) {
-                log.error("Error fetching template by ID", ex);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of(
+            log.error("Error fetching template by ID", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
                             "success", false,
-                            "error", "An unexpected error occurred. Please try again later or contact support."
-                        ));
+                            "error", "An unexpected error occurred. Please try again later or contact support."));
         }
     }
-
 
     // ───────────────────────────────────────────────
     // Get default template
@@ -71,7 +71,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/default")
     public ResponseEntity<?> getDefaultTemplate(@PathVariable Long orgId) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             SalarySlipTemplateDTO dto = templateService.getDefaultTemplate(orgId);
             return ResponseEntity.ok(dto);
         } catch (Exception ex) {
@@ -87,14 +88,24 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @PostMapping("/{orgId}/save")
     public ResponseEntity<?> saveTemplate(@PathVariable Long orgId, @RequestBody SalarySlipTemplateDTO templateDTO) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             templateDTO.setOrgId(orgId);
+
             SalarySlipTemplateDTO saved = templateService.saveTemplate(templateDTO, orgId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
+            return ResponseEntity.ok(ApiResponse.<SalarySlipTemplateDTO>builder()
+                    .success(true)
+                    .message("Template saved successfully")
+                    .data(saved)
+                    .build());
         } catch (Exception ex) {
             log.error("Error saving template", ex);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", ex.getMessage()));
+                    .body(ApiResponse.builder()
+                            .success(false)
+                            .message(ex.getMessage())
+                            .build());
         }
     }
 
@@ -104,7 +115,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @DeleteMapping("/{orgId}/template/{id}")
     public ResponseEntity<?> deleteTemplate(@PathVariable Long orgId, @PathVariable Long id) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             boolean deleted = templateService.deleteTemplate(id, orgId);
             return ResponseEntity.ok(Map.of("deleted", deleted));
         } catch (Exception ex) {
@@ -120,7 +132,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @PutMapping("/{orgId}/template/{id}/set-default")
     public ResponseEntity<?> setAsDefault(@PathVariable Long orgId, @PathVariable Long id) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             boolean result = templateService.setAsDefault(id, orgId);
             return ResponseEntity.ok(Map.of("success", result));
         } catch (Exception ex) {
@@ -136,7 +149,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @PostMapping("/{orgId}/preview")
     public ResponseEntity<?> generatePreview(@PathVariable Long orgId, @RequestBody TemplatePreviewRequest request) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             String html = templateService.generatePreview(request, orgId);
             return ResponseEntity.ok(Map.of("success", true, "data", html));
         } catch (Exception ex) {
@@ -152,7 +166,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/mock-data")
     public ResponseEntity<?> getMockData(@PathVariable Long orgId) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             Map<String, Object> mockData = templateService.getMockData(orgId);
             return ResponseEntity.ok(Map.of("success", true, "data", mockData));
         } catch (Exception ex) {
@@ -168,7 +183,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/available-fields")
     public ResponseEntity<?> getAvailableFields(@PathVariable Long orgId) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             Map<String, List<Map<String, String>>> fields = templateService.getAvailableFields(orgId);
             return ResponseEntity.ok(Map.of("success", true, "data", fields));
         } catch (Exception ex) {
@@ -184,7 +200,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @PostMapping("/{orgId}/upload-logo")
     public ResponseEntity<?> uploadLogo(@PathVariable Long orgId, @RequestParam("file") MultipartFile file) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             String url = templateService.uploadLogo(orgId, file);
             return ResponseEntity.ok(Map.of("success", true, "data", url));
         } catch (Exception ex) {
@@ -200,7 +217,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/render/{salarySlipId}")
     public ResponseEntity<?> renderSalarySlip(@PathVariable Long orgId, @PathVariable Long salarySlipId) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             String html = templateService.renderSalarySlip(salarySlipId, orgId);
             return ResponseEntity.ok(Map.of("success", true, "data", html));
         } catch (Exception ex) {
@@ -216,7 +234,8 @@ public ResponseEntity<?> getAllTemplates(@PathVariable Long orgId) {
     @GetMapping("/{orgId}/pdf/{salarySlipId}")
     public ResponseEntity<?> generatePDF(@PathVariable Long orgId, @PathVariable Long salarySlipId) {
         try {
-            if (orgId == null) throw new RuntimeException("User not authenticated");
+            if (orgId == null)
+                throw new RuntimeException("User not authenticated");
             byte[] pdf = templateService.generatePDF(salarySlipId, orgId);
             return ResponseEntity.ok()
                     .header("Content-Type", "application/pdf")

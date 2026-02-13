@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sellspark.SellsHRMS.dto.project.TaskAttachmentDTO;
 import com.sellspark.SellsHRMS.dto.project.TaskDTO;
@@ -21,7 +23,6 @@ import com.sellspark.SellsHRMS.entity.Ticket;
 import com.sellspark.SellsHRMS.entity.Ticket.TicketStatus;
 import com.sellspark.SellsHRMS.entity.TicketActivity;
 import com.sellspark.SellsHRMS.entity.TicketAttachment;
-import com.sellspark.SellsHRMS.exception.InvalidOperationException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.UnauthorizedActionException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
@@ -29,14 +30,13 @@ import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.ProjectMemberRepository;
 import com.sellspark.SellsHRMS.repository.ProjectRepository;
-import com.sellspark.SellsHRMS.repository.TaskActivityRepository;
 import com.sellspark.SellsHRMS.repository.TicketActivityRepository;
 import com.sellspark.SellsHRMS.repository.TicketAttachmentRepository;
 import com.sellspark.SellsHRMS.repository.TicketRepository;
 import com.sellspark.SellsHRMS.service.TicketService;
+import com.sellspark.SellsHRMS.service.files.FileUploadService;
 import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -52,6 +52,8 @@ public class TicketServiceImpl implements TicketService {
         private final TicketActivityRepository activityRepo;
         private final EmployeeHierarchyUtil hierarchyUtil;
         private final ProjectMemberRepository projectMemberRepo;
+
+        private final FileUploadService fileUploadService;
 
         // ---------------- CREATE ----------------
         @Override
@@ -135,6 +137,28 @@ public class TicketServiceImpl implements TicketService {
 
                 ticketRepo.save(ticket);
                 return mapToDTO(ticket);
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public TicketAttachmentDTO saveAttachmentIsolated(Long ticketId, TicketAttachmentDTO dto, Long employeeId) {
+                Ticket ticket = ticketRepo.findById(ticketId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+                Employee uploader = empRepo.findById(employeeId)
+                                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+
+                TicketAttachment attachment = new TicketAttachment();
+                attachment.setTicket(ticket);
+                attachment.setUploadedBy(uploader);
+                attachment.setFileName(dto.getFileName());
+                attachment.setFileUrl(dto.getFileUrl());
+                attachment.setDescription(dto.getDescription());
+                attachment.setFileSizeKB(dto.getFileSizeKB());
+                attachment.setUploadedAt(LocalDateTime.now());
+
+                attachmentRepo.save(attachment);
+
+                // ✅ No ticketRepo.save(ticket) here — avoids updating parent ticket
+                return TicketAttachmentDTO.fromEntity(attachment);
         }
 
         // ---------------- DELETE ----------------

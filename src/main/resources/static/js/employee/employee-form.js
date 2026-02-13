@@ -106,7 +106,7 @@ $(document).ready(async function () {
           .prop("disabled", false)
           .html(
             '<i class="fas fa-save me-2"></i>' +
-              (isEditMode ? "Update Employee" : "Create Employee"),
+            (isEditMode ? "Update Employee" : "Create Employee"),
           );
       },
     });
@@ -156,6 +156,12 @@ $(document).ready(async function () {
     $('select[name="maritalStatus"]').val(data.maritalStatus);
     $('input[name="referenceName"]').val(data.referenceName);
     $('input[name="referencePhone"]').val(data.referencePhone);
+
+    // identity proof
+    $('input[name="aadharNumber"]').val(data.aadharNumber);
+    $('input[name="panNumber"]').val(data.panNumber);
+    $('input[name="uanNumber"]').val(data.uanNumber);
+
 
     // Addresses
     if (data.localAddress) fillAddress("localAddress", data.localAddress);

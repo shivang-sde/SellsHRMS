@@ -19,6 +19,11 @@ public class EmployeeDetailResponse {
     private String personalEmail;
     private String photoUrl;
 
+    // IDENTITY DOCUMENTS
+    private String aadharNumber;
+    private String panNumber;
+    private String uanNumber;
+
     private String gender;
     private String dob;
 

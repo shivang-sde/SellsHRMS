@@ -14,9 +14,12 @@ public interface EmployeeSalaryAssignmentRepository extends JpaRepository<Employ
 
     List<EmployeeSalaryAssignment> findByOrganisationIdAndActiveTrue(Long orgId);
 
+    boolean existsBySalaryStructureIdAndActiveTrue(Long structureId);
 
     Optional<EmployeeSalaryAssignment> findByEmployeeIdAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqual(
             Long employeeId, LocalDate from, LocalDate to);
 
     List<EmployeeSalaryAssignment> findBySalaryStructureId(Long structureId);
+
+    List<EmployeeSalaryAssignment> findBySalaryStructureIdAndActiveTrue(Long structureId);
 }

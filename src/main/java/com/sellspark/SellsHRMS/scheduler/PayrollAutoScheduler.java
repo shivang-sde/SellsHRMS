@@ -3,7 +3,6 @@ package com.sellspark.SellsHRMS.scheduler;
 import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationPolicy;
 import com.sellspark.SellsHRMS.entity.payroll.PayRun;
-import com.sellspark.SellsHRMS.repository.OrganisationAdminRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationPolicyRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.payroll.PayRunRepository;
@@ -39,7 +38,8 @@ public class PayrollAutoScheduler {
         for (Organisation org : orgs) {
             try {
                 Optional<OrganisationPolicy> optPolicy = policyRepository.findByOrganisationId(org.getId());
-                if (optPolicy.isEmpty()) continue;
+                if (optPolicy.isEmpty())
+                    continue;
 
                 OrganisationPolicy policy = optPolicy.get();
 
@@ -47,8 +47,7 @@ public class PayrollAutoScheduler {
                 LocalDate cycleStart = cycle[0];
                 LocalDate cycleEnd = cycle[1];
                 LocalDate generationDate = cycleEnd.plusDays(
-                        Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0)
-                );
+                        Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0));
 
                 // Skip if not today
                 if (!today.equals(generationDate)) {
@@ -58,18 +57,19 @@ public class PayrollAutoScheduler {
                 // Prevent duplicate/overlapping PayRuns
                 boolean exists = payRunRepository.existsOverlap(org.getId(), cycleStart, cycleEnd);
                 if (exists) {
-                    log.info("⏩ Skipping payroll for {}, overlap found ({} to {})", org.getName(), cycleStart, cycleEnd);
+                    log.info("⏩ Skipping payroll for {}, overlap found ({} to {})", org.getName(), cycleStart,
+                            cycleEnd);
                     continue;
                 }
 
-                //Create PayRun
+                // Create PayRun
                 PayRun payRun = PayRun.builder()
                         .organisation(org)
                         .startDate(cycleStart)
                         .endDate(cycleEnd)
-                        .month(cycleEnd.getMonthValue())
-                        .year(cycleEnd.getYear())
-                        .periodLabel(cycleEnd.getMonth().name() + " " + cycleEnd.getYear())
+                        .month(cycleStart.getMonthValue())
+                        .year(cycleStart.getYear())
+                        .periodLabel(cycleStart.getMonth().name() + " " + cycleStart.getYear())
                         .status(PayRun.PayRunStatus.PROCESSING)
                         .runDate(today)
                         .build();
@@ -104,7 +104,7 @@ public class PayrollAutoScheduler {
         LocalDate cycleStart = findPreviousCycleStart(today, startDay);
         LocalDate cycleEnd = cycleStart.plusDays(duration - 1);
 
-        return new LocalDate[]{cycleStart, cycleEnd};
+        return new LocalDate[] { cycleStart, cycleEnd };
     }
 
     /**

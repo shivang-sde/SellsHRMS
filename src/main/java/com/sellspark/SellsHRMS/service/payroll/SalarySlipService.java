@@ -1,23 +1,31 @@
 package com.sellspark.SellsHRMS.service.payroll;
 
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
+import com.sellspark.SellsHRMS.entity.payroll.SalarySlip;
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-
 @Service
 public interface SalarySlipService {
 
-    SalarySlipDTO generateSlip(Long employeeId, Long payRunId);
+    SalarySlip generatePdfForSlip(Long slipId, Long orgId);
 
-    SalarySlipDTO updateSlip(Long slipId, SalarySlipDTO dto);
+    SalarySlip saveSlip(SalarySlip slip);
 
-    void deactivateSlip(Long slipId);
+    List<SalarySlip> getEmployeeSlips(Long empId);
 
-    SalarySlipDTO getSlip(Long slipId);
+    SalarySlip getSlip(Long slipId);
 
-    List<SalarySlipDTO> getSlipsByEmployee(Long employeeId);
+    List<SalarySlipDTO> getAllByEmployee(Long empId);
 
-    List<SalarySlipDTO> getSlipsByPayRun(Long payRunId);
+    // List<SalarySlipDTO> getSlipsByPayRun(Long payRunId);
+
+    SalarySlipDTO getSalarySlipDtoById(Long id);
+
+    // SalarySlipDTO generateSlip(Long employeeId, Long payRunId);
+
+    // SalarySlipDTO updateSlip(Long slipId, SalarySlipDTO dto);
+
 }

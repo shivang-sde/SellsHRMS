@@ -1,12 +1,15 @@
 package com.sellspark.SellsHRMS.service.payroll;
 
 import com.sellspark.SellsHRMS.dto.payroll.EmployeeSalaryAssignmentDTO;
-import java.util.List;
+import com.sellspark.SellsHRMS.entity.payroll.EmployeeSalaryAssignment;
 
+import java.util.List;
 
 public interface EmployeeSalaryAssignmentService {
 
     EmployeeSalaryAssignmentDTO assignSalaryStructure(EmployeeSalaryAssignmentDTO dto);
+
+    void calculateAndSetBaseline(EmployeeSalaryAssignment assignment);
 
     EmployeeSalaryAssignmentDTO updateAssignment(Long id, EmployeeSalaryAssignmentDTO dto);
 
@@ -21,5 +24,6 @@ public interface EmployeeSalaryAssignmentService {
     /**
      * Bulk-assign a salary structure to multiple employees by designation or grade.
      */
-    // List<EmployeeSalaryAssignmentDTO> bulkAssign(Long structureId, String designation, String grade);
+    // List<EmployeeSalaryAssignmentDTO> bulkAssign(Long structureId, String
+    // designation, String grade);
 }

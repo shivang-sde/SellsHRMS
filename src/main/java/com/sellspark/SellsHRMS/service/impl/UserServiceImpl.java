@@ -96,6 +96,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User createAccountantUser(String email, String rawPassword, Long organisationId) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered: " + email);
+        }
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setIsActive(true);
+        user.setSystemRole(User.SystemRole.ACCOUNTANT);
+
+        // only set system role for accountant not need to have org role
+        // // Assign organisation role (e.g. Accountant)
+        // user.setOrgRole(
+        // roleRepo.findByOrganisationIdAndNameIgnoreCase(organisationId, roleName)
+        // .orElseThrow(() -> new RuntimeException("Role not found: " + roleName))
+        // );
+
+        // Assign Organisation
+        user.setOrganisation(
+                orgRepo.findById(organisationId)
+                        .orElseThrow(() -> new RuntimeException("Organisation not found: " + organisationId)));
+
+        return userRepository.save(user);
+    }
+
+    @Override
     public User createEmpUser(Long employeeId, String email, String rawPassword, String roleName, Long organisationId) {
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("Email already registered: " + email);
