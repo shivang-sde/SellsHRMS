@@ -2,6 +2,7 @@ $(document).ready(function () {
     const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
     let employees = [];
     let deleteEmployeeId = null;
+    let resetUserId = null;
 
     // Load employees on page load
     loadEmployees();
@@ -24,6 +25,48 @@ $(document).ready(function () {
             deleteEmployee(deleteEmployeeId);
         }
     });
+
+    $(document).on('click', '.btn-reset', function () {
+        resetUserId = $(this).data('id');
+        $('#resetUserId').val(resetUserId);
+
+        // Create or get modal instance
+        const modalEl = document.getElementById('resetPasswordModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        console.log("Opening Reset Modal for User:", resetUserId);
+    });
+
+
+    $('#confirmReset').on('click', function () {
+        const modal = $('#resetPasswordModal');
+        const userId = modal.find('#resetUserId').val();
+        const newPassword = modal.find('#newPassword').val().trim();
+
+        console.log('userId:', userId);
+        console.log('newPassword:', newPassword);
+
+        if (!newPassword) {
+            showToast('warning', 'Please enter a new password');
+            return;
+        }
+
+        $.ajax({
+            url: '/api/users/admin-reset-password',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ userId, newPassword }),
+            success: function () {
+                showToast('success', 'Password reset successfully');
+                modal.modal('hide');
+            },
+            error: function (xhr) {
+                showToast('error', xhr.responseJSON?.message || 'Failed to reset password');
+            }
+        });
+    });
+
 
     // Load all employees
     function loadEmployees() {
@@ -109,6 +152,11 @@ $(document).ready(function () {
                             <a href="/org/employee/edit/${emp.id}" class="btn btn-outline-warning" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            <button class="btn btn-outline-secondary btn-reset" data-id="${emp.userId}"
+                                title="Reset Password">
+                                <i class="fas fa-key"></i>
+                            </button>
+
                             <button class="btn btn-outline-danger btn-delete" data-id="${emp.id}" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>

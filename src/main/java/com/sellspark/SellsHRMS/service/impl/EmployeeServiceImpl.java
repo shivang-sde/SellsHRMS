@@ -91,7 +91,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         emp.setEmployeeCode(empCode); // setting up emp code;
         employeeRepo.save(emp);
 
-        userService.createEmpUser(
+        User user = userService.createEmpUser(
                 emp.getId(),
                 req.getWorkEmail(),
                 req.getPassword(),
@@ -213,6 +213,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee emp = employeeRepo.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
+        User user = userService.findByEmail(emp.getEmail());
+
         EmployeeStatus newStatus = Arrays.stream(EmployeeStatus.values())
                 .filter(s -> s.name().equalsIgnoreCase(status))
                 .findFirst()
@@ -313,10 +315,11 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     private EmployeeResponse mapToResponse(Employee emp) {
-
+        User user = userService.findByEmail(emp.getEmail());
         EmployeeResponse res = new EmployeeResponse();
 
         res.setId(emp.getId());
+        res.setUserId(user.getId());
         res.setEmployeeCode(emp.getEmployeeCode());
         res.setFullName(emp.getFirstName() + " " + emp.getLastName());
         res.setEmail(emp.getEmail());

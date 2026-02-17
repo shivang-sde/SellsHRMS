@@ -178,8 +178,19 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // private String mask(String s) {
-    // return s == null ? "null" : "*".repeat(Math.min(5, s.length()));
-    // }
+    @Override
+    public void adminResetPassword(Long userId, String newPassword) {
+        log.info(" [ADMIN_RESET_PASSWORD] userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+
+        // No need to validate current password (admin override)
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setChangePasswordDate(LocalDateTime.now());
+        userRepository.save(user);
+
+        log.info("Admin successfully reset password for {}", user.getEmail());
+    }
 
 }

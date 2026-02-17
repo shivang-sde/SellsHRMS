@@ -53,6 +53,7 @@ public class AuthService {
 
         // Load permissions dynamically
         Set<String> perms = accessService.getPermissionsForUser(user.getId());
+        List<String> modules = accessService.getModuleCodesForUser(user.getId());
 
         UserPrincipal principal = UserPrincipal.builder()
                 .id(user.getId())
@@ -111,12 +112,10 @@ public class AuthService {
         session.setAttribute("ORG_ID", principal.getOrganisationId());
         session.setAttribute("LOGO_URL", org.getLogoUrl());
         session.setAttribute("PERMISSIONS", perms);
-        // session.setAttribute("MODULES",
-        // accessService.getModuleCodesForUser(user.getId()));
+        session.setAttribute("MODULES", modules);
 
-        // log.info("Authenticated [{}] | systemRole={} | orgRole={} | orgId={}",
-        // user.getEmail(), principal.getSystemRole(), principal.getOrgRole(),
-        // principal.getOrganisationId());
+        log.info("Authenticated [{}] | Org={} | Modules={} | Role={}",
+                user.getEmail(), org.getName(), modules.size(), principal.getOrgRole());
 
         return principal;
     }

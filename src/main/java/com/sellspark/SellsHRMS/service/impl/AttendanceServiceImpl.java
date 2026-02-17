@@ -40,6 +40,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final AttendanceSummaryRepository summaryRepo;
     private final EmployeeRepository employeeRepo;
     private final OrganisationPolicyRepository policyRepo;
+    private final DeviceRepository deviceRepo;
 
     @Override
     public PunchRecordResponse punchIn(PunchInRequest request) {
@@ -410,6 +411,68 @@ public class AttendanceServiceImpl implements AttendanceService {
         } catch (IllegalArgumentException e) {
             log.error("Invalid punchedFrom value: {}", value);
             throw new InvalidOperationException("Invalid punchedFrom value: " + value);
+        }
+    }
+
+    @Override
+    public PunchRecordResponse processDevicePunch(String apiKey, DevicePunchRequest request) {
+        log.info("Processing device punch for api key: {}", apiKey);
+
+        Device device = deviceRepo.findByApiKey(apiKey)
+                .orElseThrow(() -> new InvalidOperationException("Invalid API Key"));
+
+        if (device.getStatus() != Device.Status.ACTIVE) {
+            throw new InvalidOperationException("Device is inactive");
+        }
+
+        Employee employee;
+
+        if (request.getBiometricId() != null && !request.getBiometricId().isBlank()) {
+            employee = employeeRepo.findByOrganisationIdAndBiometricId(
+                    device.getOrganisation().getId(),
+                    request.getBiometricId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Employee not found with Biometric ID: " + request.getBiometricId()));
+        } else if (request.getEmployeeCode() != null && !request.getEmployeeCode().isBlank()) {
+            employee = employeeRepo.findByOrganisationIdAndEmployeeCode(
+                    device.getOrganisation().getId(),
+                    request.getEmployeeCode())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Employee not found with Code: " + request.getEmployeeCode()));
+        } else {
+            throw new InvalidOperationException("Either Employee Code or Biometric ID must be provided");
+        }
+
+        // Ensure strict tenant isolation (redundant with the query above but good for
+        // safety)
+        if (!employee.getOrganisation().getId().equals(device.getOrganisation().getId())) {
+            throw new InvalidOperationException("Employee does not belong to the device's organisation");
+        }
+
+        if ("IN".equalsIgnoreCase(request.getAction())) {
+            PunchInRequest punchInRequest = new PunchInRequest();
+            punchInRequest.setEmployeeId(employee.getId());
+            punchInRequest.setPunchIn(request.getTimestamp());
+            punchInRequest.setSource(PunchInOut.Source.BIOMETRIC.name());
+            punchInRequest.setLat(request.getLat());
+            punchInRequest.setLng(request.getLng());
+            punchInRequest.setPunchedFrom(PunchInOut.PUNCHFROM.WFO.name()); // Assume WFO for devices
+            return punchIn(punchInRequest);
+        } else if ("OUT".equalsIgnoreCase(request.getAction())) {
+            // Find the active punch record for today
+            AttendanceSummary summary = summaryRepo.findByEmployeeIdAndAttendanceDate(employee.getId(), LocalDate.now())
+                    .orElseThrow(() -> new ResourceNotFoundException("No attendance record found for today"));
+
+            if (summary.getPunchRecord() == null) {
+                throw new ResourceNotFoundException("No punch-in record found to punch out");
+            }
+
+            PunchOutRequest punchOutRequest = new PunchOutRequest();
+            punchOutRequest.setPunchId(summary.getPunchRecord().getId());
+            punchOutRequest.setPunchOut(request.getTimestamp());
+            return punchOut(punchOutRequest);
+        } else {
+            throw new InvalidOperationException("Invalid action: " + request.getAction());
         }
     }
 

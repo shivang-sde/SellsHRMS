@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sellspark.SellsHRMS.dto.common.ApiResponse;
 import com.sellspark.SellsHRMS.dto.users.AccountantCreateRequest;
+import com.sellspark.SellsHRMS.dto.users.AdminResetPasswordRequest;
 import com.sellspark.SellsHRMS.dto.users.ChanagePassworrdRequest;
 import com.sellspark.SellsHRMS.entity.User;
 import com.sellspark.SellsHRMS.service.UserService;
@@ -27,6 +28,12 @@ public class UsersRestController {
         userService.changePassword(request.getEmail(), request.getCurrentPassword(), request.getNewPassword());
 
         return ResponseEntity.ok(ApiResponse.ok("Password changed successfully"));
+    }
+
+    @PostMapping("/admin-reset-password")
+    public ResponseEntity<ApiResponse<Void>> adminResetPassword(@RequestBody AdminResetPasswordRequest request) {
+        userService.adminResetPassword(request.getUserId(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok("Password reset successfully"));
     }
 
 }

@@ -52,6 +52,9 @@
                         <div class="form-footer">
                             <button type="submit" class="btn btn-primary btn-block">LOGIN</button>
                         </div>
+                        <!-- <div>
+                            <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                        </div> -->
                         <div id="loginMessage" class="mt-3"></div>
                     </form>
                 </div>
@@ -80,6 +83,29 @@
     System.out.print(userIpAddress);
     %> --%> -->
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Forgot Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="forgotEmail" class="form-label">Enter your registered email</label>
+                            <input type="email" id="forgotEmail" class="form-control" placeholder="admin@yourorg.com">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="submitForgot">Submit</button>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -127,6 +153,39 @@
                 });
             });
         });
+
+
+        $('#forgotPasswordLink').on('click', function (e) {
+            e.preventDefault();
+            const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+            modal.show();
+        });
+
+        $('#submitForgot').on('click', function () {
+            const email = $('#forgotEmail').val().trim();
+            if (!email) {
+                showToast('warning', 'Please enter your email address');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/auth/forgot-password',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email }),
+                success: function (res) {
+                    showToast('success', res.message || 'If this email is valid, a reset link has been sent.');
+                    $('#forgotPasswordModal').modal('hide');
+                },
+                error: function (xhr) {
+                    showToast('error', xhr.responseJSON?.message || 'Something went wrong');
+                }
+            });
+        });
+
+
+
+
     </script>
 </body>
 

@@ -8,15 +8,23 @@ import java.util.List;
 
 public interface AttendanceService {
     PunchRecordResponse punchIn(PunchInRequest request);
+
     PunchRecordResponse punchOut(PunchOutRequest request);
+
+    PunchRecordResponse processDevicePunch(String apiKey, DevicePunchRequest request);
+
     PunchRecordResponse getTodayPunch(Long employeeId);
+
     List<PunchRecordResponse> getEmployeeAttendance(Long employeeId, LocalDate startDate, LocalDate endDate);
+
     List<PunchRecordResponse> getOrgAttendanceByDate(Long orgId, LocalDate date);
+
     List<PunchRecordResponse> getTodayOrgAttendance(Long orgId);
+
     AttendanceSummaryResponse getAttendanceSummary(Long employeeId, LocalDate startDate, LocalDate endDate);
+
     List<AttendanceSummary> getOrgAttendanceSummary(Long orgId, LocalDate date);
+
     List<PunchRecordResponse> getOrgAttendanceByRange(Long orgId, LocalDate startDate, LocalDate endDate);
-
-
 
 }

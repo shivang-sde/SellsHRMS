@@ -1,6 +1,5 @@
 package com.sellspark.SellsHRMS.service.impl;
 
-import com.sellspark.SellsHRMS.dto.admin.OrgAdminCreateDTO;
 import com.sellspark.SellsHRMS.dto.mapper.DtoMapper;
 import com.sellspark.SellsHRMS.dto.organisation.*;
 import com.sellspark.SellsHRMS.entity.Organisation;
@@ -9,6 +8,7 @@ import com.sellspark.SellsHRMS.repository.DepartmentRepository;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationAdminRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
+import com.sellspark.SellsHRMS.service.OrganisationModuleService;
 import com.sellspark.SellsHRMS.service.OrganisationService;
 import com.sellspark.SellsHRMS.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,11 @@ import java.util.List;
 @Transactional
 @Slf4j
 public class OrganisationServiceImpl implements OrganisationService {
+
+    private static final List<String> DEFAULT_HRMS_MODULES = List.of("ORG_STRUCTURE", "ROLE_PERMISSION", "EMPLOYEE",
+            "ATTENDANCE", "LEAVE", "HOLIDAY", "ORG_POLICY");
+
+    private final OrganisationModuleService organisationModuleService;
 
     private final OrganisationRepository organisationRepo;
     private final EmployeeRepository employeeRepo;
@@ -61,6 +66,9 @@ public class OrganisationServiceImpl implements OrganisationService {
             org.setOrgAdmin(adminEntity);
             organisationRepo.save(org);
         }
+
+        // 3) assign default modules
+        organisationModuleService.assignModuleToOrganisation(org.getId(), DEFAULT_HRMS_MODULES);
 
         return toDto(org);
     }

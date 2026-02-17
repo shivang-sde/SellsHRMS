@@ -24,5 +24,7 @@ public interface UserService {
 
     void changePassword(String email, String currentPassword, String newPassword);
 
+    void adminResetPassword(Long userId, String newPassword);
+
     User getCurrentUser();
 }

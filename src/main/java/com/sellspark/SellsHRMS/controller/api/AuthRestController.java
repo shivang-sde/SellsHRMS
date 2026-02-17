@@ -5,6 +5,7 @@ import com.sellspark.SellsHRMS.dto.LoginResponse;
 import com.sellspark.SellsHRMS.entity.User;
 import com.sellspark.SellsHRMS.exception.core.HRMSException;
 import com.sellspark.SellsHRMS.repository.UserRepository;
+import com.sellspark.SellsHRMS.service.AccessService;
 import com.sellspark.SellsHRMS.service.AuthService;
 import com.sellspark.SellsHRMS.service.SuperAdminService;
 import com.sellspark.SellsHRMS.service.UserService;
@@ -22,6 +23,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -33,6 +35,7 @@ public class AuthRestController {
     private final SuperAdminService superAdminService;
     private final UserRepository userRepo;
     private final UserService userService;
+    private final AccessService accessService;
 
     @PostMapping("/register-superadmin")
     public ResponseEntity<?> registerSuperAdmin(@RequestBody LoginRequest request) {
@@ -133,6 +136,14 @@ public class AuthRestController {
                 context.getAuthentication() != null ? context.getAuthentication().getPrincipal() : null,
                 "authorities",
                 context.getAuthentication() != null ? context.getAuthentication().getAuthorities() : null);
+    }
+
+    @PostMapping("/refresh-session")
+    public ResponseEntity<Void> refreshSessionModules(HttpSession session) {
+        Long userId = (Long) session.getAttribute("USER_ID");
+        List<String> modules = accessService.getModuleCodesForUser(userId);
+        session.setAttribute("MODULES", modules);
+        return ResponseEntity.ok().build();
     }
 
 }

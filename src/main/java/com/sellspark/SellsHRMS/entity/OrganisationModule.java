@@ -1,5 +1,7 @@
 package com.sellspark.SellsHRMS.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,4 +25,10 @@ public class OrganisationModule {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "module_id")
     private Module module;
+
+    @Builder.Default
+    private Boolean enabled = true;
+
+    @Column(updatable = false)
+    private LocalDateTime assignedAt;
 }

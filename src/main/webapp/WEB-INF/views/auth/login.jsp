@@ -40,6 +40,8 @@
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">Login</button>
                         </div>
+                        <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+
                         <!-- <p class="text-center">
                             <a href="/register">Register Super Admin</a>
                         </p> -->
@@ -48,6 +50,30 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Forgot Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="forgotEmail" class="form-label">Enter your registered email</label>
+                            <input type="email" id="forgotEmail" class="form-control" placeholder="admin@yourorg.com">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="submitForgot">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
