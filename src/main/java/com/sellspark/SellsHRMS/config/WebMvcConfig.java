@@ -19,6 +19,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
       String location = "file:" + (uploadBaseDir.endsWith("/") ? uploadBaseDir : uploadBaseDir + "/");
       registry.addResourceHandler(uploadUrlPath + "/**")
             .addResourceLocations(location);
+
+      // Serve static resources (JS, CSS, images) with no cache
+      registry.addResourceHandler("/**")
+            .addResourceLocations("classpath:/static/")
+            .setCachePeriod(0); // disables caching for static resources
    }
 
 }

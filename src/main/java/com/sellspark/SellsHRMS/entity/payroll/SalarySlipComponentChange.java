@@ -36,4 +36,7 @@ public class SalarySlipComponentChange {
 
     @Column(length = 200)
     private String reason;
+
+    @Column(name = "ip_address", length = 50)
+    private String ipAddress;
 }

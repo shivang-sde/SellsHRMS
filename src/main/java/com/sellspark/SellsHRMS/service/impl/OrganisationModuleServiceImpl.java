@@ -2,7 +2,6 @@ package com.sellspark.SellsHRMS.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
@@ -15,6 +14,7 @@ import com.sellspark.SellsHRMS.exception.core.HRMSException;
 import com.sellspark.SellsHRMS.repository.ModuleRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationModuleRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
+import com.sellspark.SellsHRMS.repository.PermissionRepository;
 import com.sellspark.SellsHRMS.service.OrganisationModuleService;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +26,7 @@ public class OrganisationModuleServiceImpl implements OrganisationModuleService 
     private final OrganisationRepository organisationRepository;
     private final OrganisationModuleRepository organisationModuleRepository;
     private final ModuleRepository moduleRepository;
+    private final PermissionRepository permissionRepository;
 
     @Transactional
     @Override
@@ -71,5 +72,13 @@ public class OrganisationModuleServiceImpl implements OrganisationModuleService 
     public List<String> findActiveModuleCodesByOrganisationId(Long orgId) {
         return organisationModuleRepository.findActiveModuleCodesByOrganisationId(orgId);
     }
+
+    // @Override
+    // public Map<String, Object> getAvailablePermissionForOrg(Long orgId) {
+    // List<String> activeModules =
+    // organisationModuleRepository.findActiveModuleCodesByOrganisationId(orgId);
+    // List<String> permissions = permissionRepository.findAllByActiveTrue();
+
+    // }
 
 }

@@ -125,7 +125,8 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         double pratedBase = round(assignment.getBasePay() * (paymentDays / workingDays));
         totalEarnings += pratedBase;
         // Add Base Pay as the first component
-        slipComponents.add(createSlipComponent(null, "Base Pay", "BASE", "EARNING", pratedBase, "Pro-rated Base Pay"));
+        slipComponents.add(
+                createSlipComponent(null, "Base Pay", "BASE", "EARNING", pratedBase, "Pro-rated Base Pay", context));
 
         // Crucial: Add BASE to context so other components can use it
         context.put("BASE", pratedBase);
@@ -157,7 +158,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
             componentValueMap.put(comp, amount);
 
             slipComponents.add(createSlipComponent(comp, comp.getName(), comp.getAbbreviation(), comp.getType().name(),
-                    amount, comp.getFormula()));
+                    amount, comp.getFormula(), context));
 
             log.info("component computed map -> {}", componentValueMap);
 
@@ -422,14 +423,22 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     }
 
     private SalarySlipComponent createSlipComponent(SalaryComponent comp, String name, String abbr, String type,
-            double amount, String formula) {
+            double amount, String formula, Map<String, Object> context) {
+
+        String detailedLog = String.format(
+                "Formula: %s | Evaluated with %s | Result: %.2f",
+                formula,
+                context.entrySet().stream()
+                        .map(e -> e.getKey() + "=" + e.getValue())
+                        .collect(Collectors.joining(", ")),
+                amount);
         SalarySlipComponent slipComp = new SalarySlipComponent();
         slipComp.setComponent(comp); // Can be null for Base Pay
         slipComp.setComponentName(name);
         slipComp.setComponentAbbreviation(abbr);
         slipComp.setComponentType(type);
         slipComp.setAmount(round(amount));
-        slipComp.setCalculationLog(formula);
+        slipComp.setCalculationLog(detailedLog);
         slipComp.setIsStatutory(false);
         return slipComp;
     }

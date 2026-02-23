@@ -124,14 +124,61 @@
                 <!-- Payroll -->
                 <app:ifModule code="PAYROLL">
                   <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-wallet"></i> Payroll Management <i class="fa fa-plus toggle-icon"></i>
+                    <i class="fa fa-wallet"></i> <span class="nav-text">Payroll Management</span>
+                    <i class="fa fa-plus toggle-icon"></i>
                   </a>
                   <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/payroll/salary-components">Salary Components</a>
+                    <!-- Payroll Setup -->
+                    <li class="sub-header text-muted small mt-2">Setup</li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/payroll/salary-components">
+                        <i class="fa fa-coins me-2 text-primary"></i> <span class="nav-text">Salary Components</span>
+                      </a>
                     </li>
-                    <li><a href="${pageContext.request.contextPath}/payroll/salary-structures">Salary Structures</a>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/payroll/salary-structures">
+                        <i class="fa fa-layer-group me-2 text-success"></i> <span class="nav-text">Salary
+                          Structures</span>
+                      </a>
                     </li>
-                    <li><a href="${pageContext.request.contextPath}/payroll/payruns">PayRun Dashboard</a></li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/payroll/salary-assignments">
+                        <i class="fa fa-user-tie me-2 text-info"></i> <span class="nav-text">Employee Assignments</span>
+                      </a>
+                    </li>
+
+                    <!-- Statutory & Tax -->
+                    <li class="sub-header text-muted small mt-2">Statutory & Tax</li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/payroll/statutory-tax">
+                        <i class="fa fa-balance-scale me-2 text-warning"></i> <span class="nav-text">Statutory & Tax
+                          Setup</span>
+                      </a>
+                    </li>
+
+                    <!-- Template Management (NEW SECTION) -->
+                    <li class="sub-header text-muted small mt-2">Templates</li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/salary-slip-template/list">
+                        <i class="fa fa-file-alt me-2 text-primary"></i> <span class="nav-text">Salary Slip
+                          Templates</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/salary-slip-template/design">
+                        <i class="fa fa-drafting-compass me-2 text-info"></i> <span class="nav-text">Template
+                          Designer</span>
+                      </a>
+                    </li>
+
+                    <!-- Payroll Operations -->
+                    <li class="sub-header text-muted small mt-2">Operations</li>
+                    <li>
+                      <a href="${pageContext.request.contextPath}/payroll/payruns">
+                        <i class="fa fa-play-circle me-2 text-danger"></i> <span class="nav-text">PayRun
+                          Dashboard</span>
+                      </a>
+                    </li>
                   </ul>
                 </app:ifModule>
 

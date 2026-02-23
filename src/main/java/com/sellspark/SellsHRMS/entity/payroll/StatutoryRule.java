@@ -2,8 +2,6 @@ package com.sellspark.SellsHRMS.entity.payroll;
 
 import java.time.LocalDate;
 
-import com.sellspark.SellsHRMS.entity.Organisation;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,17 +62,15 @@ public class StatutoryRule {
     @Column(name = "additional_config", columnDefinition = "TEXT")
     private String additionalConfig; // JSON for advanced country-specific rules
 
-
     @Builder.Default
     private Boolean active = true;
 
     public enum DeductionCycle {
-    MONTHLY,
-    QUARTERLY,
-    HALF_YEARLY,
-    YEARLY,
-    CUSTOM // e.g., once per financial year, on-demand
-}
+        MONTHLY,
+        QUARTERLY,
+        HALF_YEARLY,
+        YEARLY,
+        CUSTOM // e.g., once per financial year, on-demand
+    }
 
 }
-

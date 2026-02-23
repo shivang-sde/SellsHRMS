@@ -3,89 +3,75 @@
         <c:set var="pageScript" value="payroll/assignments" />
 
         <div class="container-fluid py-4">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="mb-1"><i class="fas fa-user-tie me-2 text-primary"></i>Salary Assignments</h2>
-                    <p class="text-muted mb-0">Assign salary structures and compensation to employees</p>
+            <div class="row align-items-center mb-4">
+                <div class="col">
+                    <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Salary
+                        Assignments</h2>
+                    <!-- <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#">Payroll</a></li>
+                            <li class="breadcrumb-item active">Assignments</li>
+                        </ol>
+                    </nav> -->
                 </div>
-                <button class="btn btn-primary" id="btnAddAssignment">
-                    <i class="fas fa-plus me-2"></i>New Assignment
-                </button>
-            </div>
-
-            <!-- Filter Section -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <!-- <div class="col-md-3">
-                    <label class="form-label small text-muted">Department</label>
-                    <select class="form-select" id="filterDepartment">
-                        <option value="">All Departments</option>
-                    </select>
-                </div> -->
-                        <!-- <div class="col-md-3">
-                    <label class="form-label small text-muted">Salary Structure</label>
-                    <select class="form-select" id="filterStructure">
-                        <option value="">All Structures</option>
-                    </select>
-                </div> -->
-                        <div class="col-md-4">
-                            <label class="form-label small text-muted">Search Employee</label>
-                            <input type="text" class="form-control" id="searchEmployee"
-                                placeholder="Search by name or employee ID...">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button class="btn btn-outline-secondary w-100" id="btnResetFilters">
-                                <i class="fas fa-redo me-2"></i>Reset
-                            </button>
-                        </div>
-                    </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnAddAssignment">
+                        <i class="fas fa-plus me-2"></i>New Assignment
+                    </button>
                 </div>
             </div>
 
-            <!-- Assignments Table -->
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="assignmentsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Department</th>
-                                    <th>Salary Structure</th>
-                                    <th class="text-end">Base Salary</th>
-                                    <th class="text-end">Monthly Gross Target</th>
-                                    <th class="text-end">Monthly Net Target</th>
-                                    <th class="text-end">Annual CTC</th>
-                                    <th>Effective Date</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="assignmentsTableBody">
-                                <!-- Dynamic content -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div id="emptyState" class="text-center py-5 d-none">
-                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No salary assignments found</h5>
-                        <p class="text-muted">Create the first salary assignment for an employee</p>
-                        <button class="btn btn-primary mt-3" id="btnAddAssignmentEmpty">
-                            <i class="fas fa-plus me-2"></i>New Assignment
-                        </button>
-                    </div>
-
-                    <!-- Loading State -->
-                    <div id="loadingState" class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
+            <!-- <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <small class="text-muted fw-bold text-uppercase">Total Active Payroll</small>
+                            <h3 class="mb-0 fw-bold text-primary" id="statTotalPayroll">₹0.00</h3>
                         </div>
-                        <p class="text-muted mt-3">Loading assignments...</p>
                     </div>
+                </div>
+            </div> -->
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-5">
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text bg-light border-0"><i
+                                        class="fa fa-search text-muted"></i></span>
+                                <input type="text" class="form-control border-0 bg-light" id="searchEmployee"
+                                    placeholder="Search by name, code or department...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select border-0 bg-light" id="filterStructure">
+                                <option value="">All Salary Structures</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-light w-100 fw-bold" id="btnResetFilters">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="assignmentsTable">
+                        <thead class="bg-light text-muted small">
+                            <tr>
+                                <th class="ps-4">EMPLOYEE</th>
+                                <th>STRUCTURE</th>
+                                <th class="text-end">MONTHLY NET</th>
+                                <th class="text-end">ANNUAL CTC</th>
+                                <th>EFFECTIVE DATE</th>
+                                <th>STATUS</th>
+                                <th class="text-end pe-4">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignmentsTableBody" class="border-top-0">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -254,3 +240,63 @@
                 </div>
             </div>
         </div>
+
+
+
+        <style>
+            /* Table & UI Enhancements */
+            .bg-soft-success {
+                background-color: #e6fffa;
+                color: #047857;
+            }
+
+            .bg-soft-secondary {
+                background-color: #f3f4f6;
+                color: #4b5563;
+            }
+
+            .avatar-sm {
+                width: 38px;
+                height: 38px;
+                font-size: 14px;
+            }
+
+            .x-small {
+                font-size: 0.7rem;
+            }
+
+            #assignmentsTable thead th {
+                letter-spacing: 0.05em;
+                padding-top: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            #assignmentsTable tbody tr {
+                transition: background 0.2s;
+            }
+
+            .input-group-merge .form-control {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+
+            /* Modal Styling */
+            .modal-content {
+                border: none;
+                border-radius: 1rem;
+            }
+
+            .modal-header {
+                border-bottom: 1px solid #f1f5f9;
+                padding: 1.5rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .card.bg-light {
+                border: 1px dashed #cbd5e1;
+            }
+        </style>

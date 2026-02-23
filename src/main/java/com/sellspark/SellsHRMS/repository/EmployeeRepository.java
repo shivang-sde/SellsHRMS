@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.repository;
 
+import com.sellspark.SellsHRMS.dto.common.DropdownOption;
 import com.sellspark.SellsHRMS.entity.Designation;
 import com.sellspark.SellsHRMS.entity.Employee;
 import com.sellspark.SellsHRMS.entity.Employee.EmployeeStatus;
@@ -71,4 +72,14 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
+        /* dropdown for employee */
+        @Query("""
+                        SELECT new com.sellspark.SellsHRMS.dto.common.DropdownOption(
+                        e.id,
+                        CONCAT(e.firstName, ' ', e.lastName, '(', e.employeeCode, ')' )
+                        )
+                        FROM Employee e WHERE e.organisation.id = :orgId AND e.deleted = false
+
+                        """)
+        List<DropdownOption> findEmployeeDropdown(@Param("orgId") Long orgId);
 }

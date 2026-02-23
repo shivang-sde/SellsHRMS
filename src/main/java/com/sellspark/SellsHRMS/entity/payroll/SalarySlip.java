@@ -97,6 +97,16 @@ public class SalarySlip {
     @Column(nullable = false)
     private Long version = 0L;
 
+    @Column(name = "revision_no")
+    @Builder.Default
+    private Integer revisionNo = 1;
+
+    @Column(name = "last_modified_ip", length = 50)
+    private String lastModifiedIp;
+
+    @Column(name = "last_modified_by")
+    private Long lastModifiedBy;
+
     public enum SlipStatus {
         DRAFT, // Generated but not approved
         GENERATED,

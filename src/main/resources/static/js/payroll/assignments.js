@@ -102,40 +102,53 @@ const SalaryAssignments = (() => {
     };
 
     const createAssignmentRow = (assignment) => {
-        //   add later        <td class="text-end"><strong>₹${formatCurrency(assignment.totalCTC)}</strong></td>  
-        console.log("assignment", assignment)
-        const statusClass = assignment.active ? 'success' : 'secondary';
-        return `
-            <trp>
-                <td>
-                    <strong>${assignment.employeeName}</strong>
-                    <br><small class="text-muted">${assignment.employeeCode}</small>
-                </td>
-                <td>${assignment.employeeDepartmentName || '-'}</td>
-                <td>${assignment.salaryStructureName}</td>
-                <td class="text-end">₹${formatCurrency(assignment.basePay)}</td>
-                <td class="text-end">₹${formatCurrency(assignment.monthlyGrossTarget)}</td>
-                <td class="text-end">₹${formatCurrency(assignment.monthlyNetTarget)}</td>
-                <td class="text-end">₹${formatCurrency(assignment.annualCtc)}</td>
 
-                <td>${formatDate(assignment.effectiveFrom)}</td>
-                <td><span class="badge bg-${statusClass}">${assignment.active ? 'Active' : 'Inactive'}</span></td>
-                <td class="text-end">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="SalaryAssignments.viewAssignment(${assignment.id})" title="View">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="SalaryAssignments.editAssignment(${assignment.id})" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="SalaryAssignments.deactivateAssignment(${assignment.id})" 
-                                title="Deactivate" ${!assignment.active ? 'disabled' : ''}>
-                            <i class="fas fa-ban"></i>
-                        </button>
+        console.log(assignment);
+        const statusClass = assignment.active ? 'bg-soft-success text-success' : 'bg-soft-secondary text-secondary';
+
+        return `
+        <tr>
+            <td class="ps-4">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-sm me-3 bg-light rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold">
+                        ${assignment.employeeName ? assignment.employeeName.charAt(0) : '?'}
                     </div>
-                </td>
-            </tr>
-        `;
+                    <div>
+                        <div class="fw-bold text-dark mb-0">${assignment.employeeName}</div>
+                        <div class="small text-muted">${assignment.employeeCode || 'No ID'} • ${assignment.employeeDepartmentName || 'General'}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="badge bg-light text-dark border-0 fw-medium p-2">${assignment.salaryStructureName}</span>
+            </td>
+            <td class="text-end fw-medium">
+                ₹${formatCurrency(assignment.monthlyNetTarget)}
+            </td>
+            <td class="text-end">
+                <div class="fw-bolder text-primary">₹${formatCurrency(assignment.annualCtc)}</div>
+            </td>
+            <td>
+                <div class="small fw-medium">${formatDate(assignment.effectiveFrom)}</div>
+            </td>
+            <td>
+                <span class="badge rounded-pill ${statusClass}">${assignment.active ? 'Active' : 'Inactive'}</span>
+            </td>
+            <td class="text-end pe-4">
+                <div class="btn-group">
+                    <button class="btn btn-link btn-sm text-muted" onclick="SalaryAssignments.viewAssignment(${assignment.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-link btn-sm text-muted" onclick="SalaryAssignments.editAssignment(${assignment.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-link btn-sm text-danger" onclick="SalaryAssignments.deactivateAssignment(${assignment.id})" ${!assignment.active ? 'disabled' : ''}>
+                        <i class="fas fa-ban"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
     };
 
     // --- New/Missing Functionality ---

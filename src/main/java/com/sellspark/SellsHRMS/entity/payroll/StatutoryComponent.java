@@ -16,11 +16,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @Entity
-@Table(name = "tbl_statutory_component",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"organisation_id", "code"})
-    }
-)
+@Table(name = "tbl_statutory_component", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "organisation_id", "code" })
+})
 public class StatutoryComponent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +33,6 @@ public class StatutoryComponent {
     @OneToMany(mappedBy = "statutoryComponent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StatutoryRule> rules = new ArrayList<>();
 
-
     @ManyToOne
     @JoinColumn(name = "organisation_id")
     private Organisation organisation;
@@ -46,6 +43,7 @@ public class StatutoryComponent {
     @Column(name = "state_code", length = 5)
     private String stateCode; // optional, for state-specific like PT, LWF
 
+    @Builder.Default
     private Boolean includeInCalculation = true;
 
     @Builder.Default

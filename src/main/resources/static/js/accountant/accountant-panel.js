@@ -355,4 +355,31 @@ $(document).ready(function () {
         const slipId = $(this).data("id");
         window.open(`/api/payroll/payslip/${slipId}/pdf`, "_blank");
     });
+
+
+
+    // load department dropdown
+    async function loadDepartmentDropdown() {
+        try {
+            const departments = await axiosClient.get(`/api/common/dropdowns/departments/${orgId}`);
+
+            console.log("departments", departments);
+
+            const dropdown = $("#filterDepartment");
+            dropdown.empty();
+            dropdown.append('<option value="">All Departments</option>');
+
+            if (Array.isArray(departments)) {
+                departments.forEach(dept => {
+                    dropdown.append(`<option value="${dept.id}">${dept.label}</option>`);
+                });
+            } else {
+                console.warn("Departments response is not an array:", departments);
+            }
+        } catch (err) {
+            console.error("Error loading department dropdown:", err.message);
+            showToast("error", err.message || "Failed to load department dropdown");
+        }
+    }
+    loadDepartmentDropdown();
 });
