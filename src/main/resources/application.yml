@@ -1,14 +1,15 @@
 app:
-  base-url: http://localhost:8080
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+
   upload:
-    base-dir: C:/uploads/hrms-files/
+    base-dir: ${UPLOAD_BASE_DIR:C:/uploads/hrms-files/}
     url-path: /files/hrms
 
   async:
     pool:
-      core-size: 4
-      max-size: 10
-      queue-capacity: 50
+      core-size: ${ASYNC_CORE_SIZE:4}
+      max-size: ${ASYNC_MAX_SIZE:10}
+      queue-capacity: ${ASYNC_QUEUE_CAPACITY:50}
 
 spring:
   application:
@@ -23,16 +24,16 @@ spring:
   devtools:
     add-properties: false
     restart:
-      enabled: true # ✅ Prevents RestartClassLoader issues (caused your PDF errors)
+      enabled: true
       additional-paths:
         - src/main/resources
-        - src/main/java # ✅ fixed comma placement + correct directory
+        - src/main/java
         - src/main/webapp
 
   web:
     resources:
       cache:
-        period: 0 # Disables static resource caching (JS/CSS/Images)
+        period: 0
 
   session:
     store-type: jdbc
@@ -42,14 +43,14 @@ spring:
       save-mode: on_get_attribute
 
   datasource:
-    url: jdbc:mysql://localhost:3306/SellsHRMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: hrmsuser
-    password: hrmspassword
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:SellsHRMS}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:hrmsuser}
+    password: ${DB_PASSWORD:hrmspassword}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update # change to 'validate' in production
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
     properties:
       hibernate:
         format_sql: true
@@ -67,12 +68,14 @@ spring:
       max-request-size: 25MB
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+
   servlet:
     jsp:
       init-parameters:
         development: true
         check-interval: 0
+
   error:
     whitelabel:
       enabled: false
@@ -83,7 +86,5 @@ logging:
     "[org.springframework]": INFO
     "[com.sellspark.SellsHRMS]": DEBUG
     "[com.sellspark.SellsHRMS.controller.api]": DEBUG
-    # '[org.hibernate.SQL]': DEBUG
-    '[org.springframework.security.web.FilterChainProxy]': INFO
-    '[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]': ERROR
-    # '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE
+    "[org.springframework.security.web.FilterChainProxy]": INFO
+    "[org.springframework.web.servlet.resource.ResourceHttpRequestHandler]": ERROR

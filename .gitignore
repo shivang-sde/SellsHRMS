@@ -1,33 +1,99 @@
-HELP.md
+############################
+# Build files
+############################
 target/
-.mvn/wrapper/maven-wrapper.jar
+build/
+out/
+
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
+############################
+# Logs
+############################
+*.log
+logs/
+log/
+
+############################
+# Maven
+############################
+.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+############################
+# Spring Boot
+############################
+HELP.md
+*.pid
+*.seed
+*.pid.lock
+
+############################
+# Environment Variables
+############################
+.env
+.env.*
+application-local.properties
+application-dev.properties
+application-prod.properties
+
+############################
+# Docker
+############################
+docker-data/
+mysql_data/
+*.db
+*.sqlite
+
+############################
+# OS generated files
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# IntelliJ IDEA
+############################
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+############################
+# Eclipse / STS
+############################
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+############################
+# NetBeans
+############################
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+############################
+# VS Code
+############################
 .vscode/
+
+############################
+# Temporary files
+############################
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
