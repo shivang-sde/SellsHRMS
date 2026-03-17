@@ -60,17 +60,19 @@
 
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                 <li class="dropdown-header">Manage Account</li>
-                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/employee/profile">
-                    <i class="fa-regular fa-user text-primary"></i> My Profile</a></li>
+                <sec:authorize access="hasAuthority('EMPLOYEE')">
+                  <li><a class="dropdown-item" href="${pageContext.request.contextPath}/employee/profile">
+                      <i class="fa-regular fa-user text-primary"></i> My Profile</a></li>
+                </sec:authorize>
                 <!-- <li><a class="dropdown-item" href="#">
             <i class="fa-regular fa-circle-question text-secondary"></i> Knowledge Base</a></li>
          -->
                 <div class="dropdown-divider"></div>
 
-                <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE')">
-                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                      <i class="fa fa-key text-warning"></i> Change Password</a></li>
-                </sec:authorize>
+
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="fa fa-key text-warning"></i> Change Password</a></li>
+
 
                 <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
                     <i class="fa fa-arrow-right-from-bracket"></i> Sign Out</a></li>
