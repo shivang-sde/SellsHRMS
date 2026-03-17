@@ -145,48 +145,86 @@
 
     </dependencies>
 
-    <build>
+<build>
     <pluginManagement>
+        <plugins>
+            <!-- Define ALL plugin versions here -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
+            </plugin>
+        </plugins>
+    </pluginManagement>
+    
     <plugins>
-        <!-- ✅ Compiler Plugin -->
-        <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-compiler-plugin</artifactId>
-      <version>3.11.0</version>
-      <configuration>
-        <annotationProcessorPaths>
-          <path>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>1.5.5.Final</version>
-          </path>
-          <path>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok-mapstruct-binding</artifactId>
-            <version>0.2.0</version>
-          </path>
-          <path>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
-          </path>
-        </annotationProcessorPaths>
-      </configuration>
-    </plugin>
-
-        <plugin> <groupId>org.eclipse.m2e</groupId> <artifactId>lifecycle-mapping</artifactId> <version>1.0.0</version> <configuration> <lifecycleMappingMetadata> <pluginExecutions> <pluginExecution> <pluginExecutionFilter> <groupId>com.diffplug.spotless</groupId> <artifactId>spotless-maven-plugin</artifactId> <versionRange>[2.43.0,)</versionRange> <goals> <goal>check</goal> <goal>apply</goal> </goals> </pluginExecutionFilter> <action> <!-- Ignore inside Eclipse, run only via CLI --> <ignore /> </action> </pluginExecution> </pluginExecutions> </lifecycleMappingMetadata> </configuration> </plugin>
-
-        <!-- ✅ Spring Boot Plugin -->
+        <!-- ✅ Spring Boot Plugin - with layer support -->
         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <layers>
+                    <enabled>true</enabled>  <!-- CRITICAL for layertools -->
+                </layers>
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>repackage</goal>  <!-- Creates executable JAR -->
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
 
-        <!-- ✅ Enforce Java Version -->
+        <!-- ✅ Compiler Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>21</source>
+                <target>21</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>1.18.30</version>
+                    </path>
+                    <path>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok-mapstruct-binding</artifactId>
+                        <version>0.2.0</version>
+                    </path>
+                    <path>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>1.5.5.Final</version>
+                    </path>
+                </annotationProcessorPaths>
+                <compilerArgs>
+                    <compilerArg>-Amapstruct.verbose=true</compilerArg>
+                </compilerArgs>
+            </configuration>
+        </plugin>
+
+        <!-- ✅ Enforcer Plugin -->
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-enforcer-plugin</artifactId>
-            <version>3.4.0</version>
             <executions>
                 <execution>
                     <id>enforce-java</id>
@@ -202,37 +240,23 @@
                     </configuration>
                 </execution>
             </executions>
-        </plugin>   
+        </plugin>
 
-         <plugin>
+        <!-- ✅ Spotless Plugin (optional) -->
+        <plugin>
             <groupId>com.diffplug.spotless</groupId>
             <artifactId>spotless-maven-plugin</artifactId>
-            <version>2.43.0</version> <!-- Use latest stable -->
             <configuration>
                 <java>
-                    <!-- Use Google Java Format -->
                     <googleJavaFormat>
                         <version>1.17.0</version>
                     </googleJavaFormat>
-                    <!-- Optional: Remove unused imports -->
                     <removeUnusedImports />
-                    <!-- Optional: Trim trailing whitespace -->
                     <trimTrailingWhitespace />
-                    <!-- Optional: Ensure files end with newline -->
                     <endWithNewline />
                 </java>
             </configuration>
-            <executions>
-                <execution>
-                <id>auto-format-using-spotless</id>
-                    <goals>
-                        <goal>check</goal>
-                        <goal>apply</goal>
-                    </goals>
-                </execution>
-            </executions>
         </plugin>
     </plugins>
-    </pluginManagement>
 </build>
 </project>

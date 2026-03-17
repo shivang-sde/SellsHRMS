@@ -61,7 +61,8 @@ public class SecurityConfig {
                         // 🔓 Public endpoints
                         .requestMatchers("/", "/login", "/new-login", "/register",
                                 "/error/**", "/error", "/favicon.ico",
-                                "/api/auth/login", "/api/auth/logout", "/api/auth/register-superadmin")
+                                "/api/auth/login", "/api/auth/logout", "/api/auth/register-superadmin",
+                                "/actuator/health", "/actuator/info")
                         .permitAll()
 
                         // 🔓 Static resources

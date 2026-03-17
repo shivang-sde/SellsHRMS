@@ -1,27 +1,88 @@
+# ===========================================================================
+# SellsHRMS — Docker Compose (Production)
+# ===========================================================================
+# Usage:
+#   cp .env.example .env   # configure values
+#   docker compose up -d   # start all services
+#   docker compose logs -f # tail logs
+# ===========================================================================
+
 services:
+  # ── MySQL Database ──────────────────────────────────────────────────────
   mysql-db:
-    
     image: mysql:8.0
     container_name: sells-hrms-mysql
-    restart: always
-
-    # Environment variables to configure the database upon first run
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-     
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-
 
     ports:
       - "3306:3306"
 
     volumes:
-      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
 
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
+    networks:
+      - hrms-network
+
+  # ── SellsHRMS Application ──────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sellshrms:latest
+    container_name: sells-hrms-app
+    restart: unless-stopped
+
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO:-validate}
+      UPLOAD_BASE_DIR: /opt/hrms/uploads
+      ASYNC_CORE_SIZE: ${ASYNC_CORE_SIZE:-4}
+      ASYNC_MAX_SIZE: ${ASYNC_MAX_SIZE:-10}
+      ASYNC_QUEUE_CAPACITY: ${ASYNC_QUEUE_CAPACITY:-50}
+
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+
+    volumes:
+      - hrms_uploads:/opt/hrms/uploads
+
+    networks:
+      - hrms-network
+
+# ── Persistent Volumes ───────────────────────────────────────────────────
 volumes:
   mysql_data:
     driver: local
+  hrms_uploads:
+    driver: local
+
+# ── Internal Network ─────────────────────────────────────────────────────
+networks:
+  hrms-network:
+    driver: bridge

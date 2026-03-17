@@ -1,113 +1,211 @@
+/* ================================================
+   HRMS Header — SaaS Premium Edition
+   Glassmorphism + Fixed Content Viewport
+   ================================================ */
+
 :root {
-  --header-height: 60px;
-  --header-bg: #ffffffcc; /* subtle translucency for blur effect */
-  --header-border: #e2e8f0;
-  --header-text: #334155;
-  --header-icon: #64748b;
-  --header-hover: #0ea5e9;
-  --transition-speed: 0.25s;
+    --header-bg: rgba(255, 255, 255, 0.8);
+    --header-border: #e2e8f0;
+    --header-text: #0f172a;
+    --header-icon: #64748b;
+    --header-hover-bg: rgba(14, 165, 233, 0.08);
+    --header-hover-color: #0ea5e9;
+    --transition-speed: 0.2s;
 }
 
-
-
-/* Scroll shadow */
-.hrms-header.scrolled {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+/* Glassmorphism Effect */
+.hrms-header {
+    background: var(--header-bg);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid var(--header-border);
+    transition: all var(--transition-speed);
 }
 
-
-
-/* Sidebar toggle button */
-#sidebarToggle {
-  background: transparent;
-  border: none;
-  color: var(--header-icon);
-  font-size: 1.25rem;
-  padding: 6px 10px;
-  transition: color var(--transition-speed);
+/* Sidebar Toggle */
+.sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--header-icon);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all var(--transition-speed);
 }
-#sidebarToggle:hover {
-  color: var(--header-hover);
+
+.sidebar-toggle-btn:hover {
+    background: var(--header-hover-bg);
+    color: var(--header-hover-color);
 }
 
-/* Brand */
+/* ════════════════════════════════════════════
+   CRITICAL: Logo Consistency Logic
+   ════════════════════════════════════════════ */
+.brand-link {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.brand-link:hover {
+    background: var(--header-hover-bg);
+}
+
 .brand-logo-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  transition: background var(--transition-speed);
+    height: 36px;
+    min-width: 36px;
+    max-width: 160px; /* Limit width for horizontal/long logos */
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
 .brand-logo-wrap img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* CRITICAL: ensures logo keeps aspect ratio and fits */
+    display: block;
 }
 
-.brand-link:hover .brand-logo-wrap {
-  background: #e2e8f0;
+/* Fallback for broken logos */
+.brand-logo-wrap img:after {
+    content: "\f1ad"; /* fa-building */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: var(--header-icon);
+    position: absolute;
+    inset: 0;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Avatar dropdown */
-.nav-item.dropdown img {
-  border: 2px solid #e2e8f0;
-  transition: border-color var(--transition-speed);
-}
-.nav-item.dropdown img:hover {
-  border-color: var(--header-hover);
-}
-
-/* Username */
-#name {
-  color: var(--header-text);
-  font-weight: 500;
-  font-size: 0.95rem;
+/* User Profile & Dropdown */
+.user-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    transition: all var(--transition-speed);
+    cursor: pointer;
+    border: 1px solid transparent;
 }
 
-/* Dropdown menu */
+.user-dropdown-btn:hover {
+    background: var(--header-hover-bg);
+    border-color: rgba(14, 165, 233, 0.1);
+}
+
+.user-avatar-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.user-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--header-text);
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: var(--header-icon);
+    font-weight: 500;
+}
+
+/* Dropdown Menu SaaS Theme */
 .dropdown-menu {
-  border-radius: 10px;
-  padding: 6px 0;
+    border: 1px solid var(--header-border);
+    border-radius: 14px;
+    padding: 8px;
+    box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.08);
+    margin-top: 10px !important;
+    min-width: 220px;
 }
+
+.dropdown-header {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+    padding: 8px 12px;
+}
+
 .dropdown-item {
-  color: var(--header-text);
-  font-size: 0.9rem;
-  padding: 8px 14px;
-  transition: background var(--transition-speed);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
 }
+
 .dropdown-item i {
-  width: 18px;
-  text-align: center;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    opacity: 0.8;
 }
+
 .dropdown-item:hover {
-  background: var(--header-hover);
-  color: #fff;
+    background: #f1f5f9;
+    color: var(--header-hover-color);
 }
 
-/* Notification (optional) */
-.notification-badge {
-  position: absolute;
-  top: 3px;
-  right: 5px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.65rem;
-  padding: 3px 5px;
+.dropdown-item.text-danger:hover {
+    background: #fff1f2;
+    color: #e11d48;
 }
 
-/* Responsive adjustments */
+.dropdown-divider {
+    margin: 8px 4px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .brand-name {
-    display: none;
-  }
-  #name {
-    display: none;
-  }
-  #sidebarToggle {
-    font-size: 1.1rem;
-  }
+    .user-info {
+        display: none;
+    }
 }

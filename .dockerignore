@@ -1,0 +1,70 @@
+# ===========================================================================
+# .dockerignore — Keep the Docker build context small and secure
+# ===========================================================================
+
+# ── Build artifacts (rebuilt inside Docker) ─────────────────────────────────
+target/
+build/
+dist/
+*.jar
+*.war
+
+# ── IDE / Editor files ──────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.project
+.classpath
+.settings/
+*.code-workspace
+.factorypath
+
+# ── Version control ─────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ── Docker files (no need inside build context) ────────────────────────────
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# ── Environment & secrets ──────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# ── Logs & temp files ──────────────────────────────────────────────────────
+*.log
+*.tmp
+*.swp
+*~
+hs_err_pid*.log
+replay_pid*.log
+
+# ── OS files ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Documentation & notes ──────────────────────────────────────────────────
+README.md
+LICENSE
+CHANGELOG.md
+notesssssss/
+docs/
+
+# ── Runtime data (should be mounted as volumes) ────────────────────────────
+uploads/
+
+# ── Gemini / AI agent metadata ─────────────────────────────────────────────
+.gemini/
+.agents/
+.agent/

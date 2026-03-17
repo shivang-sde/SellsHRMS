@@ -133,10 +133,6 @@ public class Employee {
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<EmployeeShift> shifts = new ArrayList<>();
-
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<EmployeeSalaryDetail> salaryDetails = new ArrayList<>();
 
     // @OneToOne(mappedBy = "employee")

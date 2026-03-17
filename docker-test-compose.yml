@@ -1,0 +1,92 @@
+# ===========================================================================
+# SellsHRMS — Docker Compose for LOCAL TESTING
+# ===========================================================================
+# Usage:
+#   docker compose -f docker-test-compose.yml --env-file .env.test up -d
+# ===========================================================================
+
+services:
+  # ── MySQL Database for TESTING ──────────────────────────────────────────
+  mysql-db-test:
+    image: mysql:8.0
+    container_name: sells-hrms-mysql-test
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env.test}  # Use env file from variable or default
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"  # Use env var with default
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - hrms-test-network
+
+  # ── SellsHRMS Application for TESTING ──────────────────────────────────
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sellshrms:test
+    container_name: sells-hrms-app-test
+    restart: unless-stopped
+    depends_on:
+      mysql-db-test:
+        condition: service_healthy
+    env_file:
+      - ${ENV_FILE:-.env.test}
+    environment:
+      # Spring
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SERVER_PORT: ${SERVER_PORT}
+      APP_BASE_URL: ${APP_BASE_URL}
+      
+      # Database connection - using service name, not from env
+      DB_HOST: mysql-db-test  # This is correct - service name is fixed
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}  # Use MySQL DB name
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      # JPA
+      HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO}
+      
+      # Upload
+      UPLOAD_BASE_DIR: ${UPLOAD_BASE_DIR}
+      
+      # Super Admin
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      
+      # Async
+      ASYNC_CORE_SIZE: ${ASYNC_CORE_SIZE}
+      ASYNC_MAX_SIZE: ${ASYNC_MAX_SIZE}
+      ASYNC_QUEUE_CAPACITY: ${ASYNC_QUEUE_CAPACITY}
+      
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    volumes:
+      - hrms_test_uploads:${UPLOAD_BASE_DIR}
+    networks:
+      - hrms-test-network
+
+# ── Persistent Volumes ───────────────────────────────────────────────────
+volumes:
+  mysql_test_data:
+    driver: local
+  hrms_test_uploads:
+    driver: local
+
+# ── Internal Network ─────────────────────────────────────────────────────
+networks:
+  hrms-test-network:
+    driver: bridge

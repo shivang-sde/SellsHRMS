@@ -1,0 +1,137 @@
+spring:
+    config:
+        activate:
+            on-profile: prod
+
+    # Disable devtools in production
+    devtools:
+        restart:
+            enabled: false
+        add-properties: false
+        livereload:
+            enabled: false
+
+    # Database configuration
+    datasource:
+        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true&requireSSL=true&verifyServerCertificate=false&serverTimezone=UTC
+        username: ${DB_USER}
+        password: ${DB_PASSWORD}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        hikari:
+            maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+            minimum-idle: ${DB_POOL_MIN_IDLE:5}
+            connection-timeout: 30000
+            idle-timeout: 600000
+            max-lifetime: 1800000
+            leak-detection-threshold: 60000
+
+    # JPA / Hibernate settings
+    jpa:
+        hibernate:
+            ddl-auto: validate # CRITICAL: validate, NOT update!
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+                format_sql: false
+                jdbc:
+                    batch_size: 20
+
+    # Session management (MISSING in your prod config)
+    session:
+        store-type: jdbc
+        jdbc:
+            initialize-schema: never
+            flush-mode: immediate
+            save-mode: on_get_attribute
+            table-name: SPRING_SESSION
+
+    # File upload settings (MISSING in your prod config)
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 15MB
+            location: ${UPLOAD_BASE_DIR}/temp
+
+    # MVC settings for JSP (MISSING in your prod config)
+    mvc:
+        view:
+            prefix: /META-INF/resources/WEB-INF/views/
+            suffix: .jsp
+        static-path-pattern: /static/**
+
+    # Web resources (MISSING in your prod config)
+    web:
+        resources:
+            cache:
+                period: 3600
+                cachecontrol:
+                    max-age: 3600
+                    must-revalidate: false
+
+# Application specific settings - FIXED: Added super-admin section
+app:
+    super-admin:
+        email: ${SUPER_ADMIN_EMAIL}
+        password: ${SUPER_ADMIN_PASSWORD}
+
+    base-url: ${APP_BASE_URL}
+    upload:
+        base-dir: ${UPLOAD_BASE_DIR:/opt/hrms/uploads}
+        url-path: /files/hrms
+        allowed-extensions: .jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx
+        max-file-size: 10485760
+    async:
+        pool:
+            core-size: ${ASYNC_CORE_SIZE:4}
+            max-size: ${ASYNC_MAX_SIZE:10}
+            queue-capacity: ${ASYNC_QUEUE_CAPACITY:50}
+            thread-name-prefix: async-task-
+
+# Server configuration
+server:
+    port: ${SERVER_PORT:8080}
+
+    # Compression
+    compression:
+        enabled: true
+        mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+        min-response-size: 1024
+
+    # Error handling
+    error:
+        whitelabel:
+            enabled: false
+        include-message: never
+        include-stacktrace: never
+        include-exception: false
+
+    # Tomcat configuration
+    tomcat:
+        max-connections: 10000
+        max-threads: 200
+        min-spare-threads: 20
+        connection-timeout: 20000
+        accept-count: 100
+        accesslog:
+            enabled: true
+            directory: /var/log/sellshrms/access
+            pattern: common
+            rotate: true
+            max-days: 30
+
+# Logging configuration
+logging:
+    level:
+        com.sellspark.SellsHRMS: INFO
+        org.springframework: WARN
+        org.springframework.web: WARN
+        org.springframework.security: WARN
+        org.hibernate: WARN
+    file:
+        name: /var/log/sellshrms/application.log
+        max-size: 20MB
+        max-history: 30
+        total-size-cap: 1GB
+    pattern:
+        file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

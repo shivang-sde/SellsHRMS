@@ -10,4 +10,7 @@ public interface ModuleRepository extends JpaRepository<Module, Long> {
     Optional<Module> findByCode(String code);
 
     List<Module> findAllByOrderByNameAsc();
+
+    List<Module> findByCodeIn(List<String> codes);
+
 }

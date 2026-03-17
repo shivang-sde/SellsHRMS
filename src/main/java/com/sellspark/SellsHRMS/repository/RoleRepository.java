@@ -10,11 +10,16 @@ import java.util.Optional;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-       List<Role> findByOrganisation_Id(Long organisationId);
+    List<Role> findByOrganisation_Id(Long organisationId);
 
     Optional<Role> findByOrganisation_IdAndNameIgnoreCase(Long organisationId, String name);
-    
-     List<Role> findByOrganisationId(Long organisationId);
+
+    List<Role> findByOrganisationId(Long organisationId);
+
     Optional<Role> findByOrganisationIdAndNameIgnoreCase(Long organisationId, String name);
+
+    long countByOrganisationId(Long organisationId);
+
+    Optional<Role> findByOrganisationIdAndName(Long organisationId, String name);
 
 }

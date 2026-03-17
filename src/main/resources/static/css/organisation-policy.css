@@ -1,0 +1,339 @@
+/* ================================================
+   Organisation Policy — Modern Settings Page
+   ================================================ */
+
+/* Page header */
+.policy-page-header {
+  margin-bottom: 24px;
+}
+
+.policy-page-header h4 {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+.policy-page-header p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 4px 0 0 0;
+}
+
+/* Alert override */
+.policy-alert {
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  color: #0c4a6e;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.policy-alert .alert-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* Main card */
+.policy-card {
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  overflow: hidden;
+}
+
+.policy-card .card-header {
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 20px 24px;
+}
+
+.policy-card .card-header h5 {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.policy-card .card-header h5 i {
+  color: #0284c7;
+}
+
+.policy-card .card-body {
+  padding: 24px;
+}
+
+/* Edit button */
+.btn-edit-policy {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-edit-policy:hover {
+  background: linear-gradient(135deg, #0369a1, #075985);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+}
+
+/* Save button */
+.btn-save-policy {
+  background: linear-gradient(135deg, #059669, #047857);
+  border: none;
+  color: #fff;
+  padding: 10px 28px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-save-policy:hover {
+  background: linear-gradient(135deg, #047857, #065f46);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+/* Section blocks */
+.policy-section {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+}
+
+.policy-section:hover {
+  border-color: #e2e8f0;
+}
+
+.policy-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.policy-section-header .section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.policy-section-header h6 {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1e293b;
+  margin: 0;
+}
+
+.policy-section-header p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+
+/* Section icon colors */
+.section-icon.financial { background: #fef3c7; color: #d97706; }
+.section-icon.leave     { background: #dbeafe; color: #2563eb; }
+.section-icon.work      { background: #d1fae5; color: #059669; }
+.section-icon.grace     { background: #fce7f3; color: #db2777; }
+.section-icon.toggles   { background: #ede9fe; color: #7c3aed; }
+.section-icon.notes     { background: #e0f2fe; color: #0284c7; }
+
+/* Form label override */
+.policy-section .form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+/* Form control override */
+.policy-section .form-control {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 9px 14px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.policy-section .form-control:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.policy-section .form-control:disabled {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #f1f5f9;
+}
+
+/* Office timing inputs */
+.office-timing-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.office-timing-group input[type="time"] {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 9px 12px;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s;
+  background: #fff;
+}
+
+.office-timing-group input[type="time"]:disabled {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #f1f5f9;
+}
+
+.office-timing-group input[type="time"]:focus {
+  border-color: #0284c7;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.timing-separator {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Toggle cards */
+.toggle-card {
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 14px 18px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.toggle-card:hover {
+  border-color: #e2e8f0;
+}
+
+.toggle-card .form-check-input {
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 20px;
+}
+
+.toggle-card .form-check-input:checked {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.toggle-card .form-check-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+  margin: 0;
+  cursor: default;
+}
+
+/* Overtime multiplier within toggles section */
+.overtime-multiplier-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.overtime-multiplier-wrap .form-label {
+  white-space: nowrap;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.overtime-multiplier-wrap .form-control {
+  max-width: 120px;
+}
+
+/* Last updated */
+.last-updated-strip {
+  padding: 12px 0 0;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+}
+
+.last-updated-strip i {
+  color: #94a3b8;
+}
+
+/* Textarea */
+.policy-section textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .policy-section {
+    padding: 16px;
+  }
+
+  .toggle-card {
+    padding: 12px 14px;
+  }
+
+  .policy-card .card-body {
+    padding: 16px;
+  }
+
+  .policy-card .card-header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}

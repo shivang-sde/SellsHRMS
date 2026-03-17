@@ -28,8 +28,8 @@
 
 
                 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/layout.css">
-                <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css"> -->
-                <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/css/header.css"> -->
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css">
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/header.css">
                 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/toast.css">
                 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/payroll.css">
                 <c:if test="${not empty pageStyle}">
@@ -58,27 +58,29 @@
 
                     <div id="toast-container" class="toast-container"></div>
 
-                    <div class="hrms-main">
+                    <div class="hrms-viewport">
                         <c:import url="/WEB-INF/views/layout/header.jsp" />
 
-                        <main class="hrms-content">
-                            <div class="container-fluid py-3">
-                                <c:choose>
-                                    <c:when test="${not empty contentPage}">
-                                        <c:import url="/WEB-INF/views/${contentPage}.jsp" />
-                                    </c:when>
-                                    <c:otherwise>
-                                        <div class="card p-5 shadow-sm text-center">
-                                            <i class="fa-solid fa-house-user fa-3x text-primary mb-3"></i>
-                                            <h3>Welcome back, ${fn:escapeXml(sessionScope.USER_NAME)}</h3>
-                                            <p class="text-muted">Select a module from the sidebar to begin.</p>
-                                        </div>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                        </main>
+                        <div class="hrms-main">
+                            <main class="hrms-content">
+                                <div class="container-fluid py-3">
+                                    <c:choose>
+                                        <c:when test="${not empty contentPage}">
+                                            <c:import url="/WEB-INF/views/${contentPage}.jsp" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div class="card p-5 shadow-sm text-center">
+                                                <i class="fa-solid fa-house-user fa-3x text-primary mb-3"></i>
+                                                <h3>Welcome back, ${fn:escapeXml(sessionScope.USER_NAME)}</h3>
+                                                <p class="text-muted">Select a module from the sidebar to begin.</p>
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+                            </main>
 
-                        <c:import url="/WEB-INF/views/layout/footer.jsp" />
+                            <c:import url="/WEB-INF/views/layout/footer.jsp" />
+                        </div>
                     </div>
                 </div>
 

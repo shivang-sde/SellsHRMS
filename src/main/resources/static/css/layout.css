@@ -1,13 +1,17 @@
 /* ================================================
-   HRMS Layout (Unified, Responsive, Enterprise)
+   HRMS Anchor Layout — Modern Enterprise Design
+   Sidebar = full-height anchor column
+   Viewport = header + scrollable content + footer
    ================================================ */
 
 :root {
   --header-height: 60px;
-  --sidebar-width: 250px;
+  --footer-height: 40px;
+  --sidebar-width: 256px;
   --sidebar-collapsed-width: 72px;
-  --transition-speed: 0.25s;
+  --transition-speed: 0.28s;
 
+  /* Palette */
   --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-border: #e2e8f0;
@@ -19,9 +23,15 @@
   --sidebar-color: #e2e8f0;
 }
 
-/* Global base */
-body.hrms-app,
-html {
+/* ============= Global Reset ============= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body.hrms-app {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -31,7 +41,21 @@ html {
   overflow: hidden;
 }
 
-/* ============= Layout Structure ============= */
+/* ============= Anchor Layout Grid ============= */
+
+/*
+   .hrms-wrapper  ┌──────────────────────────────────────────┐
+                   │ .hrms-sidebar  │  .hrms-viewport         │
+                   │ (anchor, 100vh)│ ┌─────────────────────┐ │
+                   │                │ │ .hrms-header        │ │
+                   │                │ ├─────────────────────┤ │
+                   │                │ │ .hrms-main (scroll) │ │
+                   │                │ ├─────────────────────┤ │
+                   │                │ │ .hrms-footer        │ │
+                   │                │ └─────────────────────┘ │
+                   └──────────────────────────────────────────┘
+*/
+
 .hrms-wrapper {
   display: flex;
   height: 100vh;
@@ -39,32 +63,61 @@ html {
   overflow: hidden;
 }
 
-/* Sidebar */
+/* ============= Sidebar (Anchor Column) ============= */
 .hrms-sidebar {
   position: fixed;
-  top: var(--header-height);
+  top: 0;
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
   color: var(--sidebar-color);
-  overflow-y: auto;
-  transition: width var(--transition-speed) ease;
+  display: flex;
+  flex-direction: column;
   z-index: 1040;
-  border-right: 1px solid #334155;
+  transition: width var(--transition-speed) ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
 }
 
 .hrms-sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
 }
 
-/* Sidebar Links */
+.sidebar-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Sidebar nav scroll */
 .sidebar-nav {
+  flex: 1;
   list-style: none;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
+/* Custom scrollbar for sidebar */
+.sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* ============= Nav Links ============= */
 .nav-link {
   display: flex;
   justify-content: space-between;
@@ -72,7 +125,11 @@ html {
   padding: 10px 18px;
   color: var(--sidebar-color);
   text-decoration: none;
-  transition: background var(--transition-speed);
+  font-size: 0.875rem;
+  font-weight: 400;
+  border-radius: 0;
+  transition: background var(--transition-speed), color var(--transition-speed);
+  position: relative;
 }
 
 .nav-link:hover {
@@ -85,124 +142,253 @@ html {
   color: #fff;
 }
 
+.nav-link i.fa:first-child {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.nav-text {
+  font-size: 0.875rem;
+}
+
+/* ============= Submenu with Track Line ============= */
 .sub-menu {
   list-style: none;
   margin: 0;
-  padding-left: 20px;
+  padding-left: 28px;
+  position: relative;
   max-height: 0;
   overflow: hidden;
-  background: #243447;
-  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.35);
   transition: max-height var(--transition-speed) ease;
+}
+
+/* Vertical track line */
+.sub-menu::before {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 1px;
 }
 
 .sub-menu.open {
   max-height: 999px;
 }
 
-.nav-text {
-  font-size: small;
+.sub-menu li {
+  position: relative;
 }
 
 .sub-menu li a {
   display: block;
-  padding: 8px 14px;
-  color: #cbd5e1;
+  padding: 7px 14px 7px 18px;
+  color: #94a3b8;
   text-decoration: none;
+  font-size: 0.825rem;
+  font-weight: 400;
+  transition: color var(--transition-speed), background var(--transition-speed);
+  border-radius: 4px;
+  margin: 1px 8px 1px 0;
 }
 
 .sub-menu li a:hover {
-  background: var(--sidebar-hover);
-  color: #fff;
+  background: rgba(51, 65, 85, 0.5);
+  color: #e2e8f0;
 }
 
-/* Toggle icon animation */
+/* Active submenu item */
+.sub-menu a.active {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+}
+
+/* Sub-header labels */
+.sub-menu .sub-header {
+  padding: 6px 14px 2px 18px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* ============= Toggle Icon ============= */
 .toggle-icon {
   transition: transform var(--transition-speed);
+  font-size: 0.7rem;
+  opacity: 0.6;
 }
-
 .toggle-link.open .toggle-icon {
   transform: rotate(45deg);
 }
 
-/* Scrollbar */
-.hrms-sidebar::-webkit-scrollbar {
-  width: 6px;
+/* ============= Collapsed Mode ============= */
+.hrms-sidebar.collapsed .nav-text,
+.hrms-sidebar.collapsed .toggle-icon,
+.hrms-sidebar.collapsed .sub-menu {
+  display: none !important;
 }
 
-.hrms-sidebar::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
+/* Hide ALL text in collapsed nav-links (bare text, <span>, etc.) */
+.hrms-sidebar.collapsed .nav-link {
+  font-size: 0;
+  justify-content: center;
+  padding: 12px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-/* Header */
+/* Also hide plain <span> elements without .nav-text class */
+.hrms-sidebar.collapsed .nav-link span {
+  display: none !important;
+}
+
+/* Restore icon visibility — icons use their own font-size */
+.hrms-sidebar.collapsed .nav-link i,
+.hrms-sidebar.collapsed .nav-link i.fa:first-child {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+/* ============= Hover-expand on Collapsed ============= */
+.hrms-sidebar.collapsed:hover {
+  width: var(--sidebar-width);
+  overflow-y: auto;
+}
+
+/* Restore all text visibility on hover */
+.hrms-sidebar.collapsed:hover .nav-link {
+  font-size: 0.875rem;
+  justify-content: space-between;
+  padding: 10px 18px;
+}
+
+.hrms-sidebar.collapsed:hover .nav-link span {
+  display: inline !important;
+}
+
+.hrms-sidebar.collapsed:hover .nav-text,
+.hrms-sidebar.collapsed:hover .toggle-icon {
+  display: inline !important;
+}
+
+.hrms-sidebar.collapsed:hover .sub-menu {
+  display: block !important;
+}
+
+.hrms-sidebar.collapsed:hover .nav-link i.fa:first-child {
+  margin-right: 10px;
+  font-size: 0.95rem;
+}
+
+/* Tooltip spacing fix */
+.tooltip {
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}
+
+/* ============= Viewport Container ============= */
+.hrms-viewport {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-speed) ease;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.hrms-sidebar.collapsed ~ .hrms-viewport {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ============= Header (inside viewport) ============= */
 .hrms-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   height: var(--header-height);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0;
-  transition: all var(--transition-speed);
-}
-
-/* Brand */
-/* .brand-logo-wrap {
-  margin: 10px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: #f1f5f9;
-  transition: background var(--transition-speed);
-} */
-
-.brand-logo-wrap img {
-  margin: 10px;
-  padding: 10px;
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-/* .brand-link:hover .brand-logo-wrap {
-  background: #e2e8f0;
-} */
-
-/* Main Content */
-.hrms-main {
+  padding: 0;
+  z-index: 10;
   position: relative;
+}
+
+/* ============= Main Content (scrollable) ============= */
+.hrms-main {
   flex: 1;
-  height: 100vh;
-  margin-top: var(--header-height);
-  margin-left: var(--sidebar-width);
-  background: var(--color-bg);
-  transition: margin-left var(--transition-speed) ease;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--color-bg);
+  position: relative;
+}
 
+/* Smooth scrollbar for content */
+.hrms-main::-webkit-scrollbar {
+  width: 8px;
+}
+.hrms-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hrms-main::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+}
+.hrms-main::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
 }
 
 .hrms-content {
-  padding-bottom: 80px;
+  padding-bottom: 20px;
+  min-height: calc(100% - 20px);
 }
 
-.hrms-sidebar.collapsed~.hrms-main {
-  margin-left: var(--sidebar-collapsed-width);
+/* ============= Footer (inside viewport) ============= */
+.hrms-footer {
+  flex-shrink: 0;
+  height: var(--footer-height);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  z-index: 10;
+  position: relative;
+}
+
+/* ============= Sidebar Footer ============= */
+.sidebar-footer {
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+}
+
+.sidebar-footer button {
+  color: #94a3b8;
+  border-color: #475569;
+  transition: all 0.2s;
+}
+.sidebar-footer button:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
 }
 
 /* ============= Mobile ============= */
 @media (max-width: 992px) {
   .hrms-sidebar {
-    top: 0;
-    left: -250px;
+    left: calc(-1 * var(--sidebar-width));
     width: var(--sidebar-width);
     transition: left var(--transition-speed) ease;
     z-index: 1050;
@@ -212,18 +398,19 @@ html {
     left: 0;
   }
 
-  .hrms-main {
-    margin-left: 0;
+  .hrms-viewport {
+    margin-left: 0 !important;
   }
 
   .sidebar-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-speed), visibility var(--transition-speed);
-    z-index: 999;
+    z-index: 1045;
   }
 
   .sidebar-overlay.visible {
@@ -234,45 +421,4 @@ html {
   body.sidebar-active {
     overflow: hidden;
   }
-}
-
-/* Collapsed mode: icon-only sidebar */
-.hrms-sidebar.collapsed .nav-text,
-.hrms-sidebar.collapsed .toggle-icon,
-.hrms-sidebar.collapsed .sub-menu {
-  display: none !important;
-}
-
-.hrms-sidebar.collapsed .nav-link {
-  justify-content: center;
-  padding: 12px;
-}
-
-/* Ensure icon stays centered */
-.hrms-sidebar.collapsed .nav-link i.fa:first-child {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-/* Tooltip spacing fix */
-.tooltip {
-  font-size: 0.85rem;
-  padding: 6px 10px;
-}
-
-
-.hrms-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  z-index: 1000;
 }

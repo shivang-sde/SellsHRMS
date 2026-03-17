@@ -1,0 +1,46 @@
+app:
+    super-admin:
+        email: ${SUPER_ADMIN_EMAIL:admin@test.com}
+        password: ${SUPER_ADMIN_PASSWORD:test@123}
+    base-url: ${APP_BASE_URL:http://localhost:8081}
+    upload:
+        base-dir: ${UPLOAD_BASE_DIR:/opt/hrms/uploads}
+        url-path: /files/hrms
+    async:
+        pool:
+            core-size: ${ASYNC_CORE_SIZE:2}
+            max-size: ${ASYNC_MAX_SIZE:4}
+            queue-capacity: ${ASYNC_QUEUE_CAPACITY:25}
+
+spring:
+    config:
+        activate:
+            on-profile: test
+    datasource:
+        url: jdbc:mysql://${DB_HOST:mysql-db-test}:${DB_PORT:3306}/${DB_NAME:SellsHRMS_Test}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        username: ${DB_USER:hrmsuser}
+        password: ${DB_PASSWORD:hrmspassword}
+
+    jpa:
+        hibernate:
+            ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
+
+    devtools:
+        restart:
+            enabled: false
+
+server:
+    port: ${SERVER_PORT:8081}
+    error:
+        include-message: always
+
+logging:
+    level:
+        com.sellspark.SellsHRMS: DEBUG
+        org.springframework.web: INFO
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql: TRACE

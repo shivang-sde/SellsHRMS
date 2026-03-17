@@ -56,13 +56,17 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/css",
             "/plugins",
             "/bundles",
-
             "/js",
             "/images",
             "/img",
-
             "/error",
-            "/favicon");
+            "/favicon",
+            "/actuator",
+            "/actuator/health",
+            "/actuator/info",
+            "/api/test/payroll",
+            "/WEB-INF/views",
+            "/actuator/metrics/**");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

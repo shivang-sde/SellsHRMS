@@ -22,13 +22,16 @@
         <div class="auth_left">
             <div class="card">
                 <div class="text-center mb-2">
-                    <c:if test="${not empty orgLogo}">
-                        <a class="header-brand" href="dashboard.jsp">
-                            <img alt="${orgName}" src="${orgLogo}" width="200" height="100" />
-                        </a>
-                    </c:if>
-
-
+                    <c:choose>
+                        <c:when test="${not empty orgLogo}">
+                            <a class="header-brand" href="dashboard.jsp">
+                                <img alt="${orgName}" src="${orgLogo}" width="200" height="100" id="orgLogoImg"
+                                    onerror="document.getElementById('orgLogoImg').style.display='none'; document.getElementById('orgLogoFallback').style.display='block';" />
+                            </a>
+                            <h4 id="orgLogoFallback" style="display:none; font-weight:600; color:#333;">${not empty
+                                orgName ? orgName : 'HRM'}</h4>
+                        </c:when>
+                    </c:choose>
                 </div>
                 <div class="card-body">
                     <form role="loginForm" name="form" id="loginForm" accept-charset="UTF-8">

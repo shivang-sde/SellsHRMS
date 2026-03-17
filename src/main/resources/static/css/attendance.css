@@ -1,47 +1,215 @@
-.text-gradient {
-  background: linear-gradient(90deg, #0d6efd, #6610f2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* ================================================
+   Attendance Page — SaaS Design System
+   ================================================ */
+
+:root {
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.attendance-card {
-  transition: all 0.3s ease;
+/* Header Adjustments */
+.attendance-header h2 {
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.025em;
 }
 
-.attendance-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+.attendance-header p {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #64748b;
 }
 
-#btnPunchIn, #btnPunchOut {
-  transition: all 0.3s ease;
+/* Modern Summary Cards */
+.summary-card {
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    position: relative;
+    height: 100%;
 }
 
-#btnPunchIn:hover {
-  background-color: #157347;
-  transform: translateY(-2px);
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
 }
 
-#btnPunchOut:hover {
-  background-color: #bb2d3b;
-  transform: translateY(-2px);
+.summary-card .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-.pulse-border {
-  animation: pulseBorder 1.8s infinite;
+.summary-card .icon-label-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
 }
 
-@keyframes pulseBorder {
-  0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.5); }
-  70% { box-shadow: 0 0 0 15px rgba(25, 135, 84, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+.summary-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
 }
 
-.table-hover tbody tr:hover {
-  background-color: #f8f9fa;
+.summary-card h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
 }
 
-.badge.bg-info {
-  background-color: #0dcaf0 !important;
-  color: #000;
+.summary-card .label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Card variants with soft backgrounds */
+.card-present .summary-icon-box { background: #dcfce7; color: #166534; }
+.card-absent .summary-icon-box { background: #fee2e2; color: #991b1b; }
+.card-leave .summary-icon-box { background: #fef3c7; color: #92400e; }
+.card-pending .summary-icon-box { background: #e0f2fe; color: #075985; }
+
+/* Filter Section */
+.filter-card {
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--card-shadow);
+    padding: 1rem;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.filter-card .form-control:focus,
+.filter-card .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Modern Table */
+.attendance-table-card {
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.attendance-table-card .table {
+    margin: 0;
+}
+
+.attendance-table-card thead th {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.5rem;
+}
+
+.attendance-table-card tbody td {
+    padding: 1.25rem 1.5rem;
+    vertical-align: middle;
+    color: #1e293b;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.attendance-table-card tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Soft Status Badges */
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 6px;
+}
+
+.bg-success { background-color: #dcfce7 !important; color: #166534 !important; }
+.bg-danger { background-color: #fee2e2 !important; color: #991b1b !important; }
+.bg-warning { background-color: #fef3c7 !important; color: #92400e !important; }
+.bg-info { background-color: #e0f2fe !important; color: #075985 !important; }
+.bg-primary { background-color: #dbeafe !important; color: #1e40af !important; }
+.bg-secondary { background-color: #f1f5f9 !important; color: #475569 !important; }
+
+/* Employee code styling */
+.emp-code {
+    font-family: 'JetBrains Mono', 'Monaco', monospace;
+    color: #6366f1;
+    font-weight: 600;
+}
+
+/* Work hours badge */
+.work-hours {
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Refresh Animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.btn-refresh-anim i {
+    animation: spin 1s linear infinite;
+}
+
+/* Buttons */
+.btn-saas-primary {
+    background: #3b82f6;
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.625rem 1.25rem;
+    transition: all 0.2s;
+}
+
+.btn-saas-primary:hover {
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-saas-outline {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.625rem 1.25rem;
+}
+
+.btn-saas-outline:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }

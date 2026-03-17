@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const collapseBtn = document.getElementById("sidebarCollapseBtn");
   const overlay = document.getElementById("sidebarOverlay");
   const toggleLinks = document.querySelectorAll(".toggle-link");
-  const main = document.querySelector(".hrms-main");
+  const main = document.querySelector(".hrms-viewport");
 
   /* --------------------------------------------------
      Helper: Collapse / Expand Sidebar
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toggleLinks.forEach(link => {
     link.addEventListener("click", e => {
       e.preventDefault();
-      if (sidebar.classList.contains("collapsed")) return; // prevent submenu toggle when collapsed
+      if (sidebar.classList.contains("collapsed") && !sidebar.matches(":hover")) return; // allow clicks during hover-expand
 
       const submenu = link.nextElementSibling;
       if (!submenu) return;
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   -------------------------------------------------- */
   const currentPath = window.location.pathname;
   document.querySelectorAll(".sidebar-nav a").forEach(a => {
-    if (a.href.includes(currentPath) && !a.classList.contains("toggle-link")) {
+    if (a.pathname === currentPath && !a.classList.contains("toggle-link")) {
       a.classList.add("active");
       const submenu = a.closest(".sub-menu");
       if (submenu) {

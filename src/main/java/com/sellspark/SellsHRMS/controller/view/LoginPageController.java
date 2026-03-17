@@ -25,14 +25,11 @@ public class LoginPageController {
     public String loginPage(HttpServletRequest request, Model model) {
         String domain = extractDomain(request);
 
-        log.info("domain {}", domain);
-
         Organisation org = organisationRepository.findByDomain(domain).orElse(null);
 
         // This will resolve to /WEB-INF/views/auth/login.jsp
 
         if (org != null && org.getLogoUrl() != null) {
-            log.info("org:{}, logo: {}", org.getDomain(), org.getLogoUrl());
             model.addAttribute("orgLogo", org.getLogoUrl());
             model.addAttribute("orgName", org.getName());
         }

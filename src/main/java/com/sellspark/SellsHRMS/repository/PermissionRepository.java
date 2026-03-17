@@ -18,4 +18,6 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
 
     @Query("SELECT p FROM Permission p WHERE p.module IN :modules AND (p.active = true OR p.active IS NULL)")
     List<Permission> findByModules(@Param("modules") List<String> modules);
+
+    List<Permission> findByActionIn(List<String> actions);
 }
