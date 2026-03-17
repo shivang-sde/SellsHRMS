@@ -78,6 +78,10 @@ COPY --from=build /build/src/main/webapp /app/BOOT-INF/classes/META-INF/resource
 RUN chown -R hrms:hrms /app && \
     chown -R hrms:hrms /opt/hrms/uploads
 
+RUN mkdir -p /var/log/sellshrms/access && \
+    touch /var/log/sellshrms/application.log && \
+    chown -R hrms:hrms /var/log/sellshrms
+
 # ── Switch to non-root user ─────────────────────────────────────────────
 USER hrms
 

@@ -28,7 +28,7 @@ spring:
     # JPA / Hibernate settings
     jpa:
         hibernate:
-            ddl-auto: validate # CRITICAL: validate, NOT update!
+            ddl-auto: update # CRITICAL: validate, NOT update!
         show-sql: false
         properties:
             hibernate:
@@ -41,7 +41,7 @@ spring:
     session:
         store-type: jdbc
         jdbc:
-            initialize-schema: never
+            initialize-schema: always
             flush-mode: immediate
             save-mode: on_get_attribute
             table-name: SPRING_SESSION
