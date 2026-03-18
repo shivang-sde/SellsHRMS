@@ -2,7 +2,6 @@ package com.sellspark.SellsHRMS.service.impl;
 
 import com.sellspark.SellsHRMS.dto.attendance.*;
 import com.sellspark.SellsHRMS.entity.*;
-import com.sellspark.SellsHRMS.entity.PunchInOut.PUNCHFROM;
 import com.sellspark.SellsHRMS.exception.AttendanceAlreadyMarkedException;
 import com.sellspark.SellsHRMS.exception.InvalidOperationException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
@@ -13,22 +12,24 @@ import com.sellspark.SellsHRMS.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.sellspark.SellsHRMS.config.UserPrincipal;
+import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
+import java.util.Set;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final EmployeeRepository employeeRepo;
     private final OrganisationPolicyRepository policyRepo;
     private final DeviceRepository deviceRepo;
+    private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
     @Override
     public PunchRecordResponse punchIn(PunchInRequest request) {
@@ -100,9 +102,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Check if late (example: 9:30 AM grace period)
         // TODO: Get shift timing from employee's shift configuration
         LocalDateTime punchIn = LocalDateTime.ofInstant(request.getPunchIn(), ZoneId.systemDefault());
-        if (punchIn.toLocalTime().getHour() > policy.getOfficeStart().getHour() ||
-                (punchIn.getHour() == policy.getOfficeStart().getHour()
-                        && punchIn.getMinute() > policy.getLateGraceMinutes())) {
+        LocalTime allowedTime = policy.getOfficeStart().plusMinutes(policy.getLateGraceMinutes());
+
+        if (punchIn.toLocalTime().isAfter(allowedTime)) {
             summary.setIsLate(true);
         }
 
@@ -149,10 +151,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         summary.setEffectivePunchOut(request.getPunchOut());
         summary.setWorkHours(hours);
 
+        double fullDayHours = policy.getStandardDailyHours();
+        double halfDayHours = fullDayHours / 2;
+
         // Determine status based on hours worked
-        if (hours >= 8) {
+        if (hours >= fullDayHours) {
             summary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
-        } else if (hours >= 4) {
+        } else if (hours >= halfDayHours) {
             summary.setStatus(AttendanceSummary.AttendanceStatus.HALF_DAY);
             summary.setRemarks("Half day - worked " + String.format("%.2f", hours) + " hours");
         } else {
@@ -163,9 +168,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Check if early out (example: before 5:30 PM)
         // TODO: Get shift timing from employee's shift configuration
         LocalDateTime punchOut = LocalDateTime.ofInstant(request.getPunchOut(), ZoneId.systemDefault());
-        if (punchOut.getHour() < policy.getOfficeClosed().getHour() ||
-                (punchOut.getHour() == policy.getOfficeClosed().getHour()
-                        && punchOut.getMinute() < policy.getOfficeClosed().getMinute())) {
+        LocalTime allowedExit = policy.getOfficeClosed().minusMinutes(policy.getEarlyOutGraceMinutes());
+
+        if (punchOut.toLocalTime().isBefore(allowedExit)) {
             summary.setIsEarlyOut(true);
         }
 
@@ -182,6 +187,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         List<AttendanceSummary> summaries = summaryRepo
                 .findByOrganisationIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(orgId, startDate, endDate);
+
+        summaries = filterSummariesByPermission(summaries);
 
         List<PunchRecordResponse> response = summaries.stream()
                 .map(summary -> {
@@ -265,6 +272,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<AttendanceSummary> summaries = summaryRepo
                 .findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);
 
+        summaries = filterSummariesByPermission(summaries);
+
         return summaries.stream()
                 .map(summary -> {
                     PunchRecordResponse response = new PunchRecordResponse();
@@ -299,7 +308,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceSummary> getOrgAttendanceSummary(Long orgId, LocalDate date) {
-        return summaryRepo.findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);
+        List<AttendanceSummary> summaries = summaryRepo
+                .findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);
+        return filterSummariesByPermission(summaries);
     }
 
     @Override
@@ -381,6 +392,41 @@ public class AttendanceServiceImpl implements AttendanceService {
         response.setIsEarlyOut(summary.getIsEarlyOut());
         response.setStatus(summary.getStatus().name());
         return response;
+    }
+
+    private List<AttendanceSummary> filterSummariesByPermission(List<AttendanceSummary> summaries) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return Collections.emptyList();
+        }
+        Object princ = auth.getPrincipal();
+        if (!(princ instanceof UserPrincipal)) {
+            return Collections.emptyList();
+        }
+
+        UserPrincipal principal = (UserPrincipal) princ;
+
+        // ORG_ADMIN and SUPER_ADMIN have all access implicitly
+        if ("ORG_ADMIN".equals(principal.getSystemRole()) || "SUPER_ADMIN".equals(principal.getSystemRole())) {
+            return summaries;
+        }
+
+        if (principal.hasAnyPermission("EMPLOYEE_VIEW_ALL")) {
+            return summaries;
+        } else if (principal.hasAnyPermission("EMPLOYEE_VIEW_TEAM")) {
+            Long empId = principal.getEmployeeId();
+            if (empId == null)
+                return Collections.emptyList();
+
+            Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
+            subordinateIds.add(empId); // Add self
+
+            return summaries.stream()
+                    .filter(s -> s.getEmployee() != null && subordinateIds.contains(s.getEmployee().getId()))
+                    .collect(Collectors.toList());
+        } else {
+            return Collections.emptyList(); // Unauthorized to view org level data
+        }
     }
 
     private LocalDateTime safeConvert(Instant instant) {

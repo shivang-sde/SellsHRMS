@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.controller.view;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -69,6 +70,7 @@ public class OrgAdminViewController {
         return "layout/main-layout";
     }
 
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')")
     @GetMapping("/employees")
     public String employeeListPage(Model model) {
         model.addAttribute("pageTitle", "Employees");
@@ -76,6 +78,7 @@ public class OrgAdminViewController {
         return "layout/main-layout";
     }
 
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')")
     @GetMapping("/create-employee")
     public String createEmployeePage(Model model) {
         model.addAttribute("pageTitle", "Create Employee");
@@ -84,6 +87,7 @@ public class OrgAdminViewController {
         return "layout/main-layout";
     }
 
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_EDIT')")
     @GetMapping("/employee/edit/{id}")
     public String editEmployeePage(@PathVariable Long id, Model model) {
         model.addAttribute("employeeId", id);
@@ -117,6 +121,7 @@ public class OrgAdminViewController {
         return "layout/main-layout";
     }
 
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')")
     @GetMapping("/employee/{id}")
     public String employeeDetailPage(@PathVariable Long id, Model model) {
         model.addAttribute("employeeId", id);

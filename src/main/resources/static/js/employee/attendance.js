@@ -90,14 +90,14 @@ $(document).ready(function () {
     // Default reset
     $("#todayPunchIn").text(formatTime(data.punchIn));
 
-    
+
     if (data.punchOut) {
-  $('#attendanceSummaryText').html(`You punched out at <strong>${formatTime(data.punchOut)}</strong>.`);
-} else if (data.punchIn) {
-  $('#attendanceSummaryText').html(`You are currently punched in since <strong>${formatTime(data.punchIn)}</strong>.`);
-} else {
-  $('#attendanceSummaryText').html(`You haven’t punched in yet. Your shift starts at <strong>09:30 AM</strong>.`);
-}
+      $('#attendanceSummaryText').html(`You punched out at <strong>${formatTime(data.punchOut)}</strong>.`);
+    } else if (data.punchIn) {
+      $('#attendanceSummaryText').html(`You are currently punched in since <strong>${formatTime(data.punchIn)}</strong>.`);
+    } else {
+      $('#attendanceSummaryText').html(`You haven’t punched in yet. Your shift starts at <strong>09:30 AM</strong>.`);
+    }
 
     if (data.punchOut) {
       // ✅ Already punched out
@@ -298,9 +298,7 @@ $(document).ready(function () {
 
     let html = "";
     data.forEach((record) => {
-      const statusBadge = record.punchOut
-        ? '<span class="badge bg-success">Completed</span>'
-        : '<span class="badge bg-warning text-dark">In Progress</span>';
+      const statusBadge = getStatusBadge(record);
 
       html += `
                 <tr>
@@ -315,6 +313,31 @@ $(document).ready(function () {
     });
 
     $("#attendanceTableBody").html(html);
+  }
+
+
+  function getStatusBadge(record) {
+    const status = record.status;
+
+    switch (status) {
+      case "PRESENT":
+        return '<span class="badge bg-success">Present</span>';
+
+      case "IN_PROGRESS":
+        return '<span class="badge bg-warning text-dark">In Progress</span>';
+
+      case "COMPLETED":
+        return '<span class="badge bg-primary">Completed</span>';
+
+      case "ABSENT":
+        return '<span class="badge bg-danger">Absent</span>';
+
+      case "HALF_DAY":
+        return '<span class="badge bg-info text-dark">Half Day</span>';
+
+      default:
+        return '<span class="badge bg-secondary">Unknown</span>';
+    }
   }
 
   // Update month summary

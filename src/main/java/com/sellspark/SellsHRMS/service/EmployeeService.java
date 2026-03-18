@@ -24,6 +24,7 @@ public interface EmployeeService {
     EmployeeResponse updateStatus(Long id, String status);
 
     List<EmployeeResponse> getSubordinates(Long managerId, Long organisationId);
+    boolean isSubordinate(Long managerId, Long targetId);
 
 
 }

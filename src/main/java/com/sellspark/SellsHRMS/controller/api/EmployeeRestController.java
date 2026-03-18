@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpSession;
 
@@ -33,10 +35,46 @@ public class EmployeeRestController {
         return service.update(id, request);
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW_ALL')")
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL')")
     @GetMapping("/org/{orgId}")
     public List<EmployeeResponse> getAll(@PathVariable Long orgId) {
         return service.getAll(orgId);
+    }
+
+    /**
+     * Permission-aware employee list endpoint.
+     * - ORG_ADMIN / EMPLOYEE_VIEW_ALL → all employees in org
+     * - EMPLOYEE_VIEW_TEAM → only subordinates (reporting hierarchy)
+     */
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')")
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getByPermission(
+            HttpSession session, Authentication authentication) {
+
+        Long orgId = (Long) session.getAttribute("ORG_ID");
+        Long empId = (Long) session.getAttribute("EMP_ID");
+
+        boolean isAdmin = hasAuthority(authentication, "ORG_ADMIN");
+        boolean canViewAll = hasAuthority(authentication, "EMPLOYEE_VIEW_ALL");
+        boolean canViewTeam = hasAuthority(authentication, "EMPLOYEE_VIEW_TEAM");
+
+        List<EmployeeResponse> employees;
+
+        if (isAdmin || canViewAll) {
+            employees = service.getAll(orgId);
+        } else if (canViewTeam && empId != null) {
+            employees = service.getSubordinates(empId, orgId);
+        } else {
+            employees = List.of();
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok("Employees fetched", employees));
+    }
+
+    private boolean hasAuthority(Authentication auth, String authority) {
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> a.equals(authority));
     }
 
     @GetMapping("/subordinates")
@@ -56,30 +94,39 @@ public class EmployeeRestController {
      */
     // @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_ALL')")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id, HttpSession session) {
-        String role = (String) session.getAttribute("SYSTEM_ROLE");
-        Long empId = (Long) session.getAttribute("EMP_ID");
+    public ResponseEntity<?> getById(@PathVariable Long id, HttpSession session, Authentication authentication) {
+        Long currentEmpId = (Long) session.getAttribute("EMP_ID");
         Long orgId = (Long) session.getAttribute("ORG_ID");
 
-        if ("EMPLOYEE".equals(role)) {
-            if (empId == null || !empId.equals(id)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("You are not allowed to access this employee record");
-            }
-            return ResponseEntity.ok(service.getById(id));
-        }
+        boolean isOrgAdmin = hasAuthority(authentication, "ORG_ADMIN");
+        boolean canViewAll = hasAuthority(authentication, "EMPLOYEE_VIEW_ALL");
+        boolean canViewTeam = hasAuthority(authentication, "EMPLOYEE_VIEW_TEAM");
+        boolean canViewSelf = hasAuthority(authentication, "EMPLOYEE_VIEW_SELF");
 
-        if ("ORG_ADMIN".equals(role)) {
+        // 1. ORG_ADMIN or EMPLOYEE_VIEW_ALL can view any employee in the same organisation
+        if (isOrgAdmin || canViewAll) {
             EmployeeDetailResponse emp = service.getByIdAndOrg(id, orgId);
             if (emp == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Employee not found in your organisation");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found in your organisation");
             }
             return ResponseEntity.ok(emp);
         }
 
-        // Super Admin or other roles — unrestricted
-        return ResponseEntity.ok(service.getById(id));
+        // 2. EMPLOYEE_VIEW_TEAM can view subordinates
+        if (canViewTeam && currentEmpId != null) {
+            if (service.isSubordinate(currentEmpId, id)) {
+                return ResponseEntity.ok(service.getById(id));
+            }
+        }
+
+        // 3. EMPLOYEE_VIEW_SELF can view own record
+        if (canViewSelf && currentEmpId != null && currentEmpId.equals(id)) {
+            return ResponseEntity.ok(service.getById(id));
+        }
+
+        // 4. Default to Forbidden if no permission matches
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You do not have permission to view this employee record");
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_DELETE')")

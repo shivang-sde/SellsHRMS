@@ -24,6 +24,7 @@ public class UserPrincipal implements UserDetails {
     private String orgRole;
     private LocalDateTime lastLogin;
     private Long organisationId;
+    private Long employeeId;
     private String name;
 
     // Set<String> is serializable because String is serializable

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+    <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
         <c:set var="pageTitle" value="Today's Attendance" scope="request" />
         <c:set var="pageScript" value="orgadmin/attendance" scope="request" />
@@ -13,9 +14,11 @@
                         <p class="mb-0" id="currentDate"><i class="far fa-calendar-alt me-2"></i>Loading...</p>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-saas-outline" onclick="location.href='${pageContext.request.contextPath}/org/attendance/reports'">
-                            <i class="fas fa-chart-pie me-2"></i>Analytics
-                        </button>
+                        <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'ORG_ADMIN', 'SUPER_ADMIN')">
+                            <button class="btn btn-saas-outline" onclick="location.href='${pageContext.request.contextPath}/org/attendance/reports'">
+                                <i class="fas fa-chart-pie me-2"></i>Analytics
+                            </button>
+                        </sec:authorize>
                         <button class="btn btn-saas-primary" id="btnRefresh">
                             <i class="fas fa-sync-alt me-2"></i>Refresh
                         </button>
@@ -114,9 +117,11 @@
                         </button>
                     </div>
                     <div class="col-6 col-lg-3 text-end">
-                        <button id="btnExport" class="btn btn-success d-inline-flex align-items-center gap-2" style="border-radius: 10px; padding: 0.625rem 1.25rem; font-weight: 600;">
-                            <i class="fas fa-file-excel"></i> Export Excel
-                        </button>
+                        <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'ORG_ADMIN', 'SUPER_ADMIN')">
+                            <button id="btnExport" class="btn btn-success d-inline-flex align-items-center gap-2" style="border-radius: 10px; padding: 0.625rem 1.25rem; font-weight: 600;">
+                                <i class="fas fa-file-excel"></i> Export Excel
+                            </button>
+                        </sec:authorize>
                     </div>
                 </div>
             </div>

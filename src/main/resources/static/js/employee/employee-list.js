@@ -4,6 +4,12 @@ $(document).ready(function () {
     let deleteEmployeeId = null;
     let resetUserId = null;
 
+    // Check permissions
+    const isAdmin = window.APP.ROLE === 'ORG_ADMIN';
+    const canEdit = isAdmin || window.APP.hasPermission('EMPLOYEE_EDIT');
+    const canDelete = isAdmin || window.APP.hasPermission('EMPLOYEE_DELETE');
+    const canResetPass = isAdmin || window.APP.hasPermission('USER_ADMIN');
+
     // Load employees on page load
     loadEmployees();
 
@@ -44,9 +50,6 @@ $(document).ready(function () {
         const userId = modal.find('#resetUserId').val();
         const newPassword = modal.find('#newPassword').val().trim();
 
-        console.log('userId:', userId);
-        console.log('newPassword:', newPassword);
-
         if (!newPassword) {
             showToast('warning', 'Please enter a new password');
             return;
@@ -59,7 +62,8 @@ $(document).ready(function () {
             data: JSON.stringify({ userId, newPassword }),
             success: function () {
                 showToast('success', 'Password reset successfully');
-                modal.modal('hide');
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
+                if (modalInstance) modalInstance.hide();
             },
             error: function (xhr) {
                 showToast('error', xhr.responseJSON?.message || 'Failed to reset password');
@@ -68,14 +72,13 @@ $(document).ready(function () {
     });
 
 
-    // Load all employees
+    // Load all employees using permission-aware endpoint
     function loadEmployees() {
         $.ajax({
-            url: `/api/employees/org/${orgId}`,
+            url: `/api/employees`,
             method: 'GET',
-            success: function (data) {
-
-                employees = data;
+            success: function (response) {
+                employees = response.data || [];
                 renderEmployees(employees);
             },
             error: function (xhr) {
@@ -99,8 +102,6 @@ $(document).ready(function () {
         const typeFilter = $('#filterEmploymentType').val();
 
         let filtered = employees.filter(emp => {
-            console.log('emp.employmentType:', emp.employmentType);
-
             const matchesSearch = !searchTerm ||
                 emp.fullName.toLowerCase().includes(searchTerm) ||
                 emp.employeeCode.toLowerCase().includes(searchTerm) ||
@@ -149,17 +150,21 @@ $(document).ready(function () {
                             <a href="/org/employee/${emp.id}" class="btn btn-outline-primary" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            ${canEdit ? `
                             <a href="/org/employee/edit/${emp.id}" class="btn btn-outline-warning" title="Edit">
                                 <i class="fas fa-edit"></i>
-                            </a>
+                            </a>` : ''}
+                            
+                            ${canResetPass ? `
                             <button class="btn btn-outline-secondary btn-reset" data-id="${emp.userId}"
                                 title="Reset Password">
                                 <i class="fas fa-key"></i>
-                            </button>
+                            </button>` : ''}
 
+                            ${canDelete ? `
                             <button class="btn btn-outline-danger btn-delete" data-id="${emp.id}" title="Delete">
                                 <i class="fas fa-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -183,7 +188,8 @@ $(document).ready(function () {
             method: 'DELETE',
             success: function () {
                 showToast('success', 'Employee deleted successfully');
-                $('#deleteModal').modal('hide');
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                if (modalInstance) modalInstance.hide();
                 loadEmployees(); // Reload list
             },
             error: function (xhr) {

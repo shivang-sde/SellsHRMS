@@ -25,17 +25,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/api/employee/documents")
 @RequiredArgsConstructor
+@org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
 public class EmployeeDoccumentRestController {
     
     private final EmployeeDocumentService docService;
 
     @GetMapping("/{empId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL')")
     public ResponseEntity<List<EmployeeDocumentResponse>> list(@PathVariable Long empId) {
         return ResponseEntity.ok(docService.getByEmployee(empId));
     }
     
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
     public ResponseEntity<EmployeeDocumentResponse>upload(
         @RequestParam("employeeId") Long empId,
         @RequestParam("documentType") String docType,
@@ -44,11 +47,13 @@ public class EmployeeDoccumentRestController {
     }
 
     @PostMapping("/link")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
     public ResponseEntity<EmployeeDocumentResponse> saveLink(@RequestBody EmployeeDocumentRequest req) {
         return ResponseEntity.ok(docService.saveLink(req));
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_EDIT')")
     public ResponseEntity<?> delete(@PathVariable Long id) throws Exception {
         docService.delete(id);
         return ResponseEntity.ok().build();

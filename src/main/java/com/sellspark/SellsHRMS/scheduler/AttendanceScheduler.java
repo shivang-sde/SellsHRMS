@@ -8,11 +8,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
+import java.time.*;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -27,183 +25,190 @@ public class AttendanceScheduler {
     private final LeaveRepository leaveRepo;
     private final PunchInOutRepository punchRepo;
 
-    /**
-     * PHASE 1: PRE-MARK ATTENDANCE
-     * Runs every day at midnight (00:00:00)
-     * Creates attendance summary records for all active employees
-     */
-    @Scheduled(cron = "10 17 0 * * ?")
+    // ================= PRE-MARK =================
+
+    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void preMarkDailyAttendance() {
-        log.info("========== PRE-MARKING ATTENDANCE - STARTED ==========");
+
+        log.info("========== PRE-MARK START ==========");
         LocalDate today = LocalDate.now();
 
-        // Get all active organisations
-        List<Organisation> organisations = organisationRepo.findAll()
+        List<Organisation> orgs = organisationRepo.findAll()
                 .stream()
                 .filter(org -> Boolean.TRUE.equals(org.getIsActive()))
                 .toList();
 
-        int totalMarked = 0;
+        for (Organisation org : orgs) {
 
-        for (Organisation org : organisations) {
-            log.info("Processing organisation: {} (ID: {})", org.getName(), org.getId());
+            OrganisationPolicy policy = policyRepo
+                    .findByOrganisationId(org.getId())
+                    .orElse(null);
 
-            // Get all active employees for this organisation
-            List<Employee> employees = employeeRepo.findByOrganisationIdAndDeletedFalse(
-                    org.getId()).stream()
+            if (policy == null) {
+                log.error("Policy missing for org: {}", org.getId());
+                continue;
+            }
+
+            List<Employee> employees = employeeRepo
+                    .findByOrganisationIdAndDeletedFalse(org.getId())
+                    .stream()
                     .filter(emp -> emp.getStatus() == Employee.EmployeeStatus.ACTIVE)
                     .toList();
 
-            for (Employee employee : employees) {
+            for (Employee emp : employees) {
                 try {
-                    // Check if record already exists (avoid duplicates)
-                    if (summaryRepo.findByEmployeeIdAndAttendanceDate(employee.getId(), today)
-                            .isPresent()) {
-                        log.debug("Attendance already marked for employee: {}", employee.getId());
+
+                    if (summaryRepo.findByEmployeeIdAndAttendanceDate(emp.getId(), today).isPresent()) {
                         continue;
                     }
+
+                    boolean isHoliday = holidayRepo
+                            .existsByOrganisationIdAndHolidayDate(org.getId(), today);
+
+                    boolean isWeekOff = isWeekOff(today, policy);
+
+                    boolean isLeave = leaveRepo
+                            .existsByEmployeeAndDateAndApproved(emp.getId(), today);
 
                     AttendanceSummary.AttendanceStatus status;
                     String remarks;
 
-                    // Check if today is a holiday
-                    boolean isHoliday = holidayRepo.existsByOrganisationIdAndHolidayDate(
-                            org.getId(),
-                            today);
-
-                    // Check if today is a week off (Saturday/Sunday by default)
-                    boolean isWeekOff = isWeekOff(today); // cross check by sir to get week off date clearance(emp based
-                                                          // or fiexed)
-
-                    // Check if employee has approved leave
-                    boolean hasLeave = leaveRepo.existsByEmployeeAndDateAndApproved(
-                            employee.getId(),
-                            today);
-
-                    // Determine initial status
                     if (isHoliday) {
                         status = AttendanceSummary.AttendanceStatus.HOLIDAY;
-                        remarks = "Public/Company Holiday";
+                        remarks = "Holiday";
                     } else if (isWeekOff) {
                         status = AttendanceSummary.AttendanceStatus.WEEK_OFF;
-                        remarks = "Weekly Off";
-                    } else if (hasLeave) {
+                        remarks = "Week Off (Policy)";
+                    } else if (isLeave) {
                         status = AttendanceSummary.AttendanceStatus.ON_LEAVE;
-                        remarks = "Approved Leave";
+                        remarks = "On Leave";
                     } else {
-                        // Pre-mark as ABSENT (will be updated when employee punches in)
                         status = AttendanceSummary.AttendanceStatus.ABSENT;
-                        remarks = "Tentative - Awaiting punch in";
+                        remarks = "Awaiting punch (Policy)";
                     }
 
-                    // Create attendance summary
-                    AttendanceSummary summary = AttendanceSummary.builder()
-                            .organisation(org)
-                            .employee(employee)
-                            .attendanceDate(today)
-                            .status(status)
-                            .source(AttendanceSummary.AttendanceSource.AUTO_SYSTEM)
-                            .remarks(remarks)
-                            .build();
-
-                    summaryRepo.save(summary);
-                    totalMarked++;
+                    summaryRepo.save(
+                            AttendanceSummary.builder()
+                                    .organisation(org)
+                                    .employee(emp)
+                                    .attendanceDate(today)
+                                    .status(status)
+                                    .source(AttendanceSummary.AttendanceSource.AUTO_SYSTEM)
+                                    .remarks(remarks)
+                                    .build());
 
                 } catch (Exception e) {
-                    log.error("Error pre-marking attendance for employee {}: {}",
-                            employee.getId(), e.getMessage());
+                    log.error("Error pre-mark emp {}: {}", emp.getId(), e.getMessage());
                 }
             }
-
-            log.info("Marked attendance for {} employees in org: {}",
-                    employees.size(), org.getName());
         }
 
-        log.info("========== PRE-MARKING ATTENDANCE - COMPLETED ==========");
-        log.info("Total records created: {}", totalMarked);
+        log.info("========== PRE-MARK END ==========");
     }
 
-    /**
-     * PHASE 2: RECONCILIATION
-     * Runs every day at 11:59 PM (23:59:00)
-     * Finalizes attendance - auto punch-out, confirm absences
-     */
+    // ================= RECONCILE =================
+
     @Scheduled(cron = "0 50 23 * * ?")
     @Transactional
     public void reconcileDailyAttendance() {
-        log.info("========== RECONCILIATION - STARTED ==========");
+
+        log.info("========== RECONCILE START ==========");
         LocalDate today = LocalDate.now();
 
-        // Get all attendance summaries for today
         List<AttendanceSummary> summaries = summaryRepo.findByAttendanceDate(today);
-
-        int autoCheckedOut = 0;
-        int finalizedAbsent = 0;
 
         for (AttendanceSummary summary : summaries) {
             try {
-                // Skip already finalized statuses
+
+                Organisation org = summary.getOrganisation();
+
+                OrganisationPolicy policy = policyRepo
+                        .findByOrganisationId(org.getId())
+                        .orElse(null);
+
+                if (policy == null || policy.getAutoPunchOutTime() == null) {
+                    log.warn("Skipping org {} due to missing policy", org.getId());
+                    continue;
+                }
+
+                // skip fixed statuses
                 if (summary.getStatus() == AttendanceSummary.AttendanceStatus.HOLIDAY ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.WEEK_OFF ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.ON_LEAVE) {
                     continue;
                 }
 
-                // Case 1: Still marked ABSENT (never punched in)
+                // ABSENT FINAL
                 if (summary.getStatus() == AttendanceSummary.AttendanceStatus.ABSENT) {
-                    summary.setRemarks("Absent - No punch record");
+                    summary.setRemarks("Absent - No punch");
                     summaryRepo.save(summary);
-                    finalizedAbsent++;
                     continue;
                 }
 
-                // Case 2: Punched IN but forgot to punch OUT
+                // AUTO PUNCH OUT
                 if (summary.getStatus() == AttendanceSummary.AttendanceStatus.PRESENT &&
                         summary.getEffectivePunchOut() == null &&
                         summary.getPunchRecord() != null) {
 
                     PunchInOut punch = summary.getPunchRecord();
 
-                    // Auto punch out after 10 hours
-                    Instant autoPunchOut = punch.getPunchIn();
-                    punch.setPunchOut(autoPunchOut);
+                    LocalTime autoTime = policy.getAutoPunchOutTime();
+                    double standardHours = Optional.ofNullable(policy.getStandardDailyHours()).orElse(8.0);
 
-                    // Calculate work hours
+                    // Build auto punch-out
+                    Instant autoPunchOut = LocalDateTime.of(today, autoTime)
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant();
+
+                    // Safety fallback
+                    if (autoPunchOut.isBefore(punch.getPunchIn())) {
+                        autoPunchOut = punch.getPunchIn()
+                                .plus(Duration.ofMinutes((long) (standardHours * 60)));
+                    }
+
                     Duration duration = Duration.between(punch.getPunchIn(), autoPunchOut);
-                    double hours = duration.toMinutes() / 60.0;
+                    double hours = Math.max(0, duration.toMinutes() / 60.0);
+
+                    double fullDay = policy.getStandardDailyHours();
+                    double halfDay = fullDay / 2;
+
+                    if (hours >= fullDay) {
+                        summary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
+                    } else if (hours >= halfDay) {
+                        summary.setStatus(AttendanceSummary.AttendanceStatus.HALF_DAY);
+                    } else {
+                        summary.setStatus(AttendanceSummary.AttendanceStatus.SHORT_DAY);
+                    }
+
+                    // SAVE punch
+                    punch.setPunchOut(autoPunchOut);
                     punch.setWorkHours(hours);
                     punchRepo.save(punch);
 
-                    // Update summary
+                    // UPDATE summary
                     summary.setEffectivePunchOut(autoPunchOut);
                     summary.setWorkHours(hours);
-                    summary.setRemarks("Auto punched out after 10 hours");
+                    summary.setRemarks("Auto punched out (Policy: " + autoTime + ")");
                     summaryRepo.save(summary);
-
-                    autoCheckedOut++;
-                    log.info("Auto checked out employee: {} at {}",
-                            summary.getEmployee().getId(), autoPunchOut);
                 }
 
             } catch (Exception e) {
-                log.error("Error reconciling attendance for summary {}: {}",
-                        summary.getId(), e.getMessage());
+                log.error("Error reconcile summary {}: {}", summary.getId(), e.getMessage());
             }
         }
 
-        log.info("========== RECONCILIATION - COMPLETED ==========");
-        log.info("Auto checked out: {}", autoCheckedOut);
-        log.info("Finalized absent: {}", finalizedAbsent);
+        log.info("========== RECONCILE END ==========");
     }
 
-    /**
-     * Helper method to check if a date is a week off
-     * TODO: Make this configurable per organisation/employee
-     */
-    private boolean isWeekOff(LocalDate date) {
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-        // Default: Saturday and Sunday are week offs
-        return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
+    // ================= POLICY WEEK-OFF =================
+
+    private boolean isWeekOff(LocalDate date, OrganisationPolicy policy) {
+
+        if (policy.getWeekOffDays() == null || policy.getWeekOffDays().isEmpty()) {
+            return false;
+        }
+
+        return policy.getWeekOffDays().contains(date.getDayOfWeek());
     }
 }

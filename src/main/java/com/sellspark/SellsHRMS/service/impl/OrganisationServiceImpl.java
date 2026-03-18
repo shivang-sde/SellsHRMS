@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.sellspark.SellsHRMS.entity.User;
+import com.sellspark.SellsHRMS.service.OrganisationPolicyService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ public class OrganisationServiceImpl implements OrganisationService {
     private final OrganisationAdminRepository adminRepo;
     private final DtoMapper mapper;
     private final UserService userService;
+    private final OrganisationPolicyService organisationPolicyService;
 
     @Override
     public OrganisationDTO create(OrganisationDTO dto) {
@@ -65,6 +67,9 @@ public class OrganisationServiceImpl implements OrganisationService {
             // link back
             org.setOrgAdmin(adminEntity);
             organisationRepo.save(org);
+
+            // 4) create default policy
+            organisationPolicyService.createDefaultPolicy(org);
         }
 
         // 3) assign default modules

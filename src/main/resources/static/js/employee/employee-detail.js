@@ -34,6 +34,18 @@ console.log("Resolved Employee ID:", employeeId);
         addBankAccount();
     });
 
+    // History Back Button
+    $('#btnBack').on('click', function(e) {
+        e.preventDefault();
+        // Check if we have history from our domain
+        if (window.history.length > 1 && document.referrer.includes(window.location.host)) {
+            window.history.back();
+        } else {
+            // Fallback for direct links
+            window.location.href = '/org/employees';
+        }
+    });
+
     // Load employee details
     function loadEmployeeDetails() {
         $.ajax({
@@ -141,22 +153,22 @@ console.log("Resolved Employee ID:", employeeId);
                                 <small class="text-muted">Uploaded: ${doc.uploadedAt || 'N/A'}</small>
                             </div>
                             <div class="btn-group btn-group-sm">
-                                ${doc.fileUrl ? `<a href="${doc.fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                ${doc.fileUrl ? `<a href="${doc.fileUrl}" target="_blank" class="btn btn-outline-primary" title="Download">
                                     <i class="fas fa-download"></i>
                                 </a>` : ''}
-                                ${doc.externalUrl ? `<a href="${doc.externalUrl}" target="_blank" class="btn btn-outline-info">
+                                ${doc.externalUrl ? `<a href="${doc.externalUrl}" target="_blank" class="btn btn-outline-info" title="View External">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>` : ''}
-
+                                ${window.APP.hasAnyPermission('EMPLOYEE_EDIT', 'ORG_ADMIN') ? `
+                                    <button class="btn btn-outline-danger btn-delete-doc" data-id="${doc.id}" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
                     `;
                 });
                 html += '</div>';
-
-                                //                 <button class="btn btn-outline-danger btn-delete-doc" data-id="${doc.id}">
-                                //     <i class="fas fa-trash"></i>
-                                // </button>
 
                 $('#documentsList').html(html);
 
@@ -278,9 +290,11 @@ console.log("Resolved Employee ID:", employeeId);
                                                 ${bank.isPrimaryAccount ? '<span class="badge bg-success ms-2">Primary</span>' : ''}
                                             </h6>
                                         </div>
-                                        <button class="btn btn-sm btn-outline-danger btn-delete-bank" data-id="${bank.id}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        ${window.APP.hasAnyPermission('EMPLOYEE_EDIT', 'ORG_ADMIN') ? `
+                                            <button class="btn btn-sm btn-outline-danger btn-delete-bank" data-id="${bank.id}" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : ''}
                                     </div>
                                     <hr>
                                     <p class="mb-1"><strong>Account Number:</strong> ${bank.accountNumber}</p>

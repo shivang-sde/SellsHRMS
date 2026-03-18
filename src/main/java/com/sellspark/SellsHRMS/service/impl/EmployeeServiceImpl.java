@@ -184,10 +184,17 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employees.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    @Override
     public List<EmployeeResponse> getSubordinates(Long managerId, Long organisationId) {
         Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
         List<Employee> employees = employeeRepo.findAllById(subordinateIds);
         return employees.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isSubordinate(Long managerId, Long targetId) {
+        Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
+        return subordinateIds.contains(targetId);
     }
 
     // @Override

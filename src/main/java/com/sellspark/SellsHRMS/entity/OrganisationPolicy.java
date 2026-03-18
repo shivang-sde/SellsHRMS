@@ -1,8 +1,10 @@
 package com.sellspark.SellsHRMS.entity;
 
-import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +33,17 @@ public class OrganisationPolicy {
     private Integer leaveYearStartMonth = 1; // default January
     @Builder.Default
     private Integer leaveYearStartDay = 1; // default 1st day
+
+    @Builder.Default
+    private Integer maxWorkHoursBeforeAutoPunchOut = 10;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "org_week_off_days", joinColumns = @JoinColumn(name = "policy_id"))
+    @Column(name = "day")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private List<DayOfWeek> weekOffDays = new java.util.ArrayList<>(
+            List.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
 
     private Integer salaryCycleStartDay; // e.g. 1
     private Integer cycleDuration; // e.g. 30

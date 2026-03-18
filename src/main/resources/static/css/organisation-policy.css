@@ -337,3 +337,164 @@
     align-items: flex-start;
   }
 }
+
+/* Week Off Buttons */
+.btn-check:checked + .btn-outline-primary {
+  background-color: #0284c7;
+  border-color: #0284c7;
+  color: white;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+}
+
+.btn-check:disabled + .btn-outline-primary {
+  opacity: 0.6;
+  border-color: #cbd5e1;
+  color: #64748b;
+  background-color: transparent;
+}
+
+.btn-check:disabled:checked + .btn-outline-primary {
+  background-color: #94a3b8;
+  border-color: #94a3b8;
+  color: white;
+  opacity: 0.8;
+  box-shadow: none;
+}
+
+.btn-outline-primary {
+  border-color: #bae6fd;
+  color: #0284c7;
+  transition: all 0.23s ease-in-out;
+  font-weight: 500;
+}
+
+.btn-outline-primary:not(:disabled):hover {
+  background-color: #f0f9ff;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+/* ═══════ Advanced Form Field Styling ═══════ */
+
+/* Input Groups */
+.policy-section .input-group {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease-in-out;
+}
+
+.policy-section .input-group-text {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0 12px;
+}
+
+.policy-section .input-group .form-control {
+  border-right: 0;
+  border-radius: 0;
+}
+
+.policy-section .input-group .input-group-text:first-child {
+  border-right: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+}
+.policy-section .input-group .input-group-text:last-child {
+  border-left: 0;
+}
+
+/* Select Styling */
+.policy-section .form-select {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 9px 14px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.policy-section .form-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+  outline: none;
+}
+
+.policy-section .form-select:disabled {
+  background-color: #f8fafc;
+  color: #64748b;
+  border-color: #f1f5f9;
+  opacity: 1;
+}
+
+/* Custom Time input fix */
+.policy-section .custom-time {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ═══════ Disabled View Presentation (SaaS Read-Only Dashboard Mode) ═══════ */
+.form-disabled-mode .policy-section {
+  background-color: #fff; /* Blend into the card */
+  border-color: #f1f5f9;
+}
+
+.form-disabled-mode .form-label {
+  color: #94a3b8; /* Muted labels in view mode */
+}
+
+.form-disabled-mode .form-control:disabled,
+.form-disabled-mode .form-select:disabled,
+.form-disabled-mode .input-group-text,
+.form-disabled-mode .custom-time,
+.form-disabled-mode textarea:disabled {
+  background-color: transparent;
+  border-color: transparent;
+  color: #1e293b;
+  box-shadow: none;
+  font-weight: 500;
+  padding-left: 0;
+  appearance: none; /* Hide default dropdown arrows on selects if disabled */
+  -webkit-appearance: none;
+}
+
+.form-disabled-mode .input-group {
+  box-shadow: none;
+}
+
+.form-disabled-mode .input-group-text {
+  color: #64748b; /* Keep prefix/suffix slightly muted */
+}
+
+.form-disabled-mode .office-timing-group .timing-separator {
+  padding: 0 4px;
+}
+
+/* Toggles become clean text/icon pairs when disabled */
+.form-disabled-mode .toggle-card {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Grey out week off buttons elegantly and remove borders */
+.form-disabled-mode .week-off-container .btn-outline-primary:not(:active) {
+  border-color: transparent;
+}
+.form-disabled-mode .week-off-checkbox:checked + .btn-outline-primary {
+  background-color: #e0f2fe;  /* Very subtle blue instead of loud solid blue */
+  color: #0284c7;             /* Keep text blue for readability */
+  border-color: transparent;
+  box-shadow: none;
+  font-weight: 600;
+}
+.form-disabled-mode .week-off-checkbox:not(:checked) + .btn-outline-primary {
+  color: #94a3b8; /* Grey out unselected when viewing */
+  display: none; /* Alternatively, only show active week off days when reading! Let's display none! */
+}
+

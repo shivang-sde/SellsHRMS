@@ -62,6 +62,7 @@ public class AuthService {
                 .systemRole(user.getSystemRole() != null ? user.getSystemRole().toString() : "USER")
                 .orgRole(user.getOrgRole() != null ? user.getOrgRole().getName() : "NONE")
                 .organisationId(user.getOrganisation() != null ? user.getOrganisation().getId() : null)
+                .employeeId(user.getEmployee() != null ? user.getEmployee().getId() : null)
                 .permissions(perms)
                 .lastLogin(user.getLastLogin())
                 .build();

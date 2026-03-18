@@ -90,7 +90,9 @@ public class SecurityConfig {
                 // 🔐 Add org access filter
                 .addFilterBefore(organisationAccessFilter, UsernamePasswordAuthenticationFilter.class)
 
-                .formLogin(form -> form.disable())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .permitAll())
                 .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();

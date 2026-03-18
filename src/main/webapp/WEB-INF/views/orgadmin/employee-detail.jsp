@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <input type="hidden" id="employeeId" value="${employeeId}">
 
@@ -11,9 +12,13 @@
                 <a href="/org/employees" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Back
                 </a>
-                <a href="/org/employee/edit/${employeeId}" class="btn btn-primary">
-                    <i class="fas fa-edit me-2"></i>Edit
-                </a>
+                <sec:authorize access="hasAnyAuthority('EMPLOYEE_EDIT', 'ORG_ADMIN')">
+                    <c:if test="${not empty employeeId}">
+                        <a href="/org/employee/edit/${employeeId}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit
+                        </a>
+                    </c:if>
+                </sec:authorize>
             </div>
         </div>
     </div>
@@ -241,9 +246,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Document Management</h6>
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                        <i class="fas fa-upload me-1"></i>Upload Document
-                    </button>
+                    <sec:authorize access="hasAnyAuthority('EMPLOYEE_CREATE', 'ORG_ADMIN')">
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                            <i class="fas fa-upload me-1"></i>Upload Document
+                        </button>
+                    </sec:authorize>
                 </div>
                 <div class="card-body">
                     <div id="documentsList">
@@ -258,9 +265,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Bank Account Details</h6>
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBankModal">
-                        <i class="fas fa-plus me-1"></i>Add Bank Account
-                    </button>
+                    <sec:authorize access="hasAnyAuthority('EMPLOYEE_CREATE', 'ORG_ADMIN')">
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBankModal">
+                            <i class="fas fa-plus me-1"></i>Add Bank Account
+                        </button>
+                    </sec:authorize>
                 </div>
                 <div class="card-body">
                     <div id="bankDetailsList">

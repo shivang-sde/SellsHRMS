@@ -1,14 +1,16 @@
 package com.sellspark.SellsHRMS.service;
 
-
 import java.util.Optional;
 
 import com.sellspark.SellsHRMS.dto.organisation.OrganisationPolicyDTO;
+import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.OrganisationPolicy;
 
 public interface OrganisationPolicyService {
 
     OrganisationPolicy createOrUpdatePolicy(Long orgId, OrganisationPolicyDTO policyDTO);
+
+    void createDefaultPolicy(Organisation org);
 
     Optional<OrganisationPolicy> getPolicyForOrg(Long orgId);
 

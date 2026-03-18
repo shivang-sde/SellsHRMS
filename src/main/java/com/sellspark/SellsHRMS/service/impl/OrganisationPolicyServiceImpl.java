@@ -1,6 +1,10 @@
 package com.sellspark.SellsHRMS.service.impl;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -12,6 +16,7 @@ import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.OrganisationPolicyRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.service.OrganisationPolicyService;
+import com.sellspark.SellsHRMS.validator.OrganisationPolicyValidator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OrganisationPolicyServiceImpl implements OrganisationPolicyService {
 
+    private final OrganisationPolicyValidator validator;
     private final OrganisationPolicyRepository organisationPolicyRepository;
     private final OrganisationRepository organisationRepository;
 
@@ -32,6 +38,7 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         OrganisationPolicy policy = organisationPolicyRepository.findByOrganisation(org)
                 .orElse(new OrganisationPolicy());
 
+        validator.validate(policyDTO);
         // 🔹 Use mapper helper
         mapDtoToEntity(policyDTO, policy);
         policy.setOrganisation(org);
@@ -42,6 +49,34 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         policy.setUpdatedAt(LocalDateTime.now());
 
         return organisationPolicyRepository.save(policy);
+    }
+
+    @Override
+    public void createDefaultPolicy(Organisation org) {
+
+        if (organisationPolicyRepository.findByOrganisation(org).isPresent()) {
+            return;
+        }
+
+        OrganisationPolicy policy = OrganisationPolicy.builder()
+                .organisation(org)
+                .officeStart(LocalTime.of(10, 0))
+                .officeClosed(LocalTime.of(19, 0))
+                .standardDailyHours(8.0)
+                .weeklyHours(40.0)
+                .monthlyHours(160.0)
+                .autoPunchOutTime(LocalTime.of(20, 0))
+                .maxWorkHoursBeforeAutoPunchOut(10)
+                .lateGraceMinutes(10)
+                .earlyOutGraceMinutes(10)
+                .weekOffDays(new ArrayList<>(List.of(DayOfWeek.SUNDAY))) // 👈 your rule
+                .carryForwardEnabled(true)
+                .encashmentEnabled(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        organisationPolicyRepository.save(policy);
     }
 
     @Override
@@ -62,7 +97,7 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
     public int getAutoPunchOutAfterHours(Long orgId) {
         OrganisationPolicy policy = getPolicyForOrg(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation policy not found"));
-        return policy.getAutoPunchTime() != null ? policy.getAutoPunchTime().getHour() : 0;
+        return policy.getAutoPunchOutTime() != null ? policy.getAutoPunchOutTime().getHour() : 0;
     }
 
     @Override
@@ -98,8 +133,7 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
             entity.setOfficeClosed(dto.getOfficeClosed());
         if (dto.getWeeklyHours() != null)
             entity.setWeeklyHours(dto.getWeeklyHours());
-        if (dto.getAutoPunchTime() != null)
-            entity.setAutoPunchTime(dto.getAutoPunchTime());
+        ;
         if (dto.getLateGraceMinutes() != null)
             entity.setLateGraceMinutes(dto.getLateGraceMinutes());
         if (dto.getEarlyOutGraceMinutes() != null)
@@ -110,14 +144,33 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
             entity.setOvertimeMultiplier(dto.getOvertimeMultiplier());
         if (dto.getMinMonthlyHours() != null)
             entity.setMinMonthlyHours(dto.getMinMonthlyHours());
-        if (dto.getFlexibleHourModelEnabled() != null)
-            entity.setFlexibleHourModelEnabled(dto.getFlexibleHourModelEnabled());
         if (dto.getCarryForwardEnabled() != null)
             entity.setCarryForwardEnabled(dto.getCarryForwardEnabled());
         if (dto.getEncashmentEnabled() != null)
             entity.setEncashmentEnabled(dto.getEncashmentEnabled());
         if (dto.getAdditionalNotes() != null)
             entity.setAdditionalNotes(dto.getAdditionalNotes());
+
+        if (dto.getMonthlyHours() != null)
+            entity.setMonthlyHours(dto.getMonthlyHours());
+
+        if (dto.getAutoPunchOutTime() != null)
+            entity.setAutoPunchOutTime(dto.getAutoPunchOutTime());
+
+        if (dto.getMaxWorkHoursBeforeAutoPunchOut() != null)
+            entity.setMaxWorkHoursBeforeAutoPunchOut(dto.getMaxWorkHoursBeforeAutoPunchOut());
+
+        if (dto.getWeekOffDays() != null && !dto.getWeekOffDays().isEmpty())
+            entity.setWeekOffDays(dto.getWeekOffDays());
+
+        if (dto.getSalaryCycleStartDay() != null)
+            entity.setSalaryCycleStartDay(dto.getSalaryCycleStartDay());
+
+        if (dto.getCycleDuration() != null)
+            entity.setCycleDuration(dto.getCycleDuration());
+
+        if (dto.getPayslipGenerationOffsetDays() != null)
+            entity.setPayslipGenerationOffsetDays(dto.getPayslipGenerationOffsetDays());
     }
 
     private OrganisationPolicyDTO mapEntityToDto(OrganisationPolicy policy) {
@@ -135,13 +188,18 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         dto.setOfficeClosed(policy.getOfficeClosed());
         dto.setOfficeStart(policy.getOfficeStart());
         dto.setWeeklyHours(policy.getWeeklyHours());
-        dto.setAutoPunchTime(policy.getAutoPunchTime());
+        dto.setMonthlyHours(policy.getMonthlyHours());
+        dto.setAutoPunchOutTime(policy.getAutoPunchOutTime());
+        dto.setMaxWorkHoursBeforeAutoPunchOut(policy.getMaxWorkHoursBeforeAutoPunchOut());
+        dto.setWeekOffDays(policy.getWeekOffDays());
+        dto.setSalaryCycleStartDay(policy.getSalaryCycleStartDay());
+        dto.setCycleDuration(policy.getCycleDuration());
+        dto.setPayslipGenerationOffsetDays(policy.getPayslipGenerationOffsetDays());
         dto.setLateGraceMinutes(policy.getLateGraceMinutes());
         dto.setEarlyOutGraceMinutes(policy.getEarlyOutGraceMinutes());
         dto.setOvertimeAllowed(policy.getOvertimeAllowed());
         dto.setOvertimeMultiplier(policy.getOvertimeMultiplier());
         dto.setMinMonthlyHours(policy.getMinMonthlyHours());
-        dto.setFlexibleHourModelEnabled(policy.getFlexibleHourModelEnabled());
         dto.setCarryForwardEnabled(policy.getCarryForwardEnabled());
         dto.setEncashmentEnabled(policy.getEncashmentEnabled());
         dto.setAdditionalNotes(policy.getAdditionalNotes());

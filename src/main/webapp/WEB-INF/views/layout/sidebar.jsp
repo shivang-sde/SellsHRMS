@@ -79,13 +79,20 @@
 
                 <!-- Employees -->
                 <app:ifModule code="EMPLOYEE">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-users"></i> Employees <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/org/create-employee">Add Employee</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/employees">All Employees</a></li>
-                  </ul>
+                  <sec:authorize
+                    access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_CREATE')">
+                    <a class="nav-link toggle-link" href="#">
+                      <i class="fa fa-users"></i> Employees <i class="fa fa-plus toggle-icon"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
+                        <li><a href="${pageContext.request.contextPath}/org/create-employee">Add Employee</a></li>
+                      </sec:authorize>
+                      <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
+                        <li><a href="${pageContext.request.contextPath}/org/employees">All Employees</a></li>
+                      </sec:authorize>
+                    </ul>
+                  </sec:authorize>
                 </app:ifModule>
 
                 <!-- Attendance -->
@@ -231,6 +238,17 @@
                     <i class="fa fa-wallet"></i> My Salaries
                   </a>
                 </app:ifModule>
+
+
+                <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
+                  <a class="nav-link" href="${pageContext.request.contextPath}/org/employees"><i
+                      class="fa fa-users"></i> Employees</a>
+                </sec:authorize>
+
+                <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
+                  <a class="nav-link" href="${pageContext.request.contextPath}/org/attendance"><i
+                      class="fa fa-clock"></i>Employee Attendance</a>
+                </sec:authorize>
 
                 <sec:authorize access="hasAuthority('LEAVE_VIEW_ALL')">
                   <a class="nav-link" href="${pageContext.request.contextPath}/employee/leaves">
