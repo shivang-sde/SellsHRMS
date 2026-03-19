@@ -95,6 +95,7 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .id(org.getId())
                 .name(org.getName())
                 .domain(org.getDomain())
+                .timeZone(org.getTimeZone())
                 .prefix(org.getEmpPrefix())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())
@@ -125,6 +126,7 @@ public class OrganisationServiceImpl implements OrganisationService {
 
         org.setName(dto.getName());
         org.setDomain(dto.getDomain());
+        org.setTimeZone(dto.getTimeZone());
         org.setEmpPrefix(dto.getPrefix());
         org.setContactEmail(dto.getContactEmail());
         org.setContactPhone(dto.getContactPhone());
@@ -223,6 +225,7 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .id(org.getId())
                 .name(org.getName())
                 .domain(org.getDomain())
+                .timeZone(org.getTimeZone())
                 .prefix(org.getEmpPrefix())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())
@@ -247,6 +250,7 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .id(org.getId())
                 .name(org.getName())
                 .domain(org.getDomain())
+                .timeZone(org.getTimeZone())
                 .prefix(org.getEmpPrefix())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())

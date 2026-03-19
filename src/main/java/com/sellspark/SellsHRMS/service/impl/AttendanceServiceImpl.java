@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.sellspark.SellsHRMS.config.UserPrincipal;
@@ -59,19 +60,17 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (employee.getStatus() != Employee.EmployeeStatus.ACTIVE) {
             throw new EmployeeInactiveException(employee.getEmployeeCode());
         }
-
-        LocalDate today = LocalDate.now();
+        ZoneId zoneId = ZoneId.of(employee.getOrganisation().getTimeZone());
+        LocalDate attendanceDate = LocalDate.ofInstant(request.getPunchIn(), zoneId);
 
         // Check if already punched in today
         // Check if already punched in today
         AttendanceSummary existingSummary = summaryRepo
-                .findByEmployeeIdAndAttendanceDate(employee.getId(), today)
+                .findByEmployeeIdAndAttendanceDate(employee.getId(), attendanceDate)
                 .orElseThrow(() -> new ResourceNotFoundException("AttendanceSummary", "employeeId", employee.getId()));
 
-        if (existingSummary != null &&
-                existingSummary.getStatus() == AttendanceSummary.AttendanceStatus.PRESENT &&
-                existingSummary.getEffectivePunchIn() != null) {
-            throw new AttendanceAlreadyMarkedException("punched in");
+        if (existingSummary.getEffectivePunchIn() != null) {
+            throw new AttendanceAlreadyMarkedException("Already punched in today");
         }
         log.info("No existing punch in found for today. Proceeding with punch  {}", request);
 
@@ -82,35 +81,39 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .punchIn(request.getPunchIn())
                 .punchSource(parsePunchSource(request.getSource()))
                 .punchedFrom(parsePunchedFrom(request.getPunchedFrom()))
+                .attendanceDate(attendanceDate)
                 .lat(request.getLat())
                 .lng(request.getLng())
                 .build();
-        punch = punchRepo.save(punch);
-
+        try {
+            punch = punchRepo.save(punch);
+        } catch (DataIntegrityViolationException e) {
+            throw new AttendanceAlreadyMarkedException("Already punched in today");
+        }
         // 2. Update attendance summary
-        AttendanceSummary summary = summaryRepo
-                .findByEmployeeIdAndAttendanceDate(employee.getId(), today)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Attendance summary not found. Please contact administrator."));
+        // AttendanceSummary summary = summaryRepo
+        // .findByEmployeeIdAndAttendanceDate(employee.getId(), attendanceDate)
+        // .orElseThrow(() -> new ResourceNotFoundException(
+        // "Attendance summary not found. Please contact administrator."));
 
-        summary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
-        summary.setPunchRecord(punch);
-        summary.setEffectivePunchIn(request.getPunchIn());
-        summary.setSource(AttendanceSummary.AttendanceSource.PUNCH_SYSTEM);
-        summary.setRemarks("Punched in via " + request.getPunchedFrom());
+        existingSummary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
+        existingSummary.setPunchRecord(punch);
+        existingSummary.setEffectivePunchIn(request.getPunchIn());
+        existingSummary.setSource(AttendanceSummary.AttendanceSource.PUNCH_SYSTEM);
+        existingSummary.setRemarks("Punched in via " + request.getPunchedFrom());
 
         // Check if late (example: 9:30 AM grace period)
         // TODO: Get shift timing from employee's shift configuration
-        LocalDateTime punchIn = LocalDateTime.ofInstant(request.getPunchIn(), ZoneId.systemDefault());
+        LocalDateTime punchIn = LocalDateTime.ofInstant(request.getPunchIn(), zoneId);
         LocalTime allowedTime = policy.getOfficeStart().plusMinutes(policy.getLateGraceMinutes());
 
         if (punchIn.toLocalTime().isAfter(allowedTime)) {
-            summary.setIsLate(true);
+            existingSummary.setIsLate(true);
         }
 
-        summaryRepo.save(summary);
+        summaryRepo.save(existingSummary);
         log.info("Punch in successful for employee: {}", employee.getEmployeeCode());
-        return mapToResponse(punch, summary);
+        return mapToResponse(punch, existingSummary, zoneId);
     }
 
     @Override
@@ -119,6 +122,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         PunchInOut punch = punchRepo.findById(request.getPunchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Punch record", "id", request.getPunchId()));
+
+        ZoneId zoneId = ZoneId.of(punch.getOrganisation().getTimeZone());
 
         OrganisationPolicy policy = policyRepo.findByOrganisation(punch.getOrganisation())
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation policy", "policy",
@@ -145,7 +150,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceSummary summary = summaryRepo
                 .findByEmployeeIdAndAttendanceDate(
                         punch.getEmployee().getId(),
-                        LocalDate.now())
+                        LocalDate.now(zoneId))
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance summary not found"));
 
         summary.setEffectivePunchOut(request.getPunchOut());
@@ -167,7 +172,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         // Check if early out (example: before 5:30 PM)
         // TODO: Get shift timing from employee's shift configuration
-        LocalDateTime punchOut = LocalDateTime.ofInstant(request.getPunchOut(), ZoneId.systemDefault());
+        LocalDateTime punchOut = LocalDateTime.ofInstant(request.getPunchOut(), zoneId);
         LocalTime allowedExit = policy.getOfficeClosed().minusMinutes(policy.getEarlyOutGraceMinutes());
 
         if (punchOut.toLocalTime().isBefore(allowedExit)) {
@@ -176,7 +181,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         summaryRepo.save(summary);
 
-        return mapToResponse(punch, summary);
+        return mapToResponse(punch, summary, zoneId);
     }
 
     @Override
@@ -190,6 +195,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         summaries = filterSummariesByPermission(summaries);
 
+        ZoneId zoneId = summaries.isEmpty()
+                ? ZoneId.systemDefault()
+                : ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
+
         List<PunchRecordResponse> response = summaries.stream()
                 .map(summary -> {
                     PunchRecordResponse r = new PunchRecordResponse();
@@ -199,10 +208,10 @@ public class AttendanceServiceImpl implements AttendanceService {
                     r.setStatus(summary.getStatus().name());
                     r.setWorkHours(summary.getWorkHours());
                     r.setPunchIn(summary.getEffectivePunchIn() != null
-                            ? LocalDateTime.ofInstant(summary.getEffectivePunchIn(), ZoneId.systemDefault())
+                            ? LocalDateTime.ofInstant(summary.getEffectivePunchIn(), zoneId)
                             : null);
                     r.setPunchOut(summary.getEffectivePunchOut() != null
-                            ? LocalDateTime.ofInstant(summary.getEffectivePunchOut(), ZoneId.systemDefault())
+                            ? LocalDateTime.ofInstant(summary.getEffectivePunchOut(), zoneId)
                             : null);
                     if (summary.getPunchRecord() != null) {
                         r.setId(summary.getPunchRecord().getId());
@@ -220,14 +229,18 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public PunchRecordResponse getTodayPunch(Long employeeId) {
-        LocalDate today = LocalDate.now();
+        Employee emp = employeeRepo.findById(employeeId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+
+        ZoneId zoneId = ZoneId.of(emp.getOrganisation().getTimeZone());
+        LocalDate today = LocalDate.now(zoneId);
 
         AttendanceSummary summary = summaryRepo
                 .findByEmployeeIdAndAttendanceDate(employeeId, today)
                 .orElseThrow(() -> new ResourceNotFoundException("AttendanceSummary", "employeeId", employeeId));
 
         if (summary.getPunchRecord() != null) {
-            return mapToResponse(summary.getPunchRecord(), summary);
+            return mapToResponse(summary.getPunchRecord(), summary, zoneId);
         }
 
         // Return empty response if no punch yet
@@ -246,18 +259,22 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<AttendanceSummary> summaries = summaryRepo
                 .findByEmployeeIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(employeeId, startDate, endDate);
 
+        ZoneId zoneId = summaries.isEmpty()
+                ? ZoneId.systemDefault()
+                : ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
+
         return summaries.stream()
                 .map(summary -> {
                     if (summary.getPunchRecord() != null) {
-                        return mapToResponse(summary.getPunchRecord(), summary);
+                        return mapToResponse(summary.getPunchRecord(), summary, zoneId);
                     } else {
                         // For non-punch records (holidays, leaves, absences)
                         PunchRecordResponse response = new PunchRecordResponse();
                         response.setEmployeeId(employeeId);
                         response.setStatus(summary.getStatus().name());
                         response.setWorkHours(summary.getWorkHours());
-                        response.setPunchIn(safeConvert(summary.getEffectivePunchIn()));
-                        response.setPunchOut(safeConvert(summary.getEffectivePunchOut()));
+                        response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
+                        response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
                         response.setIsLate(summary.getIsLate());
                         response.setIsEarlyOut(summary.getIsEarlyOut());
                         response.setRemarks(summary.getRemarks());
@@ -274,6 +291,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         summaries = filterSummariesByPermission(summaries);
 
+        ZoneId zoneId = ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
+
         return summaries.stream()
                 .map(summary -> {
                     PunchRecordResponse response = new PunchRecordResponse();
@@ -287,8 +306,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     }
                     response.setStatus(summary.getStatus() != null ? summary.getStatus().name() : "UNKNOWN");
                     response.setWorkHours(summary.getWorkHours() != null ? summary.getWorkHours() : 0.0);
-                    response.setPunchIn(safeConvert(summary.getEffectivePunchIn()));
-                    response.setPunchOut(safeConvert(summary.getEffectivePunchOut()));
+                    response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
+                    response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
                     response.setIsLate(summary.getIsLate());
                     response.setIsEarlyOut(summary.getIsEarlyOut());
                     response.setRemarks(summary.getRemarks());
@@ -376,7 +395,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     // Helper method to map entity to response
-    private PunchRecordResponse mapToResponse(PunchInOut punch, AttendanceSummary summary) {
+    private PunchRecordResponse mapToResponse(PunchInOut punch, AttendanceSummary summary, ZoneId zoneId) {
         PunchRecordResponse response = new PunchRecordResponse();
         response.setId(punch.getId());
         response.setEmployeeId(punch.getEmployee().getId());
@@ -385,8 +404,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                         punch.getEmployee().getLastName());
         response.setDepartment(punch.getEmployee().getDepartment().getName());
         response.setEmployeeCode(punch.getEmployee().getEmployeeCode());
-        response.setPunchIn(safeConvert(punch.getPunchIn()));
-        response.setPunchOut(safeConvert(punch.getPunchOut()));
+        response.setPunchIn(safeConvert(punch.getPunchIn(), zoneId));
+        response.setPunchOut(safeConvert(punch.getPunchOut(), zoneId));
         response.setPunchSource(punch.getPunchSource().name());
         response.setIsLate(summary.getIsLate());
         response.setIsEarlyOut(summary.getIsEarlyOut());
@@ -429,8 +448,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
     }
 
-    private LocalDateTime safeConvert(Instant instant) {
-        return instant != null ? LocalDateTime.ofInstant(instant, ZoneId.systemDefault()) : null;
+    private LocalDateTime safeConvert(Instant instant, ZoneId zoneId) {
+        return instant != null ? LocalDateTime.ofInstant(instant, zoneId) : null;
 
     }
 
@@ -470,6 +489,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (device.getStatus() != Device.Status.ACTIVE) {
             throw new InvalidOperationException("Device is inactive");
         }
+        ZoneId zoneId = ZoneId.of(device.getOrganisation().getTimeZone());
 
         Employee employee;
 
@@ -506,7 +526,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             return punchIn(punchInRequest);
         } else if ("OUT".equalsIgnoreCase(request.getAction())) {
             // Find the active punch record for today
-            AttendanceSummary summary = summaryRepo.findByEmployeeIdAndAttendanceDate(employee.getId(), LocalDate.now())
+            AttendanceSummary summary = summaryRepo
+                    .findByEmployeeIdAndAttendanceDate(employee.getId(), LocalDate.now(zoneId))
                     .orElseThrow(() -> new ResourceNotFoundException("No attendance record found for today"));
 
             if (summary.getPunchRecord() == null) {

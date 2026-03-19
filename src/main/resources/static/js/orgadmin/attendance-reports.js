@@ -254,7 +254,7 @@ $(document).ready(function () {
   function formatTime(dateTimeStr) {
     if (!dateTimeStr) return "--";
     const date = new Date(dateTimeStr);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,

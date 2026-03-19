@@ -17,6 +17,7 @@ public class OrganisationDetailDTO {
     private Long id;
     private String name;
     private String domain;
+    private String timeZone;
     private String prefix;
     private Boolean isActive;
     private String logoUrl;

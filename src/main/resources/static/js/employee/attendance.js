@@ -41,7 +41,7 @@ $(document).ready(function () {
   // Update clock
   function updateClock() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString("en-US", { hour12: false });
+    const timeStr = now.toLocaleTimeString("en-IN", { hour12: false });
     const dateStr = now.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -298,7 +298,7 @@ $(document).ready(function () {
 
     let html = "";
     data.forEach((record) => {
-      const statusBadge = getStatusBadge(record);
+      const statusBadge = getStatusBadge(record.status);
 
       html += `
                 <tr>
@@ -316,28 +316,18 @@ $(document).ready(function () {
   }
 
 
-  function getStatusBadge(record) {
-    const status = record.status;
-
-    switch (status) {
-      case "PRESENT":
-        return '<span class="badge bg-success">Present</span>';
-
-      case "IN_PROGRESS":
-        return '<span class="badge bg-warning text-dark">In Progress</span>';
-
-      case "COMPLETED":
-        return '<span class="badge bg-primary">Completed</span>';
-
-      case "ABSENT":
-        return '<span class="badge bg-danger">Absent</span>';
-
-      case "HALF_DAY":
-        return '<span class="badge bg-info text-dark">Half Day</span>';
-
-      default:
-        return '<span class="badge bg-secondary">Unknown</span>';
-    }
+  function getStatusBadge(status) {
+    const badges = {
+      'PRESENT': '<span class="badge bg-success">Present</span>',
+      'ABSENT': '<span class="badge bg-danger">Absent</span>',
+      'ON_LEAVE': '<span class="badge bg-warning text-dark">On Leave</span>',
+      'HALF_DAY': '<span class="badge bg-info">Half Day</span>',
+      'SHORT_DAY': '<span class="badge bg-warning">Short Day</span>',
+      'HOLIDAY': '<span class="badge bg-secondary">Holiday</span>',
+      'WEEK_OFF': '<span class="badge bg-secondary">Week Off</span>',
+      'WFH': '<span class="badge bg-primary">WFH</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">' + status + '</span>';
   }
 
   // Update month summary

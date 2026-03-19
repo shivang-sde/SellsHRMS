@@ -49,10 +49,7 @@ public class LocalFileStorageService implements FileStorageService {
         if (!rel.startsWith("/"))
             rel = "/" + rel;
 
-        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .build().toUriString();
-
-        return baseUrl + urlPath + rel + "/" + fileName;
+        return urlPath + rel + "/" + fileName;
     }
 
     @Override

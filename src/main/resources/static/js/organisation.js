@@ -5,8 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (isEditMode) {
     document.querySelector("h3").textContent = "Edit Organisation";
-    document.querySelector("button[type='submit']").textContent =
-      "Save Changes";
+    document.getElementById("createOrgBtn").textContent = "Update Organisation";
     loadOrganisation(orgId);
     disableAdminFields();
   }
@@ -53,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       name: val("orgName"),
       domain: val("orgDomain"),
+      timeZone: val("orgTimeZone"),
       logoUrl: val("logoUrl"),
       prefix: val("prefix"),
       contactEmail: val("orgEmail"),
@@ -131,6 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.getElementById("orgName").value = org.name || "";
       document.getElementById("orgDomain").value = org.domain || "";
+      document.getElementById("orgTimeZone").value = org.timeZone || "";
       document.getElementById("prefix").value = org.prefix || "";
       if (org.logoUrl) {
         const preview = document.getElementById("logoPreview");

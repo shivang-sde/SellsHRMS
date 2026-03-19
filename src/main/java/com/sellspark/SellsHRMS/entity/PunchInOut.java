@@ -1,8 +1,10 @@
 package com.sellspark.SellsHRMS.entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -13,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +23,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_punch_in_out")
+@Table(name = "tbl_punch_in_out", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "employee_id", "attendance_date" })
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -52,6 +57,9 @@ public class PunchInOut {
 
     @Enumerated(EnumType.STRING)
     private Source punchSource;
+
+    @Column(name = "attendance_date", nullable = false)
+    private LocalDate attendanceDate;
 
     @Builder.Default
     private Boolean isAutoPunchGenerated = false;

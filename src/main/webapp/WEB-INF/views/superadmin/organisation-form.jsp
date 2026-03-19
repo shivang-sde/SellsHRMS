@@ -13,7 +13,8 @@
 
         <div class="col-md-6">
             <label for="prefix" class="form-label">Prefix <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" required name="prefix" id="prefix" placeholder="e.g. HRMS, SELLS, SPARK or EMP">
+            <input type="text" class="form-control" required name="prefix" id="prefix"
+                placeholder="e.g. HRMS, SELLS, SPARK or EMP">
         </div>
 
         <div class="col-md-6">
@@ -23,8 +24,22 @@
             <input id="orgDomain" name="domain" class="form-control" placeholder="e.g. yourhrms.com or abc.hrms.com"
                 required>
             <small class="form-text text-muted">
-                Enter your organization&apos;s domain &quot;(without http://&quot; or &quot;www&quot;). Example: <strong>yourhrms.com</strong>
+                Enter your organization&apos;s domain &quot;(without http://&quot; or &quot;www&quot;). Example:
+                <strong>yourhrms.com</strong>
             </small>
+        </div>
+
+        <div class="col-md-6">
+            <label for="orgTimeZone" class="form-label">Time Zone <span class="text-danger">*</span></label>
+            <select id="orgTimeZone" class="form-select" required>
+                <option value="">Select Time Zone</option>
+                <option value="Asia/Kolkata">India Standard Time (IST)</option>
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="Europe/London">Greenwich Mean Time (GMT)</option>
+                <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
+                <option value="Asia/Singapore">Singapore Time (SGT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+            </select>
         </div>
 
 
@@ -67,7 +82,7 @@
 
         <div class="col-md-4">
             <label for="orgTan" class="form-label">TAN</label>
-            <input id="orgTan" class="form-control" >
+            <input id="orgTan" class="form-control">
         </div>
 
         <div class="col-md-4">
@@ -75,12 +90,12 @@
             <input id="maxEmployees" type="number" class="form-control" value="10" required>
         </div>
 
-        <div  class="col-md-4">
+        <div class="col-md-4">
             <label for="validity" class="form-label">Validity <span class="text-danger">*</span></label>
-            <input id="validity" type="date" class="form-control" required >
+            <input id="validity" type="date" class="form-control" required>
         </div>
 
-        <!-- ADMIN SECTION --> 
+        <!-- ADMIN SECTION -->
         <h5 class="mt-4">Admin Details</h5>
 
         <div class="col-md-6">
@@ -99,8 +114,9 @@
         </div>
 
         <div class="col-12 mt-4">
-            <button type="submit" class="btn btn-success">Create Organisation</button>
-            <a class="btn btn-secondary ms-2" href="${pageContext.request.contextPath}/superadmin/organisations">Cancel</a>
+            <button type="submit" id="createOrgBtn" class="btn btn-success">Create Organisation</button>
+            <a class="btn btn-secondary ms-2"
+                href="${pageContext.request.contextPath}/superadmin/organisations">Cancel</a>
         </div>
 
     </form>

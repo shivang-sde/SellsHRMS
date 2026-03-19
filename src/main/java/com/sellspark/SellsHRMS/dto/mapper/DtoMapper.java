@@ -21,6 +21,7 @@ public class DtoMapper {
         Organisation org = new Organisation();
         org.setName(dto.getName());
         org.setDomain(dto.getDomain());
+        org.setTimeZone(dto.getTimeZone());
         org.setLogoUrl(dto.getLogoUrl());
         org.setEmpPrefix(dto.getPrefix());
         org.setContactEmail(dto.getContactEmail());
@@ -42,6 +43,7 @@ public class DtoMapper {
         dto.setId(org.getId());
         dto.setName(org.getName());
         dto.setDomain(org.getDomain());
+        dto.setTimeZone(org.getTimeZone());
         dto.setMaxEmployees(org.getMaxEmployees());
         dto.setIsActive(org.getIsActive());
         dto.setValidity(org.getValidity());
@@ -61,6 +63,7 @@ public class DtoMapper {
         dto.setId(org.getId());
         dto.setName(org.getName());
         dto.setDomain(org.getDomain());
+        dto.setTimeZone(org.getTimeZone());
         dto.setPrefix(org.getEmpPrefix());
         dto.setLogoUrl(org.getLogoUrl());
         dto.setIsActive(org.getIsActive());
