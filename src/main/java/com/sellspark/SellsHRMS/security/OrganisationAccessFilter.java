@@ -47,7 +47,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
     private static final String RESET = "\u001B[0m";
 
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/api/auth",
+            "/api/auth/",
             "/api/superadmin",
             "/superadmin",
             "/login",
@@ -64,7 +64,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/actuator",
             "/actuator/health",
             "/actuator/info",
-            "/api/test/payroll",
+            "/api/test/",
             "/WEB-INF/views",
             "/actuator/metrics/**");
 
@@ -79,6 +79,10 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             // 🔍 Detect API or normal request
             String path = request.getRequestURI();
+            if (path.startsWith("/api/auth/")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             boolean isAjax = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
             boolean isApi = path.startsWith("/api/");
 
@@ -199,7 +203,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
                 YELLOW, RESET, path, isAjax, isApi, code);
 
         if (isAjax || isApi) {
-            // ✅ For API / AJAX calls → return JSON
+            // For API / AJAX calls → return JSON
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write(String.format(
@@ -207,7 +211,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
                     code, message));
             log.error("{}[ORG_ACCESS_DENIED_JSON]{} -> {} : {}", RED, RESET, code, message);
         } else {
-            // ✅ For normal page requests → redirect to error JSP
+            // For normal page requests → redirect to error JSP
             log.error("{}[ORG_ACCESS_DENIED_PAGE]{} Redirecting to /error/license-expired", RED, RESET);
             String redirectUrl = request.getContextPath()
                     + "/error/license-expired?code=" + code

@@ -24,77 +24,83 @@ import com.sellspark.SellsHRMS.security.OrganisationAccessFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OrganisationAccessFilter organisationAccessFilter;
+        private final OrganisationAccessFilter organisationAccessFilter;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public AuthenticationManager authManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authManager(AuthenticationConfiguration config) throws Exception {
+                return config.getAuthenticationManager();
+        }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http
-                .sessionManagement(session -> session
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false))
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(request -> {
-                    var config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:8080")); // or frontend URL
-                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);
-                    return config;
-                }))
+                http
+                                .sessionManagement(session -> session
+                                                .maximumSessions(1)
+                                                .maxSessionsPreventsLogin(false))
+                                .csrf(csrf -> csrf.disable())
+                                .cors(cors -> cors.configurationSource(request -> {
+                                        String origin = request.getHeader("Origin");
 
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
+                                        CorsConfiguration config = new CorsConfiguration();
+                                        config.setAllowedOrigins(origin != null ? List.of(origin) : List.of("*"));
+                                        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                                        config.setAllowedHeaders(List.of("*"));
+                                        config.setAllowCredentials(true);
+                                        return config;
+                                }))
 
-                        .requestMatchers("/api/test/payroll/**").permitAll() // <<< add this line
+                                .authorizeHttpRequests(auth -> auth
+                                                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE)
+                                                .permitAll()
 
-                        // 🔓 Public endpoints
-                        .requestMatchers("/", "/login", "/new-login", "/register",
-                                "/error/**", "/error", "/favicon.ico",
-                                "/api/auth/login", "/api/auth/logout", "/api/auth/register-superadmin",
-                                "/actuator/health", "/actuator/info")
-                        .permitAll()
+                                                .requestMatchers("/api/test/payroll/**").permitAll() // <<< add this
+                                                                                                     // line
 
-                        // 🔓 Static resources
-                        .requestMatchers("/css/**", "/js/**", "/images/**",
-                                "/bundles/**", "/plugins/**", "/fonts/**",
-                                "/audio/**", "/ajax.cloudflare.com/**")
-                        .permitAll()
+                                                // 🔓 Public endpoints
+                                                .requestMatchers("/", "/login", "/new-login", "/register",
+                                                                "/error/**", "/error", "/favicon.ico",
+                                                                "/api/auth/login", "/api/auth/logout",
+                                                                "/api/auth/register-superadmin",
+                                                                "/actuator/health", "/actuator/info")
+                                                .permitAll()
 
-                        // 🔓 JSPs
-                        .requestMatchers("/WEB-INF/**").permitAll()
+                                                // 🔓 Static resources
+                                                .requestMatchers("/css/**", "/js/**", "/images/**",
+                                                                "/bundles/**", "/plugins/**", "/fonts/**",
+                                                                "/audio/**", "/ajax.cloudflare.com/**")
+                                                .permitAll()
 
-                        // 🧠 Specific role-based routes (order matters!)
-                        .requestMatchers("/api/superadmin/**", "/superadmin/**").hasAuthority("SUPER_ADMIN")
-                        .requestMatchers("/api/org-admin/**", "/orgadmin/**")
-                        .hasAnyAuthority("ORG_ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/employee/**", "/employee/**")
-                        .hasAnyAuthority("EMPLOYEE", "ORG_ADMIN", "SUPER_ADMIN")
+                                                // 🔓 JSPs
+                                                .requestMatchers("/WEB-INF/**").permitAll()
 
-                        // 🧱 Default catch-all for authenticated users
-                        .requestMatchers("/api/**").authenticated()
+                                                // 🧠 Specific role-based routes (order matters!)
+                                                .requestMatchers("/api/superadmin/**", "/superadmin/**")
+                                                .hasAuthority("SUPER_ADMIN")
+                                                .requestMatchers("/api/org-admin/**", "/orgadmin/**")
+                                                .hasAnyAuthority("ORG_ADMIN", "SUPER_ADMIN")
+                                                .requestMatchers("/api/employee/**", "/employee/**")
+                                                .hasAnyAuthority("EMPLOYEE", "ORG_ADMIN", "SUPER_ADMIN")
 
-                        // Everything else must be authenticated
-                        .anyRequest().authenticated())
+                                                // 🧱 Default catch-all for authenticated users
+                                                .requestMatchers("/api/**").authenticated()
 
-                // 🔐 Add org access filter
-                .addFilterBefore(organisationAccessFilter, UsernamePasswordAuthenticationFilter.class)
+                                                // Everything else must be authenticated
+                                                .anyRequest().authenticated())
 
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .permitAll())
-                .httpBasic(httpBasic -> httpBasic.disable());
+                                // 🔐 Add org access filter
+                                .addFilterBefore(organisationAccessFilter, UsernamePasswordAuthenticationFilter.class)
 
-        return http.build();
-    }
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .permitAll())
+                                .httpBasic(httpBasic -> httpBasic.disable());
+
+                return http.build();
+        }
 }

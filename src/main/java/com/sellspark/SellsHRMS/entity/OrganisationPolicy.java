@@ -45,10 +45,6 @@ public class OrganisationPolicy {
     private List<DayOfWeek> weekOffDays = new java.util.ArrayList<>(
             List.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
 
-    private Integer salaryCycleStartDay; // e.g. 1
-    private Integer cycleDuration; // e.g. 30
-    private Integer payslipGenerationOffsetDays; // e.g. 5 days after cycle end
-
     // Attendance & work-hour settings
 
     @Builder.Default
@@ -82,6 +78,10 @@ public class OrganisationPolicy {
     private Double minMonthlyHours = 160.0;
     @Builder.Default
     private Boolean flexibleHourModelEnabled = false;
+
+    private Integer salaryCycleStartDay; // e.g. 1
+    private Integer cycleDuration; // e.g. 30
+    private Integer payslipGenerationOffsetDays; // e.g. 5 days after cycle end
 
     // Leave policies
     @Builder.Default
