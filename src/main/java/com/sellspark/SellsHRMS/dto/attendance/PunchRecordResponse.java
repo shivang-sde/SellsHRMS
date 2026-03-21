@@ -6,7 +6,8 @@ import lombok.Data;
 
 @Data
 public class PunchRecordResponse {
-    private Long id;
+    private Long punchId;
+    private Long summaryId;
     private Long employeeId;
     private String employeeName;
     private String department;
@@ -15,6 +16,7 @@ public class PunchRecordResponse {
     private LocalDateTime punchOut;
     private Double workHours;
     private String punchSource;
+    private String punchedFrom;
     private String status; // IN_PROGRESS, COMPLETED
     private Boolean isLate;
     private Boolean isEarlyOut;

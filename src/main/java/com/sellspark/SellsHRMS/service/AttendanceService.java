@@ -11,6 +11,8 @@ public interface AttendanceService {
 
     PunchRecordResponse punchOut(PunchOutRequest request);
 
+    PunchRecordResponse updateAttendance(PunchRecordResponse request);
+
     PunchRecordResponse processDevicePunch(String apiKey, DevicePunchRequest request);
 
     PunchRecordResponse getTodayPunch(Long employeeId);

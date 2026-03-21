@@ -12,9 +12,9 @@
                             <c:otherwise>Create New Employee</c:otherwise>
                         </c:choose>
                     </h2>
-                    <a href="/org/employees" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Back to List
-                    </a>
+                    <a href="#" onclick="history.back();" class="btn btn-outline-secondary"><i
+                            class="fas fa-arrow-left me-2"></i>Back</a>
+
                 </div>
             </div>
         </div>

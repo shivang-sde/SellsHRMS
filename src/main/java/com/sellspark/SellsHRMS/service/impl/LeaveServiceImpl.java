@@ -14,6 +14,7 @@ import com.sellspark.SellsHRMS.exception.leave.OverlappingLeaveException;
 import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.LeaveService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -219,6 +220,16 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public LeaveResponseDTO approveLeave(Long leaveId, Long approverId, String remarks, Long orgId) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
+                    .getPrincipal();
+            if ("ORG_ADMIN".equals(principal.getSystemRole()) || "SUPER_ADMIN".equals(principal.getSystemRole())) {
+                throw new InvalidOperationException(
+                        "ORG_ADMIN cannot approve or reject leaves. It requires an employee account.");
+            }
+        }
         log.info("Approving leave for leaveId: {}, approverId: {}, remarks: {}, orgId: {}", leaveId, approverId,
                 remarks, orgId);
         Leave leave = leaveRepository.findById(leaveId)
@@ -250,6 +261,16 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public LeaveRequestDTO rejectLeave(Long leaveId, Long approverId, String remarks, Long orgId) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
+                    .getPrincipal();
+            if ("ORG_ADMIN".equals(principal.getSystemRole()) || "SUPER_ADMIN".equals(principal.getSystemRole())) {
+                throw new InvalidOperationException(
+                        "ORG_ADMIN cannot approve or reject leaves. It requires an employee account.");
+            }
+        }
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
         if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
@@ -292,8 +313,31 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public List<LeaveResponseDTO> getAllLeaves(Long orgId) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return java.util.Collections.emptyList();
+        }
+        com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
+                .getPrincipal();
+        boolean isOrgAdmin = "ORG_ADMIN".equals(principal.getSystemRole())
+                || "SUPER_ADMIN".equals(principal.getSystemRole());
         List<Leave> leaves = leaveRepository.findByOrganisationId(orgId);
-        return leaves.stream().map(this::toResponseDTO).toList();
+
+        if (isOrgAdmin || principal.hasAnyPermission("EMPLOYEE_VIEW_ALL")) {
+            return leaves.stream().map(this::toResponseDTO).toList();
+        } else if (principal.hasAnyPermission("EMPLOYEE_VIEW_TEAM")) {
+            Long empId = principal.getEmployeeId();
+            if (empId == null)
+                return java.util.Collections.emptyList();
+            java.util.Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
+            subordinateIds.remove(empId);
+            return leaves.stream()
+                    .filter(l -> l.getEmployee() != null && subordinateIds.contains(l.getEmployee().getId()))
+                    .map(this::toResponseDTO)
+                    .toList();
+        }
+        return java.util.Collections.emptyList();
     }
 
     @Override
@@ -706,7 +750,6 @@ public class LeaveServiceImpl implements LeaveService {
 
     private LeaveResponseDTO toResponseDTO(Leave leave) {
 
-        log.info("leaves dto response approved by {},  by approved on{}", leave.getApprovedBy(), leave.getApprovedOn());
         return LeaveResponseDTO.builder()
                 .id(leave.getId())
                 .employeeId(leave.getEmployee().getId())

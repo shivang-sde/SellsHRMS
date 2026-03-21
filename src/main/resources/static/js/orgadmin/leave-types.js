@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
   let leaveTypes = [];
   const orgId = window.APP.ORG_ID;
 
@@ -22,66 +22,66 @@ $(document).ready(function() {
     $('#editLeaveTypeForm').on('submit', handleEditLeaveType);
 
     // For create form
-$('#createLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(false));
-$('#createLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(false));
+    $('#createLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(false));
+    $('#createLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(false));
 
-// For edit form
-$('#editLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(true));
-$('#editLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(true));
+    // For edit form
+    $('#editLeaveTypeForm [name="accrualMethod"]').on('change', () => updateFormState(true));
+    $('#editLeaveTypeForm [name="carryForwardAllowed"]').on('change', () => updateFormState(true));
 
   }
 
 
-function updateFormState(isEdit = false) {
-  const prefix = isEdit ? '#edit' : '';
-  const method = $(`${prefix}AccrualMethod`).val();
-  const accrualRate = $(`${prefix}AccrualRate`);
-  const annualLimit = $(`${prefix}AnnualLimit`);
-  const cfAllowed = $(`${prefix}CarryForwardAllowed`);
-  const cfLimit = $(`${prefix}CarryForwardLimit`);
-  const validityDays = $(`${prefix}ValidityDays`);
+  function updateFormState(isEdit = false) {
+    const prefix = isEdit ? '#edit' : '';
+    const method = $(`${prefix}AccrualMethod`).val();
+    const accrualRate = $(`${prefix}AccrualRate`);
+    const annualLimit = $(`${prefix}AnnualLimit`);
+    const cfAllowed = $(`${prefix}CarryForwardAllowed`);
+    const cfLimit = $(`${prefix}CarryForwardLimit`);
+    const validityDays = $(`${prefix}ValidityDays`);
 
-  // ---- Reset validation hints ----
-  cfLimit.removeClass('is-invalid');
-  annualLimit.removeClass('is-invalid');
+    // ---- Reset validation hints ----
+    cfLimit.removeClass('is-invalid');
+    annualLimit.removeClass('is-invalid');
 
-  // ---- Accrual Rate ----
-  accrualRate.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
-  if (method === 'NONE' || method === 'PRO_RATA') accrualRate.val('');
+    // ---- Accrual Rate ----
+    accrualRate.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
+    if (method === 'NONE' || method === 'PRO_RATA') accrualRate.val('');
 
-  // ---- Annual Limit ----
-  const annualRequired = (method === 'ANNUAL');
-  annualLimit.prop('required', annualRequired);
-  annualLimit.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
-  if (!annualRequired && !annualLimit.val()) annualLimit.val('');
+    // ---- Annual Limit ----
+    const annualRequired = (method === 'ANNUAL');
+    annualLimit.prop('required', annualRequired);
+    annualLimit.prop('disabled', method === 'NONE' || method === 'PRO_RATA');
+    if (!annualRequired && !annualLimit.val()) annualLimit.val('');
 
-  // ---- Carry Forward ----
-  const cfEnabled = (method === 'MONTHLY');
-  cfAllowed.prop('disabled', !cfEnabled);
-  if (!cfEnabled) {
-    cfAllowed.prop('checked', false);
-    cfLimit.prop('disabled', true).val('');
-  } else {
-    cfLimit.prop('disabled', !cfAllowed.is(':checked'));
+    // ---- Carry Forward ----
+    const cfEnabled = (method === 'MONTHLY');
+    cfAllowed.prop('disabled', !cfEnabled);
+    if (!cfEnabled) {
+      cfAllowed.prop('checked', false);
+      cfLimit.prop('disabled', true).val('');
+    } else {
+      cfLimit.prop('disabled', !cfAllowed.is(':checked'));
+    }
+
+    // ---- Validity Days ----
+    const validEnabled = (method === 'NONE');
+    validityDays.prop('disabled', !validEnabled);
+    if (!validEnabled) validityDays.val('');
+
+    // ---- Inline logical warnings ----
+    const accrualVal = parseFloat(accrualRate.val() || 0);
+    const cfVal = parseFloat(cfLimit.val() || 0);
+    if (cfAllowed.is(':checked') && cfVal > accrualVal && cfEnabled) {
+      cfLimit.addClass('is-invalid');
+      showToast('warning', 'Carry forward limit cannot exceed monthly accrual rate.');
+    }
+
+    if (annualRequired && (!annualLimit.val() || annualLimit.val() <= 0)) {
+      annualLimit.addClass('is-invalid');
+    }
   }
-
-  // ---- Validity Days ----
-  const validEnabled = (method === 'NONE');
-  validityDays.prop('disabled', !validEnabled);
-  if (!validEnabled) validityDays.val('');
-
-  // ---- Inline logical warnings ----
-  const accrualVal = parseFloat(accrualRate.val() || 0);
-  const cfVal = parseFloat(cfLimit.val() || 0);
-  if (cfAllowed.is(':checked') && cfVal > accrualVal && cfEnabled) {
-    cfLimit.addClass('is-invalid');
-    showToast('warning', 'Carry forward limit cannot exceed monthly accrual rate.');
-  }
-
-  if (annualRequired && (!annualLimit.val() || annualLimit.val() <= 0)) {
-    annualLimit.addClass('is-invalid');
-  }
-}
 
 
   // Load all leave types
@@ -89,11 +89,11 @@ function updateFormState(isEdit = false) {
     $.ajax({
       url: `/api/leave-type/org/${orgId}`,
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         leaveTypes = response;
         displayLeaveTypes(leaveTypes);
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#leaveTypesGrid').html(`
           <div class="col-12">
             <div class="alert alert-danger">
@@ -135,7 +135,7 @@ function updateFormState(isEdit = false) {
 
   function createLeaveTypeCard(type) {
     const features = [];
-    
+
     console.log("type ", type);
     if (type.isPaid) features.push('<span class="feature-badge">Paid</span>');
     if (type.carryForwardAllowed) features.push('<span class="feature-badge">Carry Forward</span>');
@@ -143,10 +143,35 @@ function updateFormState(isEdit = false) {
     if (type.allowHalfDay) features.push('<span class="feature-badge">Half Day</span>');
     if (type.requiresApproval) features.push('<span class="feature-badge">Requires Approval</span>');
 
-    if(type.isActive === false) {
+    if (type.isActive === false) {
       features.push('<span class="feature-badge text-lg bg-secondary">Inactive</span>');
     }
-    
+
+
+    const isOrgAdmin = window.APP.ROLE === 'ORG_ADMIN'
+    const canEdit = isOrgAdmin || (window.APP.hasAnyPermission && window.APP.hasAnyPermission('LEAVE_EDIT'));
+    const canDelete = isOrgAdmin;
+
+    let actionButtons = '';
+    if (canEdit || canDelete) {
+      actionButtons = '<div class="d-flex gap-2">';
+      if (canEdit) {
+        actionButtons += `
+          <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editLeaveType(${type.id})">
+            <i class="fa fa-edit me-1"></i>Edit
+          </button>
+        `;
+      }
+      if (canDelete) {
+        const safeName = type.name ? type.name.replace(/'/g, "\\'") : '';
+        actionButtons += `
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteLeaveType(${type.id}, '${safeName}')">
+            <i class="fa fa-trash"></i>
+          </button>
+        `;
+      }
+      actionButtons += '</div>';
+    }
 
     return `
       <div class="col-md-4 mb-4">
@@ -195,14 +220,7 @@ function updateFormState(isEdit = false) {
               </div>
             </div>
 
-            <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editLeaveType(${type.id})">
-                <i class="fa fa-edit me-1"></i>Edit
-              </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteLeaveType(${type.id}, '${type.name}')">
-                <i class="fa fa-trash"></i>
-              </button>
-            </div>
+            ${actionButtons}
           </div>
         </div>
       </div>
@@ -214,7 +232,7 @@ function updateFormState(isEdit = false) {
     e.preventDefault();
 
     if (!validateLeaveTypeForm('#createLeaveTypeForm')) return;
-    
+
     const formData = getFormData('#createLeaveTypeForm');
     formData.orgId = parseInt(orgId);
 
@@ -223,13 +241,13 @@ function updateFormState(isEdit = false) {
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         showToast('success', 'Leave type created successfully');
         $('#createLeaveTypeModal').modal('hide');
         $('#createLeaveTypeForm')[0].reset();
         loadLeaveTypes();
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to create leave type';
         showToast('error', error);
       }
@@ -237,7 +255,7 @@ function updateFormState(isEdit = false) {
   }
 
   // Edit leave type
-  window.editLeaveType = function(leaveTypeId) {
+  window.editLeaveType = function (leaveTypeId) {
     const type = leaveTypes.find(t => t.id === leaveTypeId);
     if (!type) return;
 
@@ -263,7 +281,7 @@ function updateFormState(isEdit = false) {
     $('#editVisibleToEmployees').prop('checked', type.visibleToEmployees);
 
     $('#editLeaveTypeModal').modal('show');
-     setTimeout(() => updateFormState(true), 200);
+    setTimeout(() => updateFormState(true), 200);
   };
 
   function handleEditLeaveType(e) {
@@ -271,7 +289,7 @@ function updateFormState(isEdit = false) {
 
     if (!validateLeaveTypeForm('#editLeaveTypeForm')) return;
 
-    
+
     const leaveTypeId = $('#editLeaveTypeId').val();
     const formData = getFormData('#editLeaveTypeForm');
     formData.orgId = parseInt(orgId);
@@ -281,12 +299,12 @@ function updateFormState(isEdit = false) {
       method: 'PATCH',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         showToast('success', 'Leave type updated successfully');
         $('#editLeaveTypeModal').modal('hide');
         loadLeaveTypes();
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to update leave type';
         showToast('error', error);
       }
@@ -294,7 +312,7 @@ function updateFormState(isEdit = false) {
   }
 
   // Delete leave type
-  window.deleteLeaveType = function(leaveTypeId, name) {
+  window.deleteLeaveType = function (leaveTypeId, name) {
     if (!confirm(`Are you sure you want to delete "${name}"? This action may deactivate the leave type if it's in use.`)) {
       return;
     }
@@ -302,11 +320,11 @@ function updateFormState(isEdit = false) {
     $.ajax({
       url: `/api/leave-type/${leaveTypeId}/delete`,
       method: 'DELETE',
-      success: function() {
+      success: function () {
         showToast('success', 'Leave type deleted successfully');
         loadLeaveTypes();
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to delete leave type';
         showToast('error', error);
       }
@@ -319,10 +337,10 @@ function updateFormState(isEdit = false) {
     const data = {};
 
     // Text inputs and selects
-    form.find('input[type="text"], input[type="number"], textarea, select').each(function() {
+    form.find('input[type="text"], input[type="number"], textarea, select').each(function () {
       const name = $(this).attr('name');
       const value = $(this).val();
-      
+
       if (name && value !== '') {
         if ($(this).attr('type') === 'number') {
           data[name] = value ? parseFloat(value) : null;
@@ -333,7 +351,7 @@ function updateFormState(isEdit = false) {
     });
 
     // Checkboxes
-    form.find('input[type="checkbox"]').each(function() {
+    form.find('input[type="checkbox"]').each(function () {
       const name = $(this).attr('name');
       if (name) {
         data[name] = $(this).is(':checked');
@@ -364,9 +382,9 @@ function validateLeaveTypeForm(formSelector) {
     return false;
   }
   if (annualLimit && maxConsecutive && maxConsecutive > annualLimit) {
-  showToast('error', 'Max consecutive days cannot exceed annual limit.');
-  return false;
-}
+    showToast('error', 'Max consecutive days cannot exceed annual limit.');
+    return false;
+  }
   if (carryForwardAllowed && carryForwardLimit > accrualRate) {
     showToast('error', 'Carry forward limit cannot exceed monthly accrual rate.');
     return false;

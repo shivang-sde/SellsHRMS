@@ -28,7 +28,7 @@ spring:
     # JPA / Hibernate settings
     jpa:
         hibernate:
-            ddl-auto: update # CRITICAL: validate, NOT update!
+            ddl-auto: validate # CRITICAL: validate, NOT update!
         show-sql: false
         properties:
             hibernate:

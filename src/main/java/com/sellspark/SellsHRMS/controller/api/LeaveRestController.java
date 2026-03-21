@@ -133,7 +133,7 @@ public class LeaveRestController {
                                 "data", leaves));
         }
 
-        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_VIEW_ALL')")
+        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')")
         @GetMapping("/all")
         public ResponseEntity<?> getAllLeaves(HttpSession session) {
                 Long orgId = (Long) session.getAttribute("ORG_ID");
@@ -150,6 +150,7 @@ public class LeaveRestController {
                 return ResponseEntity.ok(Map.of("success", true, "data", balances));
         }
 
+        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT')")
         @PostMapping("/{id}/approve")
         public ResponseEntity<?> approveLeave(
                         @PathVariable Long id,
@@ -171,6 +172,7 @@ public class LeaveRestController {
                                 "data", response));
         }
 
+        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT')")
         @PostMapping("/{id}/reject")
         public ResponseEntity<?> rejectLeave(
                         @PathVariable Long id,

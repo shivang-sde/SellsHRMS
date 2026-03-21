@@ -52,7 +52,7 @@ $(document).ready(function () {
           container.append(`
             <div class="col-md-4 col-sm-6">
               <div class="form-check">
-                <input class="form-check-input permission-checkbox" type="checkbox" id="perm_${p.id}" value="${p.id}">
+                <input class="form-check-input permission-checkbox" type="checkbox" id="perm_${p.id}" value="${p.id}" data-code="${p.code}">
                 <label class="form-check-label" for="perm_${p.id}">${p.action} (${p.code})</label>
               </div>
             </div>
@@ -72,9 +72,31 @@ $(document).ready(function () {
         data.permissions.forEach(p => {
           $(`#perm_${p.id}`).prop('checked', true);
         });
+        $('.permission-checkbox').trigger('change');
       }
     });
   }
+
+  $('#permissionsList').on('change', '.permission-checkbox', function() {
+    const code = $(this).data('code');
+    const checked = $(this).prop('checked');
+    
+    if (code === 'EMPLOYEE_VIEW_ALL') {
+      const $team = $('.permission-checkbox[data-code="EMPLOYEE_VIEW_TEAM"]');
+      if (checked) {
+        $team.prop('checked', false).prop('disabled', true);
+      } else {
+        $team.prop('disabled', false);
+      }
+    } else if (code === 'EMPLOYEE_VIEW_TEAM') {
+      const $all = $('.permission-checkbox[data-code="EMPLOYEE_VIEW_ALL"]');
+      if (checked) {
+        $all.prop('checked', false).prop('disabled', true);
+      } else {
+        $all.prop('disabled', false);
+      }
+    }
+  });
 
   function collectFormData() {
     const selectedPermissions = [];

@@ -23,13 +23,13 @@ public class EmployeeRestController {
 
     private final EmployeeService service;
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
+    @PreAuthorize("hasAnyAuthority('EMPLOYEE_CREATE', 'ORG_ADMIN')")
     @PostMapping
     public EmployeeResponse create(@RequestBody EmployeeCreateRequest request) {
         return service.create(request);
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_EDIT')")
+    @PreAuthorize("hasAnyAuthority('EMPLOYEE_EDIT', 'ORG_ADMIN')")
     @PutMapping("/{id}")
     public EmployeeResponse update(@PathVariable Long id, @RequestBody EmployeeCreateRequest request) {
         return service.update(id, request);
@@ -103,7 +103,8 @@ public class EmployeeRestController {
         boolean canViewTeam = hasAuthority(authentication, "EMPLOYEE_VIEW_TEAM");
         boolean canViewSelf = hasAuthority(authentication, "EMPLOYEE_VIEW_SELF");
 
-        // 1. ORG_ADMIN or EMPLOYEE_VIEW_ALL can view any employee in the same organisation
+        // 1. ORG_ADMIN or EMPLOYEE_VIEW_ALL can view any employee in the same
+        // organisation
         if (isOrgAdmin || canViewAll) {
             EmployeeDetailResponse emp = service.getByIdAndOrg(id, orgId);
             if (emp == null) {

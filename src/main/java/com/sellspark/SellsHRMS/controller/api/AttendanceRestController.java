@@ -7,7 +7,6 @@ import com.sellspark.SellsHRMS.dto.attendance.AttendanceSummaryResponse;
 import com.sellspark.SellsHRMS.dto.attendance.PunchInRequest;
 import com.sellspark.SellsHRMS.dto.attendance.PunchOutRequest;
 import com.sellspark.SellsHRMS.dto.attendance.PunchRecordResponse;
-import com.sellspark.SellsHRMS.entity.AttendanceSummary;
 import com.sellspark.SellsHRMS.service.AttendanceService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,20 +17,18 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
-
 @RestController
 @RequestMapping("api/attendance")
 @RequiredArgsConstructor
 public class AttendanceRestController {
-    
-    private final AttendanceService attendanceService;
 
+    private final AttendanceService attendanceService;
 
     // Employee punches in
     @PostMapping("/punch-in")
@@ -39,7 +36,7 @@ public class AttendanceRestController {
         return ResponseEntity.ok(attendanceService.punchIn(request));
     }
 
-     // Employee punches out
+    // Employee punches out
     @PostMapping("/punch-out")
     public ResponseEntity<PunchRecordResponse> punchOut(@RequestBody PunchOutRequest request) {
         return ResponseEntity.ok(attendanceService.punchOut(request));
@@ -50,39 +47,42 @@ public class AttendanceRestController {
     public ResponseEntity<PunchRecordResponse> getTodayPunch(@PathVariable Long employeeId) {
         return ResponseEntity.ok(attendanceService.getTodayPunch(employeeId));
     }
-    
-   // Get punch records by employee and date range
+
+    // Get punch records by employee and date range
     @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<List<PunchRecordResponse>> getEmployeeAttendance(@PathVariable Long employeeId, 
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate ) {
-    return ResponseEntity.ok(attendanceService.getEmployeeAttendance(employeeId, startDate, endDate));
-    
+    public ResponseEntity<List<PunchRecordResponse>> getEmployeeAttendance(@PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(attendanceService.getEmployeeAttendance(employeeId, startDate, endDate));
+
     }
 
     // Get attendance summary for an employee
     @GetMapping("/summary/{employeeId}")
-    public ResponseEntity<AttendanceSummaryResponse> getAttedanceSummary(@PathVariable Long employeeId, 
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate ) {
+    public ResponseEntity<AttendanceSummaryResponse> getAttedanceSummary(@PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         return ResponseEntity.ok(attendanceService.getAttendanceSummary(employeeId, startDate, endDate));
     }
 
-
-     // Admin: Get all attendance for today
-     @GetMapping("/today/org/{orgId}")
-     public ResponseEntity<List<PunchRecordResponse>> getTodayOrgAttendance(@PathVariable Long orgId) {
+    // Admin: Get all attendance for today
+    @GetMapping("/today/org/{orgId}")
+    public ResponseEntity<List<PunchRecordResponse>> getTodayOrgAttendance(@PathVariable Long orgId) {
         return ResponseEntity.ok(attendanceService.getTodayOrgAttendance(orgId));
     }
 
     @GetMapping("/org/{orgId}")
-    public ResponseEntity<List<PunchRecordResponse>> getOrgAttendanceByDate(    @PathVariable Long orgId, 
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate ) {
-        
+    public ResponseEntity<List<PunchRecordResponse>> getOrgAttendanceByDate(@PathVariable Long orgId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
         return ResponseEntity.ok(attendanceService.getOrgAttendanceByRange(orgId, startDate, endDate));
     }
 
+    @PutMapping("/update")
+    public ResponseEntity<PunchRecordResponse> updateAttendance(@RequestBody PunchRecordResponse request) {
+        return ResponseEntity.ok(attendanceService.updateAttendance(request));
+    }
 
 }

@@ -174,6 +174,20 @@ $(document).ready(function () {
         lateEarly.push('<span class="badge bg-info" title="Early Out">Early</span>');
       const lateEarlyStr = lateEarly.length > 0 ? lateEarly.join(" ") : "--";
 
+      const currentEmpId = parseInt(window.APP.EMPLOYEE_ID) || 0;
+      const isOrgAdmin = window.APP.ROLE === "ORG_ADMIN" || window.APP.ROLE === "SUPER_ADMIN";
+
+      let actionBtn = "";
+      if (record.employeeId == currentEmpId && !isOrgAdmin) {
+        actionBtn = `<button class="btn btn-sm btn-outline-secondary" disabled title="Cannot edit own record"><i class="fas fa-edit"></i></button>`;
+      } else {
+        actionBtn = `
+            <button class="btn btn-sm btn-outline-primary edit-attendance" onclick="editAttendance('${record.summaryId || record.id}')">
+                <i class="fas fa-edit"></i>
+            </button>
+        `;
+      }
+
       html += `
                 <tr>
                     <td>${date}</td>
@@ -185,12 +199,107 @@ $(document).ready(function () {
                     <td>${getStatusBadge(record.status)}</td>
                     <td>${lateEarlyStr}</td>
                     <td>${record.remarks ? `<span class="badge bg-secondary">${record.remarks}</span>` : "--"}</td>
+                    <td>${actionBtn}</td>
                 </tr>
             `;
     });
 
     $("#reportTableBody").html(html);
   }
+
+
+
+  window.editAttendance = function (attendanceId) {
+    const record = reportData.find(r => r.summaryId == attendanceId);
+
+    if (!record) {
+      showToast("error", "Attendance record not found");
+      return;
+    }
+
+    $('#editAttendanceId').val(record.summaryId);
+    $('#editEmployeeName').val(record.employeeName || '');
+
+    const dateStr = record.punchIn
+      ? record.punchIn.split('T')[0]
+      : new Date().toISOString().split('T')[0];
+    $('#editAttendanceDate').val(dateStr);
+
+    function formatTimeForInput(dateTimeStr) {
+      if (!dateTimeStr) return "";
+      const date = new Date(dateTimeStr);
+      const hr = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      return `${hr}:${min}`;
+    }
+
+    $('#editPunchIn').val(record.punchIn ? formatTimeForInput(record.punchIn) : '');
+    $('#editPunchOut').val(record.punchOut ? formatTimeForInput(record.punchOut) : '');
+    $('#editStatus').val(record.status || '');
+    $('#editRemarks').val(record.remarks || '');
+
+    const lateEarly = [];
+    if (record.isLate) lateEarly.push("Late");
+    if (record.isEarlyOut) lateEarly.push("Early");
+    $('#editLateEarly').val(lateEarly.join(", ") || 'No');
+
+    $('#editAttendanceModal').modal('show');
+  };
+
+  $('#btnSaveAttendance').on('click', function (e) {
+    e.preventDefault();
+    updateAttendance();
+  });
+
+  function updateAttendance() {
+    const attendanceId = $('#editAttendanceId').val();
+    const punchInTime = $('#editPunchIn').val(); // HH:mm
+    const punchOutTime = $('#editPunchOut').val(); // HH:mm
+
+    const status = $('#editStatus').val();
+    const remarks = $('#editRemarks').val();
+
+    const oldRecord = reportData.find(r => r.summaryId == attendanceId);
+    if (!oldRecord) return;
+
+    let newPunchIn = null;
+    let newPunchOut = null;
+    const baseDateStr = $('#editAttendanceDate').val();
+
+    if (punchInTime) {
+      newPunchIn = `${baseDateStr}T${punchInTime}:00`;
+    }
+
+    if (punchOutTime) {
+      newPunchOut = `${baseDateStr}T${punchOutTime}:00`;
+    }
+
+    const payload = { ...oldRecord };
+    payload.punchIn = newPunchIn;
+    payload.punchOut = newPunchOut;
+    payload.status = status;
+    payload.remarks = remarks;
+
+    $.ajax({
+      url: `/api/attendance/update`,
+      method: "PUT",
+      data: JSON.stringify(payload),
+      contentType: "application/json",
+      success: function (data) {
+        showToast("success", "Attendance updated successfully");
+        $('#editAttendanceModal').modal('hide');
+        generateReport();
+      },
+      error: function (xhr) {
+        const msg = xhr.responseJSON?.message || "Failed to update attendance";
+        showToast("error", msg);
+      }
+    });
+  }
+
+
+
+
 
   function exportReport() {
     if (!reportData || reportData.length === 0) {

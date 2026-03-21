@@ -250,7 +250,7 @@
                       class="fa fa-clock"></i>Employee Attendance</a>
                 </sec:authorize>
 
-                <sec:authorize access="hasAuthority('LEAVE_VIEW_ALL')">
+                <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
                   <a class="nav-link" href="${pageContext.request.contextPath}/employee/leaves">
                     <i class="fa fa-calendar-check"></i> Leave Requests
                   </a>

@@ -5,8 +5,8 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <h2 class="mb-0">Attendance Reports</h2>
-                    <a href="/org/attendance" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Today's Attendance
+                    <a href="#" onclick="history.back();" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back
                     </a>
                 </div>
             </div>
@@ -101,6 +101,7 @@
                                 <th>Status</th>
                                 <th>Late/Early</th>
                                 <th>Remarks</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
@@ -118,5 +119,78 @@
                 <h5>Select Date Range to Generate Report</h5>
                 <p class="text-muted">Choose the date range and optionally select an employee to view detailed
                     attendance reports.</p>
+            </div>
+        </div>
+
+
+        <!-- Edit Attendance Modal -->
+        <div class="modal fade" id="editAttendanceModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Edit Attendance Record</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editAttendanceForm">
+                            <input type="hidden" id="editAttendanceId">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Employee</label>
+                                    <input type="text" id="editEmployeeName" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" id="editAttendanceDate" class="form-control" readonly>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Punch In</label>
+                                    <input type="time" id="editPunchIn" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Punch Out</label>
+                                    <input type="time" id="editPunchOut" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Status</label>
+                                    <select id="editStatus" class="form-select">
+                                        <option value="PRESENT">Present</option>
+                                        <option value="ABSENT">Absent</option>
+                                        <option value="LEAVE">Leave</option>
+                                        <option value="WEEKEND">Weekend</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Late/Early</label>
+                                    <input type="text" id="editLateEarly" class="form-control" readonly>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Remarks</label>
+                                <textarea id="editRemarks" class="form-control" rows="3"></textarea>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <strong>Note:</strong> Changes will be saved immediately and will reflect in
+                                reports.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="btnSaveAttendance">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>

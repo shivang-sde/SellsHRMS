@@ -185,6 +185,109 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    public PunchRecordResponse updateAttendance(PunchRecordResponse request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
+        Long currentEmployeeId = principal.getEmployeeId();
+        String role = principal.getSystemRole();
+        boolean isOrgAdmin = "ORG_ADMIN".equals(role) || "SUPER_ADMIN".equals(role);
+
+        AttendanceSummary summary = summaryRepo.findById(request.getSummaryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance summary not found"));
+
+        if (summary.getEmployee() == null) {
+            throw new InvalidOperationException("Attendance summary has no associated employee");
+        }
+
+        Long targetEmployeeId = summary.getEmployee().getId();
+
+        if (!isOrgAdmin) {
+            if (targetEmployeeId.equals(currentEmployeeId)) {
+                throw new InvalidOperationException("You cannot edit your own attendance record");
+            }
+
+            Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(currentEmployeeId);
+            if (!subordinateIds.contains(targetEmployeeId)) {
+                throw new InvalidOperationException("You are not authorized to edit this attendance record");
+            }
+        }
+
+        ZoneId zoneId = ZoneId.of(summary.getOrganisation().getTimeZone());
+        Instant punchIn = request.getPunchIn() != null ? request.getPunchIn().atZone(zoneId).toInstant() : null;
+        Instant punchOut = request.getPunchOut() != null ? request.getPunchOut().atZone(zoneId).toInstant() : null;
+
+        if (punchIn != null && punchOut != null && punchIn.isAfter(punchOut)) {
+            throw new InvalidOperationException("Punch In time cannot be after Punch Out time");
+        }
+
+        OrganisationPolicy policy = policyRepo.findByOrganisation(summary.getOrganisation())
+                .orElseThrow(() -> new ResourceNotFoundException("Organisation policy", "policy",
+                        summary.getOrganisation().getName()));
+
+        Double workHours = 0.0;
+        if (punchIn != null && punchOut != null) {
+            workHours = Duration.between(punchIn, punchOut).toMinutes() / 60.0;
+        }
+
+        boolean isLate = false;
+        if (punchIn != null) {
+            LocalDateTime punchInDateTime = LocalDateTime.ofInstant(punchIn, zoneId);
+            LocalTime allowedTime = policy.getOfficeStart().plusMinutes(policy.getLateGraceMinutes());
+            if (punchInDateTime.toLocalTime().isAfter(allowedTime)) {
+                isLate = true;
+            }
+        }
+
+        boolean isEarlyOut = false;
+        if (punchOut != null) {
+            LocalDateTime punchOutDateTime = LocalDateTime.ofInstant(punchOut, zoneId);
+            LocalTime allowedExit = policy.getOfficeClosed().minusMinutes(policy.getEarlyOutGraceMinutes());
+            if (punchOutDateTime.toLocalTime().isBefore(allowedExit)) {
+                isEarlyOut = true;
+            }
+        }
+
+        PunchInOut punch = summary.getPunchRecord();
+
+        if (punch != null) {
+            punch.setPunchIn(punchIn);
+            punch.setPunchOut(punchOut);
+            punch.setWorkHours(workHours);
+
+            if (request.getPunchSource() != null && !request.getPunchSource().isBlank()) {
+                punch.setPunchSource(PunchInOut.Source.valueOf(request.getPunchSource()));
+            }
+            if (request.getPunchedFrom() != null && !request.getPunchedFrom().isBlank()) {
+                punch.setPunchedFrom(PunchInOut.PUNCHFROM.valueOf(request.getPunchedFrom()));
+            }
+            if (punchIn != null) {
+                punch.setAttendanceDate(LocalDate.ofInstant(punchIn, zoneId));
+            }
+            punchRepo.save(punch);
+        }
+
+        summary.setEffectivePunchIn(punchIn);
+        summary.setEffectivePunchOut(punchOut);
+        summary.setWorkHours(workHours);
+
+        // Status is still updated from request if UI permits, but derived flags are
+        // backend authoritative
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            summary.setStatus(AttendanceSummary.AttendanceStatus.valueOf(request.getStatus()));
+        }
+
+        summary.setIsLate(isLate);
+        summary.setIsEarlyOut(isEarlyOut);
+
+        if (request.getRemarks() != null) {
+            summary.setRemarks(request.getRemarks());
+        }
+        summaryRepo.save(summary);
+
+        return mapToResponse(punch, summary, zoneId);
+    }
+
+    @Override
     public List<PunchRecordResponse> getOrgAttendanceByRange(
             Long orgId,
             LocalDate startDate,
@@ -202,6 +305,10 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<PunchRecordResponse> response = summaries.stream()
                 .map(summary -> {
                     PunchRecordResponse r = new PunchRecordResponse();
+                    r.setSummaryId(summary.getId());
+                    if (summary.getPunchRecord() != null) {
+                        r.setPunchId(summary.getPunchRecord().getId());
+                    }
                     r.setEmployeeId(summary.getEmployee().getId());
                     r.setEmployeeName(summary.getEmployee().getFirstName() + " " + summary.getEmployee().getLastName());
                     r.setEmployeeCode(summary.getEmployee().getEmployeeCode());
@@ -214,7 +321,6 @@ public class AttendanceServiceImpl implements AttendanceService {
                             ? LocalDateTime.ofInstant(summary.getEffectivePunchOut(), zoneId)
                             : null);
                     if (summary.getPunchRecord() != null) {
-                        r.setId(summary.getPunchRecord().getId());
                         r.setPunchSource(summary.getPunchRecord().getPunchSource().name());
                     }
                     r.setIsLate(summary.getIsLate());
@@ -270,6 +376,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     } else {
                         // For non-punch records (holidays, leaves, absences)
                         PunchRecordResponse response = new PunchRecordResponse();
+                        response.setSummaryId(summary.getId());
+                        response.setPunchId(summary.getPunchRecord().getId());
                         response.setEmployeeId(employeeId);
                         response.setStatus(summary.getStatus().name());
                         response.setWorkHours(summary.getWorkHours());
@@ -289,14 +397,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         List<AttendanceSummary> summaries = summaryRepo
                 .findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);
 
+        if (summaries.isEmpty()) {
+            throw new ResourceNotFoundException("AttendanceSummary", "orgId", orgId);
+        }
+
         summaries = filterSummariesByPermission(summaries);
 
-        ZoneId zoneId = ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
+        ZoneId zoneId = ZoneId.of(summaries.get(0).getOrganisation().getTimeZone());
 
         return summaries.stream()
                 .map(summary -> {
                     PunchRecordResponse response = new PunchRecordResponse();
-
+                    response.setSummaryId(summary.getId());
                     Employee emp = summary.getEmployee();
                     if (emp != null) {
                         response.setEmployeeId(emp.getId());
@@ -314,7 +426,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
                     PunchInOut punch = summary.getPunchRecord();
                     if (punch != null) {
-                        response.setId(punch.getId());
+                        response.setPunchId(punch.getId());
                         response.setPunchSource(punch.getPunchSource().name());
                     } else {
                         response.setPunchSource("SYSTEM");
@@ -397,19 +509,28 @@ public class AttendanceServiceImpl implements AttendanceService {
     // Helper method to map entity to response
     private PunchRecordResponse mapToResponse(PunchInOut punch, AttendanceSummary summary, ZoneId zoneId) {
         PunchRecordResponse response = new PunchRecordResponse();
-        response.setId(punch.getId());
-        response.setEmployeeId(punch.getEmployee().getId());
+        if (punch != null && punch.getId() != null) {
+            response.setPunchId(punch.getId());
+            if (punch.getPunchSource() != null) {
+                response.setPunchSource(punch.getPunchSource().name());
+            }
+        }
+        response.setSummaryId(summary.getId());
+        response.setEmployeeId(summary.getEmployee().getId());
         response.setEmployeeName(
-                punch.getEmployee().getFirstName() + " " +
-                        punch.getEmployee().getLastName());
-        response.setDepartment(punch.getEmployee().getDepartment().getName());
-        response.setEmployeeCode(punch.getEmployee().getEmployeeCode());
-        response.setPunchIn(safeConvert(punch.getPunchIn(), zoneId));
-        response.setPunchOut(safeConvert(punch.getPunchOut(), zoneId));
-        response.setPunchSource(punch.getPunchSource().name());
+                summary.getEmployee().getFirstName() + " " +
+                        summary.getEmployee().getLastName());
+        if (summary.getEmployee().getDepartment() != null) {
+            response.setDepartment(summary.getEmployee().getDepartment().getName());
+        }
+        response.setEmployeeCode(summary.getEmployee().getEmployeeCode());
+        response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
+        response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
         response.setIsLate(summary.getIsLate());
         response.setIsEarlyOut(summary.getIsEarlyOut());
-        response.setStatus(summary.getStatus().name());
+        if (summary.getStatus() != null) {
+            response.setStatus(summary.getStatus().name());
+        }
         return response;
     }
 
@@ -438,7 +559,6 @@ public class AttendanceServiceImpl implements AttendanceService {
                 return Collections.emptyList();
 
             Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
-            subordinateIds.add(empId); // Add self
 
             return summaries.stream()
                     .filter(s -> s.getEmployee() != null && subordinateIds.contains(s.getEmployee().getId()))
