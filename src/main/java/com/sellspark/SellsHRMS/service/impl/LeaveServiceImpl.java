@@ -8,7 +8,6 @@ import com.sellspark.SellsHRMS.exception.InvalidDateRangeException;
 import com.sellspark.SellsHRMS.exception.InvalidOperationException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
-import com.sellspark.SellsHRMS.exception.leave.InsufficientLeaveBalanceException;
 import com.sellspark.SellsHRMS.exception.leave.LeaveTypeNotFoundException;
 import com.sellspark.SellsHRMS.exception.leave.OverlappingLeaveException;
 import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;

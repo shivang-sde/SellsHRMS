@@ -1,5 +1,7 @@
 package com.sellspark.SellsHRMS.utils;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,19 +21,26 @@ public class EmployeeHierarchyUtil {
     private final EmployeeRepository employeeRepository;
 
     public Set<Long> getAllSubordinateIds(Long managerId) {
-        Set<Long> result = new HashSet<>();
-        collectSubordinates(managerId, result);
-        return result;
-    }
+        Set<Long> visited = new HashSet<>();
+        Deque<Long> stack = new ArrayDeque<>();
+        stack.push(managerId);
+        visited.add(managerId);
 
-    private void collectSubordinates(Long managerId, Set<Long> result) {
-        Employee manager = employeeRepository.findById(managerId)
-                .orElseThrow(() -> new EmployeeNotFoundException(managerId));
-        List<Employee> subs = employeeRepository.findByReportingTo(manager);
-        for (Employee sub : subs) {
-            if (result.add(sub.getId())) {
-                collectSubordinates(sub.getId(), result);
+        while (!stack.isEmpty()) {
+            Long currentId = stack.pop();
+            Employee currEmployee = employeeRepository.findById(currentId)
+                    .orElseThrow(() -> new EmployeeNotFoundException(currentId));
+
+            List<Employee> subordinates = employeeRepository.findByReportingTo(currEmployee);
+            for (Employee sub : subordinates) {
+                if (visited.add(sub.getId())) {
+                    stack.push(sub.getId());
+                }
             }
         }
+        visited.remove(managerId);
+        return visited;
+
     }
+
 }
