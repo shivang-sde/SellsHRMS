@@ -1,4 +1,19 @@
 $(document).ready(function () {
+
+    $('#deleteModal, #resetPasswordModal').on('hidden.bs.modal', function () {
+        // Remove any lingering backdrops
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('overflow', 'auto');
+    });
+
+    // Also ensure dropdowns work when modals are closed
+    $('#deleteModal, #resetPasswordModal').on('shown.bs.modal', function () {
+        // Temporarily fix dropdown z-index
+        $('.dropdown-menu').css('z-index', '1060');
+    });
+
+
     const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
     let employees = [];
     let deleteEmployeeId = null;
