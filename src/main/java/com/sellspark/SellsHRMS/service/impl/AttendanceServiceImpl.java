@@ -356,7 +356,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);
 
         if (summaries.isEmpty()) {
-            throw new ResourceNotFoundException("AttendanceSummary", "orgId", orgId);
+            return Collections.emptyList();
         }
 
         summaries = filterSummariesByPermission(summaries);
