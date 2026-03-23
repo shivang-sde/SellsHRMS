@@ -26,6 +26,29 @@ public interface AttendanceSummaryRepository
                         Long employeeId,
                         LocalDate date);
 
+        @Query("SELECT a FROM AttendanceSummary a " +
+                        "JOIN FETCH a.employee e " +
+                        "JOIN FETCH e.department d " +
+                        "WHERE a.organisation.id = :orgId " +
+                        "AND a.attendanceDate BETWEEN :startDate AND :endDate " +
+                        "ORDER BY a.attendanceDate DESC")
+        List<AttendanceSummary> findWithEmployeeAndDepartmentByEmployeeIdAndDateRange(
+                        @Param("orgId") Long orgId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
+
+        @Query("""
+                            SELECT s FROM AttendanceSummary s
+                            JOIN FETCH s.employee e
+                            LEFT JOIN FETCH e.department
+                            WHERE s.organisation.id = :orgId
+                            AND s.attendanceDate = :date
+                            ORDER BY s.attendanceDate DESC
+                        """)
+        List<AttendanceSummary> findWithEmployeeAndDepartmentByOrgAndDate(
+                        @Param("orgId") Long orgId,
+                        @Param("date") LocalDate date);
+
         List<AttendanceSummary> findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(
                         Long organisationId,
                         LocalDate date);

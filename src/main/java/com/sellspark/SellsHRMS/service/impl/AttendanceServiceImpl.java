@@ -294,7 +294,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             LocalDate endDate) {
 
         List<AttendanceSummary> summaries = summaryRepo
-                .findByOrganisationIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(orgId, startDate, endDate);
+                .findWithEmployeeAndDepartmentByEmployeeIdAndDateRange(orgId, startDate, endDate);
 
         summaries = filterSummariesByPermission(summaries);
 
@@ -303,31 +303,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 : ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
 
         List<PunchRecordResponse> response = summaries.stream()
-                .map(summary -> {
-                    PunchRecordResponse r = new PunchRecordResponse();
-                    r.setSummaryId(summary.getId());
-                    if (summary.getPunchRecord() != null) {
-                        r.setPunchId(summary.getPunchRecord().getId());
-                    }
-                    r.setEmployeeId(summary.getEmployee().getId());
-                    r.setEmployeeName(summary.getEmployee().getFirstName() + " " + summary.getEmployee().getLastName());
-                    r.setEmployeeCode(summary.getEmployee().getEmployeeCode());
-                    r.setStatus(summary.getStatus().name());
-                    r.setWorkHours(summary.getWorkHours());
-                    r.setPunchIn(summary.getEffectivePunchIn() != null
-                            ? LocalDateTime.ofInstant(summary.getEffectivePunchIn(), zoneId)
-                            : null);
-                    r.setPunchOut(summary.getEffectivePunchOut() != null
-                            ? LocalDateTime.ofInstant(summary.getEffectivePunchOut(), zoneId)
-                            : null);
-                    if (summary.getPunchRecord() != null) {
-                        r.setPunchSource(summary.getPunchRecord().getPunchSource().name());
-                    }
-                    r.setIsLate(summary.getIsLate());
-                    r.setIsEarlyOut(summary.getIsEarlyOut());
-                    r.setRemarks(summary.getRemarks());
-                    return r;
-                })
+                .map(summary -> mapToResponse(summary.getPunchRecord(), summary, zoneId))
                 .collect(Collectors.toList());
 
         return response;
@@ -370,25 +346,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 : ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
 
         return summaries.stream()
-                .map(summary -> {
-                    if (summary.getPunchRecord() != null) {
-                        return mapToResponse(summary.getPunchRecord(), summary, zoneId);
-                    } else {
-                        // For non-punch records (holidays, leaves, absences)
-                        PunchRecordResponse response = new PunchRecordResponse();
-                        response.setSummaryId(summary.getId());
-                        response.setPunchId(summary.getPunchRecord().getId());
-                        response.setEmployeeId(employeeId);
-                        response.setStatus(summary.getStatus().name());
-                        response.setWorkHours(summary.getWorkHours());
-                        response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
-                        response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
-                        response.setIsLate(summary.getIsLate());
-                        response.setIsEarlyOut(summary.getIsEarlyOut());
-                        response.setRemarks(summary.getRemarks());
-                        return response;
-                    }
-                })
+                .map(summary -> mapToResponse(summary.getPunchRecord(), summary, zoneId))
                 .collect(Collectors.toList());
     }
 
@@ -509,28 +467,42 @@ public class AttendanceServiceImpl implements AttendanceService {
     // Helper method to map entity to response
     private PunchRecordResponse mapToResponse(PunchInOut punch, AttendanceSummary summary, ZoneId zoneId) {
         PunchRecordResponse response = new PunchRecordResponse();
-        if (punch != null && punch.getId() != null) {
+
+        // Punch details
+        if (punch != null) {
             response.setPunchId(punch.getId());
             if (punch.getPunchSource() != null) {
                 response.setPunchSource(punch.getPunchSource().name());
             }
         }
+
         response.setSummaryId(summary.getId());
-        response.setEmployeeId(summary.getEmployee().getId());
-        response.setEmployeeName(
-                summary.getEmployee().getFirstName() + " " +
-                        summary.getEmployee().getLastName());
-        if (summary.getEmployee().getDepartment() != null) {
-            response.setDepartment(summary.getEmployee().getDepartment().getName());
+
+        // Employee details
+        Employee emp = summary.getEmployee();
+        if (emp != null) {
+            response.setEmployeeId(emp.getId());
+
+            String firstName = emp.getFirstName() != null ? emp.getFirstName() : "";
+            String lastName = emp.getLastName() != null ? emp.getLastName() : "";
+            response.setEmployeeName((firstName + " " + lastName).trim());
+            response.setEmployeeCode(emp.getEmployeeCode());
+
+            if (emp.getDepartment() != null) {
+                response.setDepartment(emp.getDepartment().getName());
+            }
         }
-        response.setEmployeeCode(summary.getEmployee().getEmployeeCode());
+
+        // Attendance data
         response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
         response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
         response.setIsLate(summary.getIsLate());
         response.setIsEarlyOut(summary.getIsEarlyOut());
+
         if (summary.getStatus() != null) {
             response.setStatus(summary.getStatus().name());
         }
+
         return response;
     }
 
