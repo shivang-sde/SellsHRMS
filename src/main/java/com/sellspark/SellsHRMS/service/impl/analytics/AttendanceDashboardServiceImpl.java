@@ -1,10 +1,7 @@
 package com.sellspark.SellsHRMS.service.impl.analytics;
 
 import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.*;
-import com.sellspark.SellsHRMS.entity.Organisation;
-import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
-import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.analytics.AttendanceDashboardRepository;
 import com.sellspark.SellsHRMS.service.analytics.AttendanceDashboardService;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,18 +40,18 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
         LocalDate yesterday = today.minusDays(1);
 
         try {
-            // ✅ Attendance %
+            // Attendance %
             BigDecimal todayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, today);
             BigDecimal yesterdayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, yesterday);
 
-            // ✅ Missed Days
+            // Missed Days
             Long todayMissed = dashboardRepository.countDaysMissedByDate(orgId, today);
             Long yesterdayMissed = dashboardRepository.countDaysMissedByDate(orgId, yesterday);
 
-            // ✅ Late arrivals
+            // Late arrivals
             Long todayLateArrivals = dashboardRepository.countTodayLateArrivals(orgId, today);
 
-            // ✅ Build response
+            // Build response
             return AttendanceDashboardSummaryDTO.builder()
                     .averageAttendance(todayAvgAttendance != null ? todayAvgAttendance : BigDecimal.ZERO)
                     .previousAttendance(yesterdayAvgAttendance != null ? yesterdayAvgAttendance : BigDecimal.ZERO)

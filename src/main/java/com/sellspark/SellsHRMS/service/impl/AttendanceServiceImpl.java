@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +42,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final PunchInOutRepository punchRepo;
     private final AttendanceSummaryRepository summaryRepo;
     private final EmployeeRepository employeeRepo;
+    private final LeaveRepository leaveRepo;
+    private final HolidayRepository holidayRepo;
     private final OrganisationPolicyRepository policyRepo;
     private final DeviceRepository deviceRepo;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
@@ -60,10 +63,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (employee.getStatus() != Employee.EmployeeStatus.ACTIVE) {
             throw new EmployeeInactiveException(employee.getEmployeeCode());
         }
+
+        // check if on leave
+        Optional<Leave> leave = leaveRepo.findApprovedLeaveByEmployeeAndDate(employee.getId(), LocalDate.now());
+        if (leave.isPresent()) {
+            throw new AttendanceAlreadyMarkedException("Can't punch in! You are on leave today");
+        }
+        if (holidayRepo.existsByOrganisationAndHolidayDate(employee.getOrganisation(), LocalDate.now())) {
+            throw new AttendanceAlreadyMarkedException("Can't punch in! It is a holiday today");
+        }
         ZoneId zoneId = ZoneId.of(employee.getOrganisation().getTimeZone());
         LocalDate attendanceDate = LocalDate.ofInstant(request.getPunchIn(), zoneId);
 
-        // Check if already punched in today
         // Check if already punched in today
         AttendanceSummary existingSummary = summaryRepo
                 .findByEmployeeIdAndAttendanceDate(employee.getId(), attendanceDate)
@@ -128,6 +139,16 @@ public class AttendanceServiceImpl implements AttendanceService {
         OrganisationPolicy policy = policyRepo.findByOrganisation(punch.getOrganisation())
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation policy", "policy",
                         punch.getOrganisation().getName()));
+
+        // check if on leave
+        Optional<Leave> leave = leaveRepo.findApprovedLeaveByEmployeeAndDate(punch.getEmployee().getId(),
+                LocalDate.now());
+        if (leave.isPresent()) {
+            throw new AttendanceAlreadyMarkedException("Can't punch out! You are on leave today");
+        }
+        if (holidayRepo.existsByOrganisationAndHolidayDate(punch.getOrganisation(), LocalDate.now())) {
+            throw new AttendanceAlreadyMarkedException("Can't punch out! It is a holiday today");
+        }
 
         if (punch.getPunchOut() != null) {
             throw new AttendanceAlreadyMarkedException("punched out");
@@ -298,9 +319,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         summaries = filterSummariesByPermission(summaries);
 
-        ZoneId zoneId = summaries.isEmpty()
-                ? ZoneId.systemDefault()
-                : ZoneId.of(summaries.get(0).getEmployee().getOrganisation().getTimeZone());
+        ZoneId zoneId = summaries.stream()
+                .findFirst()
+                .map(s -> ZoneId.of(s.getOrganisation().getTimeZone()))
+                .orElse(ZoneId.systemDefault());
 
         List<PunchRecordResponse> response = summaries.stream()
                 .map(summary -> mapToResponse(summary.getPunchRecord(), summary, zoneId))
@@ -360,6 +382,10 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         summaries = filterSummariesByPermission(summaries);
+
+        if (summaries.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         ZoneId zoneId = ZoneId.of(summaries.get(0).getOrganisation().getTimeZone());
 
@@ -473,6 +499,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             response.setPunchId(punch.getId());
             if (punch.getPunchSource() != null) {
                 response.setPunchSource(punch.getPunchSource().name());
+            } else {
+                response.setPunchSource("SYSTEM");
             }
         }
 
@@ -531,6 +559,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 return Collections.emptyList();
 
             Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
+            if (subordinateIds == null || subordinateIds.isEmpty()) {
+                return Collections.emptyList();
+            }
 
             return summaries.stream()
                     .filter(s -> s.getEmployee() != null && subordinateIds.contains(s.getEmployee().getId()))

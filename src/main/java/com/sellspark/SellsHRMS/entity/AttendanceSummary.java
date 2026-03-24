@@ -3,6 +3,7 @@ package com.sellspark.SellsHRMS.entity;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.*;

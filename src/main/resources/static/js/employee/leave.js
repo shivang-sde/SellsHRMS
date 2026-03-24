@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
   let leaveTypes = [];
   let allLeaves = [];
 
@@ -10,22 +10,29 @@ $(document).ready(function() {
     loadLeaveTypes();
     loadMyLeaves();
     loadLeaveStats();
+    disableButttons()
     setupEventListeners();
   }
+
+  function disableButttons() {
+    $('#applyLeaveBtn').prop('disabled', !window.APP.hasPermission('LEAVE_APPLY'));
+    $('#editLeaveBtn').prop('disabled', !window.APP.hasPermission('LEAVE_EDIT'));
+  }
+
 
   function setupEventListeners() {
     // Apply leave form submission
     $('#applyLeaveForm').on('submit', handleApplyLeave);
-    
+
     // Edit leave form submission
     $('#editLeaveForm').on('submit', handleEditLeave);
-    
+
     // Date change listeners for calculating days
     $('#startDate, #endDate, #startDayBreakdown, #endDayBreakdown').on('change', calculateLeaveDays);
-    
+
     // Status filter
     $('#statusFilter').on('change', filterLeavesByStatus);
-    
+
     // Leave type selection
     $('#leaveTypeSelect').on('change', showLeaveTypeInfo);
 
@@ -39,39 +46,40 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/balances',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           displayLeaveBalances(response.data);
         }
       },
-      error: function(xhr) {
-        console.error('Error loading leave balances:', xhr);
+      error: function (xhr) {
+        const err = xhr.responseJSON;
+        showToast('error', err.message);
       }
     });
   }
 
   function displayLeaveBalances(balances) {
-  const container = $('#leaveBalanceCards');
-  container.empty();
+    const container = $('#leaveBalanceCards');
+    container.empty();
 
-  if (balances.length === 0) {
-    container.append(`
+    if (balances.length === 0) {
+      container.append(`
       <div class="col-12">
         <div class="alert alert-info">
           No leave balances found. Please contact HR.
         </div>
       </div>
     `);
-    return;
-  }
+      return;
+    }
 
-  balances.forEach(balance => {
-    const remaining = balance.closingBalance - balance.availed;
+    balances.forEach(balance => {
+      const remaining = balance.closingBalance - balance.availed;
 
-    const card = $(`
+      const card = $(`
       <div class="col-md-3 mb-4 ">
         <div class="card border-0 shadow-sm leave-balance-card h-100 selectable-leave-card" 
-             data-leave-type-id="${balance.leaveTypeId}"
+             data-leave-type-id="${balance.leaveTypeId}"  
              data-leave-type-name="${balance.leaveTypeName}">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -95,24 +103,24 @@ $(document).ready(function() {
       </div>
     `);
 
-    // 💥 click to open Apply Leave Modal
-    card.find('.selectable-leave-card').on('click', function() {
-      const leaveTypeId = $(this).data('leave-type-id');
-      const leaveTypeName = $(this).data('leave-type-name');
+      //  click to open Apply Leave Modal
+      card.find('.selectable-leave-card').on('click', function () {
+        const leaveTypeId = $(this).data('leave-type-id');
+        const leaveTypeName = $(this).data('leave-type-name');
 
-      // Open the modal
-      $('#applyLeaveModal').modal('show');
+        // Open the modal
+        $('#applyLeaveModal').modal('show');
 
-      // Preselect the leave type in dropdown
-      $('#leaveTypeSelect').val(leaveTypeId).trigger('change');
+        // Preselect the leave type in dropdown
+        $('#leaveTypeSelect').val(leaveTypeId).trigger('change');
 
-      // Optionally show a toast or info text
-      showToast('info', `Applying for ${leaveTypeName}`);
+        // Optionally show a toast or info text
+        showToast('info', `Applying for ${leaveTypeName}`);
+      });
+
+      container.append(card);
     });
-
-    container.append(card);
-  });
-}
+  }
 
 
   // Load leave types for dropdown
@@ -121,11 +129,11 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/leave-type/org/${orgId}`,
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         leaveTypes = response;
         populateLeaveTypeDropdown();
       },
-      error: function(xhr) {
+      error: function (xhr) {
         console.error('Error loading leave types:', xhr);
       }
     });
@@ -134,7 +142,7 @@ $(document).ready(function() {
   function populateLeaveTypeDropdown() {
     const select = $('#leaveTypeSelect');
     select.empty().append('<option value="">Select Leave Type</option>');
-    
+
     leaveTypes.forEach(type => {
       if (type.visibleToEmployees) {
         select.append(`<option value="${type.id}" 
@@ -152,7 +160,7 @@ $(document).ready(function() {
     const annualLimit = selected.data('annual-limit');
     const maxConsecutive = selected.data('max-consecutive');
     const allowHalfDay = selected.data('allow-half-day');
-    
+
     if (selected.val()) {
       let info = `Annual Limit: ${annualLimit} days`;
       if (maxConsecutive !== 'N/A') {
@@ -177,14 +185,14 @@ $(document).ready(function() {
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      
+
       if (end < start) {
         $('#calculatedDays').val('Invalid date range');
         return;
       }
 
       let days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      
+
       // Adjust for half days
       if (startBreakdown !== 'FULL_DAY') {
         days -= 0.5;
@@ -202,14 +210,14 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/my',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         console.log('My Leaves:', response);
         if (response.success) {
           allLeaves = response.data;
           displayLeaves(allLeaves);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         $('#leavesTableBody').html(`
           <tr>
             <td colspan="7" class="text-center text-danger">
@@ -240,7 +248,7 @@ $(document).ready(function() {
     leaves.forEach(leave => {
       const statusBadge = getStatusBadge(leave.status);
       const actions = getActionButtons(leave);
-      
+
       const row = `
         <tr>
           <td>
@@ -286,7 +294,7 @@ $(document).ready(function() {
       </button>
     `;
 
-    if (leave.status === 'PENDING') {
+    if (leave.status === 'PENDING' && leave.startDate >= new Date().toISOString().split('T')[0]) {
       buttons += `
         <button class="btn btn-sm btn-outline-info action-btn ms-1" onclick="editLeave(${leave.id})">
           <i class="fa fa-edit"></i>
@@ -303,7 +311,11 @@ $(document).ready(function() {
   // Apply leave
   function handleApplyLeave(e) {
     e.preventDefault();
-    
+
+    if (checkPermission('LEAVE_APPLY')) {
+      showToast('error', 'You do not have permission to apply for leave');
+      return;
+    }
     const formData = {
       leaveTypeId: parseInt($('#leaveTypeSelect').val()),
       startDate: $('#startDate').val(),
@@ -323,7 +335,7 @@ $(document).ready(function() {
       method: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           console.log('Apply Leave Response:', response);
           showToast('success', response.message);
@@ -334,7 +346,7 @@ $(document).ready(function() {
           loadLeaveStats();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to apply leave';
         showToast('error', error);
       }
@@ -342,7 +354,7 @@ $(document).ready(function() {
   }
 
   // Edit leave
-  window.editLeave = function(leaveId) {
+  window.editLeave = function (leaveId) {
     const leave = allLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
@@ -359,7 +371,7 @@ $(document).ready(function() {
 
   function handleEditLeave(e) {
     e.preventDefault();
-    
+
     const leaveId = $('#editLeaveId').val();
     const formData = {
       leaveTypeId: allLeaves.find(l => l.id == leaveId).leaveTypeId,
@@ -380,14 +392,14 @@ $(document).ready(function() {
       method: 'PATCH',
       contentType: 'application/json',
       data: JSON.stringify(formData),
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           $('#editLeaveModal').modal('hide');
           loadMyLeaves();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to update leave';
         showToast('error', error);
       }
@@ -395,7 +407,7 @@ $(document).ready(function() {
   }
 
   // Cancel leave
-  window.cancelLeave = function(leaveId) {
+  window.cancelLeave = function (leaveId) {
     if (!confirm('Are you sure you want to cancel this leave application?')) {
       return;
     }
@@ -403,14 +415,14 @@ $(document).ready(function() {
     $.ajax({
       url: `/api/leaves/${leaveId}/cancel`,
       method: 'DELETE',
-      success: function(response) {
+      success: function (response) {
         if (response.success) {
           showToast('success', response.message);
           loadMyLeaves();
           loadLeaveStats();
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         const error = xhr.responseJSON?.message || 'Failed to cancel leave';
         showToast('error', error);
       }
@@ -418,7 +430,7 @@ $(document).ready(function() {
   };
 
   // View leave details
-  window.viewLeaveDetails = function(leaveId) {
+  window.viewLeaveDetails = function (leaveId) {
     const leave = allLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
@@ -458,7 +470,7 @@ $(document).ready(function() {
     $.ajax({
       url: '/api/leaves/my/stats',
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         console.log('Leave Stats:', response);
         if (response.success) {
           const stats = response.data.statusStats;
@@ -468,7 +480,7 @@ $(document).ready(function() {
           $('#cancelledCount').text(stats.CANCELED || 0);
         }
       },
-      error: function(xhr) {
+      error: function (xhr) {
         console.error('Error loading stats:', xhr);
       }
     });
@@ -478,10 +490,10 @@ $(document).ready(function() {
   function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     });
   }
 

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.sellspark.SellsHRMS.service.HolidayService; // Import Service
@@ -49,6 +50,13 @@ public class HolidayRestController {
             @RequestBody List<HolidayRequest> requests) {
 
         return ResponseEntity.ok(holidayService.createBulkHolidays(orgId, requests));
+    }
+
+    @GetMapping("/isHoliday")
+    public ResponseEntity<Map<String, Boolean>> isHoliday(
+            @RequestParam Long orgId,
+            @RequestParam LocalDate date) {
+        return ResponseEntity.ok(Map.of("isHoliday", holidayService.isHoliday(orgId, date)));
     }
 
     @GetMapping("/org/{orgId}")

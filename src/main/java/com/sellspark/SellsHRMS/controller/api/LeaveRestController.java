@@ -27,6 +27,7 @@ public class LeaveRestController {
         // 🧍 Employee Endpoints
         // ---------------------------------------------------------
 
+        @PreAuthorize("hasAnyAuthority('LEAVE_APPLY')")
         @PostMapping("/apply")
         public ResponseEntity<?> applyLeave(@RequestBody LeaveRequestDTO request, HttpSession session) {
                 Long empId = (Long) session.getAttribute("EMP_ID");
@@ -63,6 +64,7 @@ public class LeaveRestController {
                                 "data", response));
         }
 
+        @PreAuthorize("hasAnyAuthority('LEAVE_EDIT')")
         @PatchMapping("/{id}/update")
         public ResponseEntity<?> updateLeave(
                         @PathVariable Long id,
@@ -107,11 +109,13 @@ public class LeaveRestController {
         // 🧑‍💼 Manager / Admin Endpoints
         // ---------------------------------------------------------
 
+        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'ORG_ADMIN')")
         @GetMapping("/pending")
         public ResponseEntity<?> getPendingLeaves(HttpSession session) {
                 Long orgId = (Long) session.getAttribute("ORG_ID");
+                Long empId = (Long) session.getAttribute("EMP_ID");
 
-                List<LeaveResponseDTO> leaves = leaveService.getPendingLeaves(orgId);
+                List<LeaveResponseDTO> leaves = leaveService.getPendingLeaves(orgId, empId);
                 return ResponseEntity.ok(Map.of(
                                 "success", true,
                                 "data", leaves));
@@ -133,11 +137,12 @@ public class LeaveRestController {
                                 "data", leaves));
         }
 
-        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')")
+        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'ORG_ADMIN')")
         @GetMapping("/all")
         public ResponseEntity<?> getAllLeaves(HttpSession session) {
                 Long orgId = (Long) session.getAttribute("ORG_ID");
-                List<LeaveResponseDTO> leaves = leaveService.getAllLeaves(orgId);
+                Long empId = (Long) session.getAttribute("EMP_ID");
+                List<LeaveResponseDTO> leaves = leaveService.getAllLeaves(orgId, empId);
                 return ResponseEntity.ok(Map.of(
                                 "success", true,
                                 "data", leaves));
@@ -148,6 +153,12 @@ public class LeaveRestController {
         public ResponseEntity<?> getOrgEmployeeLeaveBalances(@PathVariable Long orgId) {
                 var balances = leaveService.getOrgEmployeeLeaveBalances(orgId);
                 return ResponseEntity.ok(Map.of("success", true, "data", balances));
+        }
+
+        @GetMapping("/check")
+        public ResponseEntity<?> checkLeave(@RequestParam Long employeeId, @RequestParam LocalDate date) {
+                boolean leave = leaveService.checkLeave(employeeId, date);
+                return ResponseEntity.ok(Map.of("success", true, "data", leave));
         }
 
         @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT')")
@@ -192,19 +203,22 @@ public class LeaveRestController {
                                 "data", response));
         }
 
+        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'ORG_ADMIN')")
         @GetMapping("/status")
         public ResponseEntity<?> getLeavesByStatus(
                         @RequestParam String status,
                         HttpSession session) {
 
                 Long orgId = (Long) session.getAttribute("ORG_ID");
-                List<LeaveResponseDTO> leaves = leaveService.getLeavesByStatus(orgId, status);
+                Long empId = (Long) session.getAttribute("EMP_ID");
+                List<LeaveResponseDTO> leaves = leaveService.getLeavesByStatus(orgId, empId, status);
 
                 return ResponseEntity.ok(Map.of(
                                 "success", true,
                                 "data", leaves));
         }
 
+        @PreAuthorize("hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'ORG_ADMIN')")
         @GetMapping("/range")
         public ResponseEntity<?> getLeavesBetweenDates(
                         @RequestParam String from,
@@ -212,10 +226,11 @@ public class LeaveRestController {
                         HttpSession session) {
 
                 Long orgId = (Long) session.getAttribute("ORG_ID");
+                Long empId = (Long) session.getAttribute("EMP_ID");
                 LocalDate fromDate = LocalDate.parse(from);
                 LocalDate toDate = LocalDate.parse(to);
 
-                List<LeaveResponseDTO> leaves = leaveService.getLeavesBetweenDates(orgId, fromDate, toDate);
+                List<LeaveResponseDTO> leaves = leaveService.getLeavesBetweenDates(orgId, empId, fromDate, toDate);
                 return ResponseEntity.ok(Map.of(
                                 "success", true,
                                 "data", leaves));

@@ -216,8 +216,8 @@ $(document).ready(function () {
           displayPunchStatus(data);
           loadAttendanceHistory();
         },
-        error: function () {
-          showToast("error", "Failed to punch in");
+        error: function (error) {
+          showToast("error", error.responseJSON.message);
         },
       });
     } catch (err) {

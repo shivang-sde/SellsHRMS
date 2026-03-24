@@ -14,7 +14,7 @@ import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundExcept
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.LeaveService;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +23,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Transactional
 @Slf4j
 public class LeaveServiceImpl implements LeaveService {
@@ -288,6 +287,11 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
+    public boolean checkLeave(Long employeeId, LocalDate date) {
+        return leaveRepository.existsByEmployeeAndDateAndApproved(employeeId, date);
+    }
+
+    @Override
     public LeaveResponseDTO getLeaveById(Long id, Long orgId) {
         Leave leave = leaveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", id));
@@ -297,9 +301,6 @@ public class LeaveServiceImpl implements LeaveService {
     public List<LeaveResponseDTO> findVisibleLeaves(Long orgId, Long empId) {
         // Get subordinates recursively
         Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
-
-        // Exclude self (cannot see or approve own leaves)
-        subordinateIds.remove(empId);
 
         List<Leave> leaves = leaveRepository.findByOrganisationIdAndEmployeeIdIn(orgId, subordinateIds);
 
@@ -311,32 +312,9 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public List<LeaveResponseDTO> getAllLeaves(Long orgId) {
-        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            return java.util.Collections.emptyList();
-        }
-        com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
-                .getPrincipal();
-        boolean isOrgAdmin = "ORG_ADMIN".equals(principal.getSystemRole())
-                || "SUPER_ADMIN".equals(principal.getSystemRole());
-        List<Leave> leaves = leaveRepository.findByOrganisationId(orgId);
-
-        if (isOrgAdmin || principal.hasAnyPermission("EMPLOYEE_VIEW_ALL")) {
-            return leaves.stream().map(this::toResponseDTO).toList();
-        } else if (principal.hasAnyPermission("EMPLOYEE_VIEW_TEAM")) {
-            Long empId = principal.getEmployeeId();
-            if (empId == null)
-                return java.util.Collections.emptyList();
-            java.util.Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(empId);
-            subordinateIds.remove(empId);
-            return leaves.stream()
-                    .filter(l -> l.getEmployee() != null && subordinateIds.contains(l.getEmployee().getId()))
-                    .map(this::toResponseDTO)
-                    .toList();
-        }
-        return java.util.Collections.emptyList();
+    public List<LeaveResponseDTO> getAllLeaves(Long orgId, Long empId) {
+        List<Leave> allLeaves = leaveRepository.findByOrganisationId(orgId);
+        return resolveFilteredLeaves(allLeaves, empId);
     }
 
     @Override
@@ -351,28 +329,62 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public List<LeaveResponseDTO> getPendingLeaves(Long orgId) {
+    public List<LeaveResponseDTO> getPendingLeaves(Long orgId, Long empId) {
         Organisation org = organisationRepository.findById(orgId)
                 .orElseThrow(() -> new OrganisationNotFoundException(orgId));
-        return leaveRepository.findByOrganisationAndLeaveStatus(org, Leave.LeaveStatus.PENDING)
-                .stream().map(this::toResponseDTO).collect(Collectors.toList());
+        List<Leave> pending = leaveRepository.findByOrganisationAndLeaveStatus(org, Leave.LeaveStatus.PENDING);
+        return resolveFilteredLeaves(pending, empId);
     }
 
     @Override
-    public List<LeaveResponseDTO> getLeavesByStatus(Long orgId, String status) {
-        Leave.LeaveStatus st = Leave.LeaveStatus.valueOf(status);
+    public List<LeaveResponseDTO> getLeavesByStatus(Long orgId, Long empId, String status) {
         Organisation org = organisationRepository.findById(orgId)
                 .orElseThrow(() -> new OrganisationNotFoundException(orgId));
-        return leaveRepository.findByOrganisationAndLeaveStatus(org, Leave.LeaveStatus.valueOf(status))
-                .stream().map(this::toResponseDTO).collect(Collectors.toList());
+        List<Leave> leaves = leaveRepository.findByOrganisationAndLeaveStatus(org, Leave.LeaveStatus.valueOf(status));
+        return resolveFilteredLeaves(leaves, empId);
     }
 
     @Override
-    public List<LeaveResponseDTO> getLeavesBetweenDates(Long orgId, LocalDate from, LocalDate to) {
+    public List<LeaveResponseDTO> getLeavesBetweenDates(Long orgId, Long empId, LocalDate from, LocalDate to) {
         Organisation org = organisationRepository.findById(orgId)
                 .orElseThrow(() -> new OrganisationNotFoundException(orgId));
-        return leaveRepository.findLeavesBetweenDates(org, from, to)
-                .stream().map(this::toResponseDTO).collect(Collectors.toList());
+        List<Leave> leaves = leaveRepository.findLeavesBetweenDates(org, from, to);
+        return resolveFilteredLeaves(leaves, empId);
+    }
+
+    /**
+     * Resolves which leaves to return based on the current principal's authority:
+     * - ORG_ADMIN / SUPER_ADMIN / EMPLOYEE_VIEW_ALL → full list
+     * - EMPLOYEE_VIEW_TEAM → only subordinates of the given empId
+     * - otherwise → empty list
+     */
+    private List<LeaveResponseDTO> resolveFilteredLeaves(List<Leave> leaves, Long empId) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return java.util.Collections.emptyList();
+        }
+        com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
+                .getPrincipal();
+
+        boolean isAdmin = "ORG_ADMIN".equals(principal.getSystemRole())
+                || "SUPER_ADMIN".equals(principal.getSystemRole());
+
+        if (isAdmin || principal.hasAnyPermission("EMPLOYEE_VIEW_ALL")) {
+            return leaves.stream().map(this::toResponseDTO).toList();
+        } else if (principal.hasAnyPermission("EMPLOYEE_VIEW_TEAM")) {
+            // Determine effective empId: prefer session-passed empId, fallback to principal
+            Long resolvedEmpId = (empId != null) ? empId : principal.getEmployeeId();
+            if (resolvedEmpId == null) {
+                return java.util.Collections.emptyList();
+            }
+            Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(resolvedEmpId);
+            return leaves.stream()
+                    .filter(l -> l.getEmployee() != null && subordinateIds.contains(l.getEmployee().getId()))
+                    .map(this::toResponseDTO)
+                    .toList();
+        }
+        return java.util.Collections.emptyList();
     }
 
     @Override

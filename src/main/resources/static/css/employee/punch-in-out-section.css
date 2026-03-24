@@ -1,144 +1,280 @@
+/* ============================================================
+   PUNCH IN/OUT SECTION — punch-in-out-section.css
+   Breakpoints:
+     xs  < 576px   (phones, portrait)
+     sm  ≥ 576px   (phones, landscape / large phones)
+     md  ≥ 768px   (tablets)
+     lg  ≥ 992px   (small desktops / landscape tablet)
+     xl  ≥ 1200px  (desktops)
+     xxl ≥ 1400px  (wide screens)
+   ============================================================ */
 
-/* Modern CSS Utilities */
+/* ── Outer wrapper ─────────────────────────────────────────── */
+.punch-section-wrapper {
+    padding: clamp(0.75rem, 2vw, 1.5rem);
+    margin-bottom: 1rem;
+}
+
+/* ── Punch Card (left panel on desktop) ────────────────────── */
 .punch-card-refined {
     background: #ffffff;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+    position: relative;
+}
+.punch-card-refined:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.09) !important;
 }
 
-.ls-1 {
-    letter-spacing: 1px;
-}
-
-.x-small {
-    font-size: 0.75rem;
-}
-
-/* Status Soft Colors */
-.bg-soft-secondary {
-    background-color: #f8f9fa;
-    color: #6c757d;
-}
-
-.bg-soft-primary {
-    background-color: #e7f1ff;
-}
-
-.bg-soft-success {
-    background-color: #e6fffa;
-    color: #319795;
-}
-
-/* Glow Effect */
+/* ── Coloured top strip that changes with state ─────────────── */
 .status-indicator-glow {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 4px;
-    background: #6c757d;
-    /* Default gray */
-    transition: background 0.5s ease;
+    background: #adb5bd;        /* neutral default */
+    transition: background 0.5s ease, box-shadow 0.5s ease;
+    z-index: 1;
 }
-
-/* State Classes (Apply via JS) */
 .card-state-active .status-indicator-glow {
-    background: #28a745;
-    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4);
+    background: #10b981;
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
 }
 
-.card-state-active .btn-primary {
-    display: none;
+/* ── Clock block ────────────────────────────────────────────── */
+.punch-clock-block { min-width: 0; }   /* allow text-overflow inside flex */
+
+.punch-date-label {
+    font-size: clamp(0.6rem, 1.2vw, 0.7rem);
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 17ch;
 }
 
-.transition-all:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.1);
+.punch-time {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
 }
 
+/* ── Action Buttons ─────────────────────────────────────────── */
+.punch-btn {
+    font-size: clamp(0.82rem, 1.5vw, 0.95rem);
+    letter-spacing: 0.2px;
+}
 
+/* ── GPS tag ─────────────────────────────────────────────────── */
+.x-small { font-size: 0.75rem; }
 
-/* Icon Shapes for Summary Cards */
+/* ── Utility helpers ─────────────────────────────────────────── */
+.ls-1 { letter-spacing: 1px; }
+
+/* ── Soft background helpers ─────────────────────────────────── */
+.bg-soft-primary  { background-color: #eef2ff; }
+.bg-soft-danger   { background-color: #fff1f2; }
+.bg-soft-success  { background-color: #f0fdf4; }
+.bg-soft-info     { background-color: #ecfeff; }
+.bg-soft-secondary { background-color: #f8f9fa; color: #6c757d; }
+
+/* ============================================================
+   SUMMARY CARDS
+   ============================================================ */
+
+.summary-card {
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Icon badge circles */
 .icon-shape {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
 }
 
-/* Subtle Hover Effect */
-.summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+/* Data value inside each summary card */
+.summary-value {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    line-height: 1.2;
 }
 
+/* ============================================================
+   STATUS BADGE COMPONENT
+   BEM: .status-badge  |  modifier: --{type}
+   ============================================================ */
 
-
-/* Responsive Logic & Expert Styling */
-.punch-card-refined {
-    min-height: 400px;
-}
-
-/* Icon Shapes for Summary Cards */
-.icon-shape {
-    width: 48px;
-    height: 48px;
-    display: flex;
+.status-badge {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 5px;
+    padding: 5px 12px 5px 8px;
+    border-radius: 999px;
+    font-size: clamp(0.65rem, 1.3vw, 0.78rem);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border: 1.5px solid transparent;
+    white-space: nowrap;
+    max-width: 100%;
+    transition: background 0.35s ease, color 0.35s ease,
+                border-color 0.35s ease, box-shadow 0.35s ease;
+    user-select: none;
 }
 
-/* Soft Backgrounds */
-.bg-soft-primary {
-    background-color: #eef2ff;
+.status-badge__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
+    opacity: 0.6;
+    transition: opacity 0.35s, transform 0.35s;
 }
 
-.bg-soft-danger {
-    background-color: #fff1f2;
+.status-badge__icon {
+    font-size: 0.78em;
+    flex-shrink: 0;
 }
 
-.bg-soft-success {
-    background-color: #f0fdf4;
+.status-badge__label {
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.bg-soft-info {
-    background-color: #ecfeff;
+/* ── Off Duty ─────────────────────────────────────────────── */
+.status-badge--offduty {
+    background: #f1f3f5;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+.status-badge--offduty .status-badge__dot { opacity: 0.35; }
+
+/* ── Not Punched In ──────────────────────────────────────── */
+.status-badge--not-punched {
+    background: #fff8e7;
+    color: #b45309;
+    border-color: #fcd34d;
+    box-shadow: 0 1px 6px rgba(251, 191, 36, 0.18);
 }
 
-/* Subtle Hover Effect */
-.summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+/* ── Punched In (glowing, animated dot) ──────────────────── */
+.status-badge--punched-in {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18),
+                0 2px 10px rgba(16, 185, 129, 0.25);
+}
+.status-badge--punched-in .status-badge__dot {
+    opacity: 1;
+    animation: statusDotPulse 1.6s ease-in-out infinite;
 }
 
-/* Responsive Font Scaling */
-@media (max-width: 768px) {
-    #currentTime {
-        font-size: calc(1.3rem + 1.5vw);
+/* ── Punched Out ─────────────────────────────────────────── */
+.status-badge--punched-out {
+    background: #f0f4ff;
+    color: #3730a3;
+    border-color: #a5b4fc;
+    box-shadow: 0 1px 6px rgba(99, 102, 241, 0.15);
+}
+
+/* ── Holiday ─────────────────────────────────────────────── */
+.status-badge--holiday {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    color: #9d174d;
+    border-color: #f472b6;
+    box-shadow: 0 1px 8px rgba(244, 114, 182, 0.2);
+}
+
+/* ── On Leave ────────────────────────────────────────────── */
+.status-badge--on-leave {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border-color: #f87171;
+    box-shadow: 0 1px 8px rgba(248, 113, 113, 0.2);
+}
+
+/* ── Dot pulse animation ─────────────────────────────────── */
+@keyframes statusDotPulse {
+    0%, 100% { transform: scale(1);   opacity: 1; }
+    50%       { transform: scale(1.7); opacity: 0.4; }
+}
+
+/* ============================================================
+   RESPONSIVE OVERRIDES
+   ============================================================ */
+
+/* xs — phones portrait (< 576px) */
+@media (max-width: 575.98px) {
+    .punch-section-wrapper { padding: 0.75rem 0.5rem; }
+
+    .punch-time { font-size: 1.8rem; }
+    .punch-date-label { font-size: 0.6rem; max-width: 14ch; }
+
+    .icon-shape { width: 36px; height: 36px; font-size: 0.95rem; }
+    .summary-value { font-size: 1rem; }
+
+    .status-badge {
+        padding: 4px 9px 4px 6px;
+        font-size: 0.65rem;
+        gap: 4px;
     }
+    .status-badge__dot { width: 6px; height: 6px; }
 
-    .summary-card h4 {
-        font-size: 1.1rem;
-    }
-
+    #btnPunchIn, #btnPunchOut { padding: 0.55rem 1rem; font-size: 0.85rem; }
 }
 
-/* Flex Reverse Logic specifically for Desktop */
-@media (min-width: 992px) {
-    .flex-lg-row-reverse {
-        flex-direction: row-reverse !important;
-    }
-    .summary-card h4 {
-        font-size: 1.5rem;
-    }
-
-    .summary-card p-3 {
-        padding: 1.5rem !important;
-    }
-     .x-small {
-        font-size: 0.7rem;
-    }
+/* sm — large phones / landscape (576px – 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .punch-time { font-size: 2rem; }
+    .icon-shape { width: 40px; height: 40px; }
+    .summary-value { font-size: 1.15rem; }
 }
 
+/* md — tablets (768px – 991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    /* Summary cards go to 4-in-a-row (handled by col-md-3 in JSP) */
+    .punch-time { font-size: 2.2rem; }
+    .summary-value { font-size: 1.3rem; }
+    .icon-shape { width: 44px; height: 44px; font-size: 1.1rem; }
+}
+
+/* lg — small desktops / landscape tablet (992px – 1199px) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    /* Punch card is col-lg-4, summaries col-lg-8 — side by side */
+    .punch-time { font-size: 2rem; }
+    .punch-date-label { font-size: 0.65rem; max-width: 16ch; }
+
+    /* On lg the punch card is slightly narrower; keep badge compact */
+    .status-badge { font-size: 0.7rem; padding: 4px 10px 4px 7px; }
+
+    .summary-value { font-size: 1.2rem; }
+    .icon-shape { width: 40px; height: 40px; font-size: 1rem; }
+    .x-small { font-size: 0.68rem; }
+}
+
+/* xl — desktops (1200px – 1399px) */
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    /* Punch card is col-xl-3, summaries col-xl-9 */
+    .punch-time { font-size: 2.2rem; }
+    .summary-value { font-size: 1.4rem; }
+    .icon-shape { width: 46px; height: 46px; font-size: 1.15rem; }
+    .x-small { font-size: 0.7rem; }
+}
+
+/* xxl — wide screens (≥ 1400px) */
+@media (min-width: 1400px) {
+    .punch-time { font-size: 2.5rem; }
+    .summary-value { font-size: 1.5rem; }
+    .icon-shape { width: 50px; height: 50px; font-size: 1.2rem; }
+    .x-small { font-size: 0.72rem; }
+}

@@ -44,7 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final UserService userService;
     private final EmployeeRepository employeeRepo;
-    private UserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
     private final UserRepository userRepo;
     private final OrganisationRepository orgRepo;
     private final DepartmentRepository deptRepo;

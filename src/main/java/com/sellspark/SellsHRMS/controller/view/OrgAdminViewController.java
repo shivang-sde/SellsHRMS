@@ -75,6 +75,7 @@ public class OrgAdminViewController {
     public String employeeListPage(Model model) {
         model.addAttribute("pageTitle", "Employees");
         model.addAttribute("contentPage", "orgadmin/employee-list");
+        model.addAttribute("pageScript", "employee/employee-list");
         return "layout/main-layout";
     }
 

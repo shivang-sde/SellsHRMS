@@ -1,24 +1,94 @@
 $(document).ready(function () {
+  const orgId = window.APP.ORG_ID;
   const employeeId = window.APP.EMPLOYEE_ID || $("#globalEmployeeId").val();
   if (!employeeId) return console.error("Employee ID missing!");
 
-  initAttendanceCard(employeeId);
+  initAttendanceCard(employeeId, orgId);
 });
 
-function initAttendanceCard(employeeId) {
+function initAttendanceCard(employeeId, orgId) {
   let currentPunchId = null;
   let timerInterval = null;
+  let isOnLeave = false;
+  let isHoliday = false;
+
+  // ─── Status Badge Helper ────────────────────────────────────────────────────
+  // type: 'offduty' | 'not-punched' | 'punched-in' | 'punched-out' | 'holiday' | 'on-leave'
+  function setStatusBadge(type, label, icon) {
+    const $span = $("#punchStatusBadge .status-badge");
+    const allModifiers = [
+      "status-badge--offduty",
+      "status-badge--not-punched",
+      "status-badge--punched-in",
+      "status-badge--punched-out",
+      "status-badge--holiday",
+      "status-badge--on-leave"
+    ];
+    $span
+      .removeClass(allModifiers.join(" "))
+      .addClass("status-badge--" + type);
+    $span.find(".status-badge__icon")
+      .attr("class", "status-badge__icon fas " + icon);
+    $span.find(".status-badge__label").text(label);
+  }
+
+
+  function checkHoliday() {
+    $.ajax({
+      url: `/api/holidays/isHoliday?orgId=${orgId}&date=${new Date().toISOString().split("T")[0]}`,
+      method: "GET",
+      success: function (data) {
+        if (data.success && data.data) {
+          isHoliday = true;
+        }
+        // later fetch the holiday details itself and show to users
+        if (isHoliday) {
+          setStatusBadge("holiday", "Holiday", "fa-calendar-times");
+        } else {
+          setStatusBadge("not-punched", "Not Punched In", "fa-clock");
+        }
+      },
+      error: function (xhr) {
+        const err = xhr.responseJSON;
+        showToast('error', err.message);
+      }
+    });
+  }
+
+  function checkLeave() {
+    $.ajax({
+      url: `/api/leaves/check?employeeId=${employeeId}&date=${new Date().toISOString().split("T")[0]}`,
+      method: "GET",
+      success: function (data) {
+        if (data.success && data.data) {
+          isOnLeave = true;
+        }
+
+        if (isOnLeave) {
+          setStatusBadge("on-leave", "On Leave", "fa-umbrella-beach");
+        } else {
+          setStatusBadge("not-punched", "Not Punched In", "fa-clock");
+        }
+      },
+      error: function (xhr) {
+        const err = xhr.responseJSON;
+        showToast('error', err.message);
+      }
+    });
+  }
 
   // -----------------------
   // Initialization
   // -----------------------
+  checkLeave();
+  checkHoliday();
   $("#btnPunchIn").prop("disabled", true);
 
   $("#punchedFrom")
     .val("WFO")
     .on("change", function () {
       const value = $(this).val();
-      $("#btnPunchIn").prop("disabled", !value);
+      $("#btnPunchIn").prop("disabled", !value || isOnLeave || isHoliday);
     })
     .trigger("change");
 
@@ -27,7 +97,13 @@ function initAttendanceCard(employeeId) {
   loadTodayPunch();
 
   // Event bindings
-  $("#btnPunchIn").on("click", punchIn);
+  $("#btnPunchIn").on("click", function () {
+    if (isOnLeave || isHoliday) {
+      showToast("error", `${isOnLeave ? "You are on leave today" : "It is a holiday"}`);
+      return;
+    }
+    punchIn();
+  });
   $("#btnPunchOut").on("click", punchOut);
 
   // -----------------------
@@ -77,25 +153,22 @@ function initAttendanceCard(employeeId) {
       $("#attendanceSummaryText").html(
         `You punched out at <strong>${formatTime(data.punchOut)}</strong>.`,
       );
+      setStatusBadge("punched-out", "Punched Out", "fa-user-check");
     } else if (data.punchIn) {
       $("#attendanceSummaryText").html(
         `You are currently punched in since <strong>${formatTime(data.punchIn)}</strong>.`,
       );
+      setStatusBadge("punched-in", "Punched In", "fa-user-clock");
     } else {
       $("#attendanceSummaryText").html(
-        `You haven’t punched in yet. Your shift starts at <strong>09:30 AM</strong>.`,
+        `You haven't punched in yet. Your shift starts at <strong>09:30 AM</strong>.`,
       );
+      setStatusBadge("not-punched", "Not Punched In", "fa-clock");
     }
 
     // ✅ Update punch card UI
     if (data.punchOut) {
       // Already punched out
-      $("#punchStatus").html(`
-        <span class="badge bg-secondary fs-6 px-3 py-2 rounded-pill shadow-sm">
-          <i class="fas fa-user-check me-1"></i> Punched Out
-        </span>
-      `);
-
       $("#btnPunchIn, #btnPunchOut").hide();
       $("#workingHours").hide();
 
@@ -104,12 +177,6 @@ function initAttendanceCard(employeeId) {
         .addClass("border-secondary");
     } else {
       // Currently punched in
-      $("#punchStatus").html(`
-        <span class="badge bg-success fs-6 px-3 py-2 rounded-pill shadow-sm animate__animated animate__pulse animate__infinite">
-          <i class="fas fa-user-clock me-1"></i> Punched In
-        </span>
-      `);
-
       $("#btnPunchIn").hide();
       $("#btnPunchOut").show();
       $("#workingHours").fadeIn();
@@ -123,9 +190,7 @@ function initAttendanceCard(employeeId) {
   }
 
   function resetPunchUI() {
-    $("#punchStatus").html(
-      '<span class="badge bg-secondary fs-6">Not Punched In</span>',
-    );
+    setStatusBadge("not-punched", "Not Punched In", "fa-clock");
     $("#btnPunchIn, #punchedFromDiv").show();
     $("#btnPunchOut").hide();
     $("#todayPunchIn, #todayPunchOut").text("--:--");
@@ -149,6 +214,10 @@ function initAttendanceCard(employeeId) {
   }
 
   async function punchIn() {
+    if (isOnLeave || isHoliday) {
+      showToast("error", `${isOnLeave ? "You are on leave today" : "It is a holiday"}`);
+      return;
+    }
     const punchedFrom = $("#punchedFrom").val();
     if (!punchedFrom) {
       showToast(
@@ -157,6 +226,7 @@ function initAttendanceCard(employeeId) {
       );
       return;
     }
+
     try {
       const now = new Date().toISOString();
       const { lat, lng } = await getLocation();
@@ -182,6 +252,10 @@ function initAttendanceCard(employeeId) {
   }
 
   function punchOut() {
+    if (isOnLeave && isHoliday) {
+      showToast("error", `${isOnLeave ? "You are on leave today" : "It is a holiday"}`);
+      return;
+    }
     if (!currentPunchId) {
       showToast("error", "No active punch record found");
       return;

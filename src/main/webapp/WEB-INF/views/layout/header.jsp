@@ -51,10 +51,10 @@
                 </div>
                 <div class="user-info">
                   <span class="user-name">${sessionScope.USER_NAME}</span>
-                  <span class="user-role">
-                    <c:out
-                      value="${sessionScope.SYSTEM_ROLE != null ? fn:toLowerCase(fn:replace(sessionScope.SYSTEM_ROLE, '_', ' ')) : 'User'}" />
+                  <span class="user-role" style="text-transform: capitalize;">
+                    <c:out value="${fn:replace(sessionScope.SYSTEM_ROLE, '_', ' ')}" />
                   </span>
+
                 </div>
               </div>
 

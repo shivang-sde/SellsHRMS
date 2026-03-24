@@ -23,6 +23,8 @@ public interface LeaveService {
 
     LeaveResponseDTO updateLeave(Long leaveId, LeaveRequestDTO leave, Long employeeId, Long orgId);
 
+    boolean checkLeave(Long employeeId, LocalDate date);
+
     void cancelLeave(Long leaveId, Long employeeId, Long orgId);
 
     LeaveResponseDTO approveLeave(Long leaveId, Long approverId, String remarks, Long orgId);
@@ -35,15 +37,15 @@ public interface LeaveService {
 
     List<LeaveResponseDTO> findVisibleLeaves(Long orgId, Long empId);
 
-    List<LeaveResponseDTO> getAllLeaves(Long orgId);
+    List<LeaveResponseDTO> getAllLeaves(Long orgId, Long empId);
 
     List<LeaveResponseDTO> getEmployeeLeaves(Long employeeId, String financialYear);
 
-    List<LeaveResponseDTO> getPendingLeaves(Long orgId);
+    List<LeaveResponseDTO> getPendingLeaves(Long orgId, Long empId);
 
-    List<LeaveResponseDTO> getLeavesByStatus(Long orgId, String status);
+    List<LeaveResponseDTO> getLeavesByStatus(Long orgId, Long empId, String status);
 
-    List<LeaveResponseDTO> getLeavesBetweenDates(Long orgId, LocalDate from, LocalDate to);
+    List<LeaveResponseDTO> getLeavesBetweenDates(Long orgId, Long empId, LocalDate from, LocalDate to);
 
     // ============ Leave Balance ============
     EmployeeLeaveBalance getEmployeeLeaveBalance(Long employeeId, Long leaveTypeId, String financialYear);

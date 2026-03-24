@@ -12,31 +12,27 @@ import com.sellspark.SellsHRMS.entity.Organisation;
 
 @Repository
 public interface HolidayRepository extends JpaRepository<Holiday, Long> {
-    
+
     List<Holiday> findByOrganisationId(Long organisationId);
 
     List<Holiday> findByOrganisation(Organisation organisation);
-    
+
     List<Holiday> findByOrganisationIdAndHolidayDateBetween(
-        Long organisationId,
-        LocalDate startDate,
-        LocalDate endDate
-    );
-    
-     List<Holiday> findByOrganisationAndHolidayDateBetween(
-        Organisation organisation, LocalDate start, LocalDate end);
+            Long organisationId,
+            LocalDate startDate,
+            LocalDate endDate);
 
-      Optional<Holiday> findByOrganisationIdAndHolidayDate(
-        Long organisationId,
-        LocalDate date
-    );
-    
+    List<Holiday> findByOrganisationAndHolidayDateBetween(
+            Organisation organisation, LocalDate start, LocalDate end);
+
+    Optional<Holiday> findByOrganisationIdAndHolidayDate(
+            Long organisationId,
+            LocalDate date);
+
     boolean existsByOrganisationIdAndHolidayDate(
-        Long organisationId,
-        LocalDate date
-    );
+            Long organisationId,
+            LocalDate date);
 
-     boolean existsByOrganisationAndHolidayDate(Organisation organisation, LocalDate holidayDate);
-    
-  
+    boolean existsByOrganisationAndHolidayDate(Organisation organisation, LocalDate holidayDate);
+
 }

@@ -6,10 +6,10 @@ $(document).ready(function () {
   let punchInTime = null;
   let timerInterval = null;
 
-    if (!employeeId) {
-        showToast("error", "Invalid Session: Employee ID Missing");
-        return;
-    }
+  if (!employeeId) {
+    showToast("error", "Invalid Session: Employee ID Missing");
+    return;
+  }
 
 
 
@@ -81,8 +81,8 @@ $(document).ready(function () {
           setAsPunchedIn();
           startTimer();
         },
-        error: function () {
-          showToast('error', 'Failed to punch in.');
+        error: function (error) {
+          showToast('error', error.responseJSON.message);
         }
       });
     } catch (err) {
@@ -160,15 +160,15 @@ $(document).ready(function () {
 
 
   async function loadEmployeeProfile(id) {
-    const container = $('#employeeProfileContainer');   
+    const container = $('#employeeProfileContainer');
 
     try {
-        const res = await fetch(`/api/employees/${id}`);
-        if (!res.ok) throw new Error("Failed to load employee details");
+      const res = await fetch(`/api/employees/${id}`);
+      if (!res.ok) throw new Error("Failed to load employee details");
 
-        const emp = await res.json();
+      const emp = await res.json();
 
-        container.innerHTML = `
+      container.innerHTML = `
             <div class="row">
 
                 <div class="col-md-4">
@@ -201,9 +201,9 @@ $(document).ready(function () {
             </div>
         `;
     } catch (err) {
-        container.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+      container.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
     }
-}
+  }
 
   // =============================
   // GET LOCATION (PROMISE)

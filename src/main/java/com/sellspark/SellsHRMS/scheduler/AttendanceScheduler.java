@@ -71,6 +71,8 @@ public class AttendanceScheduler {
                     boolean isLeave = leaveRepo
                             .existsByEmployeeAndDateAndApproved(emp.getId(), today);
 
+                    Optional<Leave> leave = leaveRepo.findApprovedLeaveByEmployeeAndDate(emp.getId(), today);
+
                     AttendanceSummary.AttendanceStatus status;
                     String remarks;
 
@@ -80,9 +82,11 @@ public class AttendanceScheduler {
                     } else if (isWeekOff) {
                         status = AttendanceSummary.AttendanceStatus.WEEK_OFF;
                         remarks = "Week Off (Policy)";
+
                     } else if (isLeave) {
                         status = AttendanceSummary.AttendanceStatus.ON_LEAVE;
                         remarks = "On Leave";
+
                     } else {
                         status = AttendanceSummary.AttendanceStatus.ABSENT;
                         remarks = "Awaiting punch (Policy)";
@@ -94,6 +98,7 @@ public class AttendanceScheduler {
                                     .employee(emp)
                                     .attendanceDate(today)
                                     .status(status)
+                                    .leave(leave.orElse(null))
                                     .source(AttendanceSummary.AttendanceSource.AUTO_SYSTEM)
                                     .remarks(remarks)
                                     .build());

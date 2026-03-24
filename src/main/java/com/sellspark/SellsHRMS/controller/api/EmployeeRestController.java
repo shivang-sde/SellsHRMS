@@ -5,7 +5,8 @@ import com.sellspark.SellsHRMS.dto.employee.EmployeeDetailResponse;
 import com.sellspark.SellsHRMS.dto.employee.EmployeeResponse;
 import com.sellspark.SellsHRMS.payload.ApiResponse;
 import com.sellspark.SellsHRMS.service.EmployeeService;
-import lombok.RequiredArgsConstructor;
+
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class EmployeeRestController {
 
     private final EmployeeService service;
@@ -101,7 +102,6 @@ public class EmployeeRestController {
         boolean isOrgAdmin = hasAuthority(authentication, "ORG_ADMIN");
         boolean canViewAll = hasAuthority(authentication, "EMPLOYEE_VIEW_ALL");
         boolean canViewTeam = hasAuthority(authentication, "EMPLOYEE_VIEW_TEAM");
-        boolean canViewSelf = hasAuthority(authentication, "EMPLOYEE_VIEW_SELF");
 
         // 1. ORG_ADMIN or EMPLOYEE_VIEW_ALL can view any employee in the same
         // organisation
@@ -118,11 +118,6 @@ public class EmployeeRestController {
             if (service.isSubordinate(currentEmpId, id)) {
                 return ResponseEntity.ok(service.getById(id));
             }
-        }
-
-        // 3. EMPLOYEE_VIEW_SELF can view own record
-        if (canViewSelf && currentEmpId != null && currentEmpId.equals(id)) {
-            return ResponseEntity.ok(service.getById(id));
         }
 
         // 4. Default to Forbidden if no permission matches
