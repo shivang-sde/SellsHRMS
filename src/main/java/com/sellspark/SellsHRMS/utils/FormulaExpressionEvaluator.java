@@ -30,8 +30,8 @@ public class FormulaExpressionEvaluator {
     // Cache parsed expressions to avoid re-parsing the same formula 10,000 times
     // private static final Map<String, Expression> expressionCache = new
     // ConcurrentHashMap<>(); later performance improvement
-    private static final Pattern COMP_PATTERN = Pattern.compile("COMP:([A-Z0-9_]+)");
-    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\b[A-Z0-9_]+\\b");
+    private static final Pattern COMP_PATTERN = Pattern.compile("COMP:([A-Za-z_][A-Za-z0-9_]*)");
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\b[A-Za-z_][A-Za-z0-9_]*\\b");
 
     /**
      * Evaluate any payroll formula with the provided context.
@@ -40,18 +40,25 @@ public class FormulaExpressionEvaluator {
         if (formula == null || formula.isBlank())
             return 0.0;
 
+        log.info("FormulaExpressionEvaluator - Evaluating formula: '{}'", formula);
+        log.info("FormulaExpressionEvaluator - Initial Context keys: {}", context.keySet());
+
         try {
             // Step 1️⃣: Replace COMP: references with actual values
             String parsedFormula = replaceComponentRefs(formula, context);
+            log.info("FormulaExpressionEvaluator - After COMP replacement: '{}'", parsedFormula);
 
             // Step 2️⃣: Replace missing direct tokens (e.g., BASE, BASIC, PF) with "0"
             parsedFormula = replaceMissingTokens(parsedFormula, context);
+            log.info("FormulaExpressionEvaluator - After Missing Token replacement: '{}'", parsedFormula);
 
             // Step 3️⃣: Create safe evaluation context
             StandardEvaluationContext evalContext = new StandardEvaluationContext(context);
             evalContext.addPropertyAccessor(new MapAccessor());
             evalContext.setRootObject(context);
             Object value = parser.parseExpression(parsedFormula).getValue(evalContext);
+            log.info("FormulaExpressionEvaluator - Evaluation Result: {}", value);
+            
             if (value instanceof Number num)
                 return num.doubleValue();
             return 0.0;
@@ -75,11 +82,15 @@ public class FormulaExpressionEvaluator {
         try {
             String parsed = replaceComponentRefs(formula, sampleContext);
             parsed = replaceMissingTokens(parsed, sampleContext);
-            StandardEvaluationContext ctx = new StandardEvaluationContext();
-            sampleContext.forEach((k, v) -> ctx.setVariable(k, v != null ? v : 0.0));
+            
+            StandardEvaluationContext ctx = new StandardEvaluationContext(sampleContext);
+            ctx.addPropertyAccessor(new MapAccessor());
+            ctx.setRootObject(sampleContext);
+            
             parser.parseExpression(parsed).getValue(ctx);
             return true;
         } catch (Exception e) {
+            log.error("Formula validation failed for '{}': {}", formula, e.getMessage());
             return false;
         }
     }

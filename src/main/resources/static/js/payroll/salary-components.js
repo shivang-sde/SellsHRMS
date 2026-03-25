@@ -38,6 +38,45 @@ const SalaryComponents = (() => {
         // Calculation type change
         $('#calculationType').on('change', handleCalculationTypeChange);
 
+        $('#componentFormula').on('input', debounce(validateFormulaRealTime, 500));
+        $('#componentFormula').on('blur', validateFormulaRealTime);
+
+        // Auto-correct decimal errors like ".5" -> "0.5"
+        $('#componentFormula').on('change', function() {
+            let val = $(this).val();
+            let corrected = val.replace(/(^|[^0-9])\.([0-9]+)/g, '$10.$2');
+            if (val !== corrected) {
+                $(this).val(corrected);
+                window.showToast('info', 'Auto-corrected syntax for proper validation.');
+                validateFormulaRealTime();
+            }
+        });
+
+        // Formula builder actions
+        $('.btn-formula-action').on('click', function(e) {
+            e.preventDefault();
+            const valToInsert = $(this).data('val');
+            const $textarea = $('#componentFormula');
+            const cursorPos = $textarea.prop('selectionStart');
+            const v = $textarea.val();
+            const textBefore = v.substring(0, cursorPos);
+            const textAfter = v.substring(cursorPos, v.length);
+            
+            // Add spaces around operators if appropriate
+            let insertStr = valToInsert;
+            if (['+', '-', '*', '/'].includes(valToInsert)) {
+                insertStr = ' ' + valToInsert + ' ';
+            }
+            
+            $textarea.val(textBefore + insertStr + textAfter);
+            $textarea.prop('selectionStart', cursorPos + insertStr.length);
+            $textarea.prop('selectionEnd', cursorPos + insertStr.length);
+            $textarea.focus();
+            validateFormulaRealTime();
+        });
+
+        $('#btnValidateFormula').on('click', testFormulaEndpoint);
+
         // Form reset on modal close
         $('#componentModal').on('hidden.bs.modal', resetForm);
     };
@@ -174,6 +213,7 @@ const SalaryComponents = (() => {
         $('#componentId').val('');
         currentComponentId = null;
         $('#formulaSection').addClass('d-none');
+        $('#formulaError').remove();
     };
 
     const handleCalculationTypeChange = () => {
@@ -234,7 +274,7 @@ const SalaryComponents = (() => {
             loadComponents();
         } catch (error) {
             console.error('Error saving component:', error);
-            const errorMsg = error.responseJSON?.message || 'Failed to save component';
+            const errorMsg = error.responseText || 'Failed to save component';
             window.showToast('error', errorMsg);
         } finally {
             btnSave.prop('disabled', false).html('<i class="fas fa-save me-2"></i>Save Component');
@@ -338,6 +378,96 @@ const SalaryComponents = (() => {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    };
+
+    const validateFormulaRealTime = () => {
+        const formula = $('#componentFormula').val().trim();
+        const calcType = $('#calculationType').val();
+
+        if (calcType !== 'FORMULA' || !formula) {
+            $('#formulaError').remove();
+            return true;
+        }
+
+        const regex = /\b[A-Z0-9_]+\b/g;
+        let match;
+        const usedVars = new Set();
+        while ((match = regex.exec(formula)) !== null) {
+            if (match[0] !== 'COMP') {
+                usedVars.add(match[0]);
+            }
+        }
+
+        const validVars = new Set(['BASE', 'WORKING_DAYS', 'PAYMENT_DAYS', 'LOP_DAYS', 'VARPAY', 'COUNTRY', 'ORG_ID', 'DATE_NOW', 'BASEPAY', 'GROSS']);
+        
+        componentsData.forEach(c => {
+            if (c.id !== currentComponentId && c.active && c.abbreviation) {
+                validVars.add(c.abbreviation);
+            }
+        });
+
+        const missing = Array.from(usedVars).filter(v => !validVars.has(v) && isNaN(v) && !['TRUE', 'FALSE', 'AND', 'OR', 'NOT'].includes(v));
+
+        if (missing.length > 0) {
+            if ($('#formulaError').length === 0) {
+                $('#componentFormula').after('<div id="formulaError" class="text-danger small mt-2"></div>');
+            }
+            $('#formulaError').removeClass('text-success').addClass('text-danger').html(`<i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> The following variables are not recognized: <strong>${missing.join(', ')}</strong>. Make sure they are correctly spelled and created prior.`);
+            return false;
+        } else {
+            if ($('#formulaError').length === 0) {
+                $('#componentFormula').after('<div id="formulaError" class="text-success small mt-2"></div>');
+            }
+            $('#formulaError').removeClass('text-danger').addClass('text-success').html(`<i class="fas fa-check-circle"></i> Extracted variables look correct. You can click Test Formula just to be perfectly sure!`);
+            return true;
+        }
+    };
+
+    const testFormulaEndpoint = async () => {
+        const formula = $('#componentFormula').val().trim();
+        if (!formula) {
+            window.showToast('warning', 'Please enter a formula to test.');
+            return;
+        }
+
+        const componentData = {
+            id: currentComponentId,
+            organisationId: window.APP.ORG_ID,
+            abbreviation: $('#componentAbbr').val().trim().toUpperCase(),
+            calculationType: 'FORMULA',
+            formula: formula
+        };
+
+        const btnTest = $('#btnValidateFormula');
+        const origHTML = btnTest.html();
+        btnTest.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Testing...');
+
+        try {
+            const res = await $.ajax({
+                url: `${window.APP.CONTEXT_PATH}/api/payroll/salary-components/validate-formula`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(componentData)
+            });
+
+            if ($('#formulaError').length === 0) {
+                $('#componentFormula').after('<div id="formulaError" class="text-success small mt-2"></div>');
+            }
+            $('#formulaError').removeClass('text-danger').addClass('text-success')
+                .html(`<i class="fas fa-check-circle"></i> ${res.message || 'Formula is syntactically correct and logical.'}`);
+            window.showToast('success', res.message || 'Formula is valid!');
+
+        } catch (error) {
+            const errorMsg = error.responseJSON?.message || 'Formula validation failed. Try again.';
+            if ($('#formulaError').length === 0) {
+                $('#componentFormula').after('<div id="formulaError" class="text-danger small mt-2"></div>');
+            }
+            $('#formulaError').removeClass('text-success').addClass('text-danger')
+                .html(`<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> ${errorMsg}`);
+            window.showToast('error', 'Formula validation failed.');
+        } finally {
+            btnTest.prop('disabled', false).html(origHTML);
+        }
     };
 
     // Public API

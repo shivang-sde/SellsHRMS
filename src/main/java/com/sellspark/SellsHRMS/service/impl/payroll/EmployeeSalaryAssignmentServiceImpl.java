@@ -94,7 +94,8 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
         boolean structureChanged = dto.getSalaryStructureId() != null &&
                 !dto.getSalaryStructureId().equals(assignment.getSalaryStructure().getId());
         boolean basePayChanged = dto.getBasePay() != null && !dto.getBasePay().equals(assignment.getBasePay());
-
+        boolean forceRecalc = "recalc".equalsIgnoreCase(dto.getRemarks());
+        
         mapDtoToEntity(dto, assignment);
 
         if (structureChanged) {
@@ -102,7 +103,7 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
             assignment.setSalaryStructure(structure);
         }
 
-        if (structureChanged || basePayChanged) {
+        if (structureChanged || basePayChanged || forceRecalc) {
             // RE-CALC BASELINE
             calculateAndSetBaseline(assignment);
         }
@@ -219,13 +220,23 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
         List<SalaryComponent> orderedComponents = SalaryComponentDependencySorter
                 .sortByDependencies(structure.getComponents());
 
+        log.info("========== BASELINE CALCULATION LOGGING START ==========");
+        log.info("Ordered Components to process: {}", orderedComponents.stream().map(SalaryComponent::getAbbreviation).collect(Collectors.toList()));
+
         for (SalaryComponent comp : orderedComponents) {
-            if (Boolean.FALSE.equals(comp.getActive()))
+            log.info("Checking component: {}", comp.getAbbreviation());
+            if (Boolean.FALSE.equals(comp.getActive())) {
+                log.info("Component {} is Inactive. Skipping.", comp.getAbbreviation());
                 continue;
+            }
 
             // Use existing FormulaExpressionEvaluator logic here
+            log.info("Baseline Calc: Processing Component {} ({}) with context keys {}", comp.getName(), comp.getAbbreviation(), context.keySet());
             double amount = payrollCalculationService.computeComponentAmount(comp, context);
+            log.info("Baseline Calc: Evaluated Component {} ({}) -> Amount: {}", comp.getName(), comp.getAbbreviation(), amount);
+            
             context.put(comp.getAbbreviation(), amount);
+            context.put("COMP:" + comp.getAbbreviation(), amount);
             // Add to context so subsequent formulas can use this component
             componentValueMap.put(comp, amount);
             breakdownMap.put(comp.getName(), round(amount));

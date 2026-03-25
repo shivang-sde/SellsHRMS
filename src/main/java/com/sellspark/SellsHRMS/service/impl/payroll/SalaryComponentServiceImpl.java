@@ -6,6 +6,7 @@ import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.payroll.SalaryComponentRepository;
 import com.sellspark.SellsHRMS.service.payroll.SalaryComponentService;
+import com.sellspark.SellsHRMS.validator.SalaryFormulaValidator;
 
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 
@@ -26,6 +27,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     private final SalaryComponentRepository componentRepository;
     private final OrganisationRepository organisationRepository;
+    private final SalaryFormulaValidator formulaValidator;
 
     // ------------------ CREATE ------------------
     @Override
@@ -33,6 +35,16 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         log.info("Creating salary component: {}", dto);
         Organisation org = organisationRepository.findById(dto.getOrganisationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
+
+        List<SalaryComponent> existingComponents = componentRepository.findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
+        
+        boolean isDuplicate = existingComponents.stream()
+                .anyMatch(c -> c.getAbbreviation().equalsIgnoreCase(dto.getAbbreviation()));
+        if (isDuplicate) {
+            throw new IllegalArgumentException("A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
+        }
+
+        formulaValidator.validateFormula(dto, existingComponents);
 
         SalaryComponent component = new SalaryComponent();
         mapDtoToEntity(dto, component);
@@ -45,8 +57,20 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     // ------------------ UPDATE ------------------
     @Override
     public SalaryComponentDTO updateComponent(Long id, SalaryComponentDTO dto) {
+        log.debug("salary component update request : {}", dto);
         SalaryComponent component = componentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary component not found"));
+
+        List<SalaryComponent> existingComponents = componentRepository.findByOrganisationIdAndActiveTrue(component.getOrganisation().getId());
+        
+        boolean isDuplicate = existingComponents.stream()
+                .anyMatch(c -> c.getAbbreviation().equalsIgnoreCase(dto.getAbbreviation()) && !c.getId().equals(id));
+        if (isDuplicate) {
+            throw new IllegalArgumentException("A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
+        }
+        
+        dto.setId(id);
+        formulaValidator.validateFormula(dto, existingComponents);
 
         mapDtoToEntity(dto, component);
         componentRepository.save(component);

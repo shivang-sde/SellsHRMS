@@ -16,6 +16,24 @@ import java.util.List;
 public class SalaryComponentRestController {
 
     private final SalaryComponentService service;
+    private final com.sellspark.SellsHRMS.repository.payroll.SalaryComponentRepository componentRepository;
+    private final com.sellspark.SellsHRMS.validator.SalaryFormulaValidator formulaValidator;
+
+    @PostMapping("/validate-formula")
+    public ResponseEntity<?> validateFormula(@RequestBody SalaryComponentDTO dto) {
+        try {
+            if (dto.getOrganisationId() == null) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("valid", false, "message", "Organisation ID is required for evaluation."));
+            }
+            java.util.List<com.sellspark.SellsHRMS.entity.payroll.SalaryComponent> existing = 
+                componentRepository.findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
+            
+            formulaValidator.validateFormula(dto, existing);
+            return ResponseEntity.ok(java.util.Map.of("valid", true, "message", "Formula is syntactically correct and logical."));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("valid", false, "message", ex.getMessage()));
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody SalaryComponentDTO dto) {

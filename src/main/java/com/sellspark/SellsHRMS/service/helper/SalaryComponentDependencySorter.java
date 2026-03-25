@@ -9,7 +9,7 @@ import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
 public class SalaryComponentDependencySorter {
 
     // Regex to extract potential component references like BASIC, HRA, PF, etc.
-    private static final Pattern COMPONENT_REF_PATTERN = Pattern.compile("\\b[A-Z0-9_]+\\b");
+    private static final Pattern COMPONENT_REF_PATTERN = Pattern.compile("\\b[A-Za-z_][A-Za-z0-9_]*\\b");
 
     /**
      * Sort salary components based on their formula dependencies.

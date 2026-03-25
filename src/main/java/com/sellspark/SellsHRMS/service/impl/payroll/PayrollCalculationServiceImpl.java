@@ -264,22 +264,32 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     // ───────────────────────────────────────────────
     @Override
     public double computeComponentAmount(SalaryComponent comp, Map<String, Object> context) {
-        return switch (comp.getCalculationType()) {
+        log.info("--- computeComponentAmount START ---");
+        log.info("Component: {} ({})", comp.getName(), comp.getAbbreviation());
+        log.info("Calculation Type: {}", comp.getCalculationType());
+        log.info("Formula from DB: '{}'", comp.getFormula());
+        log.info("Context keys available: {}", context.keySet());
+
+        double resultAmount = switch (comp.getCalculationType()) {
             case FIXED -> Optional.ofNullable(comp.getAmount()).orElse(0.0);
             case FORMULA -> FormulaExpressionEvaluator.evaluate(comp.getFormula(), context);
             case PERCENTAGE -> {
                 // If a formula exists, use it; otherwise, default to BASE * percent
                 if (comp.getFormula() != null && !comp.getFormula().isBlank()) {
+                    log.info("Processing percentage via formula: {}", comp.getFormula());
                     yield FormulaExpressionEvaluator.evaluate(comp.getFormula(), context);
                 }
 
                 // Default fallback (backward compatibility)
                 double base = context.containsKey("BASE") ? ((Number) context.get("BASE")).doubleValue() : 0.0;
                 double percent = Optional.ofNullable(comp.getAmount()).orElse(0.0);
-                log.info("percent {}, base {}, yeild {}", percent, base, base * (percent / 100.0));
+                log.info("percent {}, base {}, yield {}", percent, base, base * (percent / 100.0));
                 yield base * (percent / 100.0);
             }
         };
+        log.info("Computed amount for {}: {}", comp.getAbbreviation(), resultAmount);
+        log.info("--- computeComponentAmount END ---");
+        return resultAmount;
     }
 
     // ───────────────────────────────────────────────
