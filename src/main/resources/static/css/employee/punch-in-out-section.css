@@ -203,6 +203,14 @@
     box-shadow: 0 1px 8px rgba(248, 113, 113, 0.2);
 }
 
+/* ── Week Off ────────────────────────────────────────────── */
+.status-badge--week-off {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 6px rgba(100, 116, 139, 0.15);
+}
+
 /* ── Dot pulse animation ─────────────────────────────────── */
 @keyframes statusDotPulse {
     0%, 100% { transform: scale(1);   opacity: 1; }

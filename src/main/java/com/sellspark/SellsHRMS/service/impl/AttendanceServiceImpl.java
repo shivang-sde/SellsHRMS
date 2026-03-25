@@ -497,11 +497,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Punch details
         if (punch != null) {
             response.setPunchId(punch.getId());
-            if (punch.getPunchSource() != null && !punch.getPunchSource().name().equals("null")) {
-                response.setPunchSource(punch.getPunchSource().name());
-            } else {
-                response.setPunchSource("SYSTEM");
-            }
+            response.setPunchSource(
+                    punch.getPunchSource() != null && !"null".equals(punch.getPunchSource().name())
+                            ? punch.getPunchSource().name()
+                            : "SYSTEM");
+        } else {
+            response.setPunchId(0L);
+            response.setPunchSource("SYSTEM");
         }
 
         response.setSummaryId(summary.getId());
@@ -514,22 +516,28 @@ public class AttendanceServiceImpl implements AttendanceService {
             String firstName = emp.getFirstName() != null ? emp.getFirstName() : "";
             String lastName = emp.getLastName() != null ? emp.getLastName() : "";
             response.setEmployeeName((firstName + " " + lastName).trim());
-            response.setEmployeeCode(emp.getEmployeeCode());
 
-            if (emp.getDepartment() != null) {
-                response.setDepartment(emp.getDepartment().getName());
-            }
+            response.setEmployeeCode(emp.getEmployeeCode() != null ? emp.getEmployeeCode() : "N/A");
+            response.setDepartment(emp.getDepartment() != null ? emp.getDepartment().getName() : "Unassigned");
+        } else {
+            response.setEmployeeId(0L);
+            response.setEmployeeName("Unknown Employee");
+            response.setEmployeeCode("N/A");
+            response.setDepartment("Unassigned");
         }
 
         // Attendance data
-        response.setPunchIn(safeConvert(summary.getEffectivePunchIn(), zoneId));
-        response.setPunchOut(safeConvert(summary.getEffectivePunchOut(), zoneId));
-        response.setIsLate(summary.getIsLate());
-        response.setIsEarlyOut(summary.getIsEarlyOut());
+        response.setPunchIn(
+                summary.getEffectivePunchIn() != null ? safeConvert(summary.getEffectivePunchIn(), zoneId) : null);
+        response.setPunchOut(
+                summary.getEffectivePunchOut() != null ? safeConvert(summary.getEffectivePunchOut(), zoneId) : null);
+        response.setWorkHours(summary.getWorkHours() != null ? summary.getWorkHours() : 0.0);
 
-        if (summary.getStatus() != null) {
-            response.setStatus(summary.getStatus().name());
-        }
+        response.setIsLate(summary.getIsLate() != null ? summary.getIsLate() : false);
+        response.setIsEarlyOut(summary.getIsEarlyOut() != null ? summary.getIsEarlyOut() : false);
+
+        response.setStatus(summary.getStatus() != null ? summary.getStatus().name() : "UNKNOWN");
+        response.setRemarks(summary.getRemarks() != null ? summary.getRemarks() : "No remarks");
 
         return response;
     }

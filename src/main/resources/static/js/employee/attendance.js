@@ -77,7 +77,7 @@ $(document).ready(function () {
         if (xhr.status === 404) {
           resetPunchUI();
         } else {
-          console.error("Failed to load punch status");
+          showToast("error", xhr.responseJSON.message);
         }
       },
     });
@@ -100,7 +100,7 @@ $(document).ready(function () {
     }
 
     if (data.punchOut) {
-      // ✅ Already punched out
+      //  Already punched out
       $("#punchStatus").html(`
       <span class="badge bg-secondary fs-6 px-3 py-2 rounded-pill shadow-sm">
         <i class="fas fa-user-check me-1"></i> Punched Out
@@ -120,7 +120,7 @@ $(document).ready(function () {
         .removeClass("border-success border-danger pulse-border")
         .addClass("border-secondary");
     } else {
-      // ✅ Currently punched in
+      // Currently punched in
       $("#punchStatus").html(`
       <span class="badge bg-success fs-6 px-3 py-2 rounded-pill shadow-sm animate__animated animate__pulse animate__infinite">
         <i class="fas fa-user-clock me-1"></i> Punched In
@@ -238,7 +238,6 @@ $(document).ready(function () {
 
     const now = new Date().toISOString();
 
-    console.log("punch in time", now);
 
     $.ajax({
       url: "/api/attendance/punch-out",

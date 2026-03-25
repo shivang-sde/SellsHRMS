@@ -102,6 +102,7 @@ public class EmployeeRestController {
         boolean isOrgAdmin = hasAuthority(authentication, "ORG_ADMIN");
         boolean canViewAll = hasAuthority(authentication, "EMPLOYEE_VIEW_ALL");
         boolean canViewTeam = hasAuthority(authentication, "EMPLOYEE_VIEW_TEAM");
+        boolean canViewSelf = id.equals(currentEmpId);
 
         // 1. ORG_ADMIN or EMPLOYEE_VIEW_ALL can view any employee in the same
         // organisation
@@ -113,7 +114,12 @@ public class EmployeeRestController {
             return ResponseEntity.ok(emp);
         }
 
-        // 2. EMPLOYEE_VIEW_TEAM can view subordinates
+        // 2. An employee can always view their own record
+        if (canViewSelf) {
+            return ResponseEntity.ok(service.getById(id));
+        }
+
+        // 3. EMPLOYEE_VIEW_TEAM can view their subordinates
         if (canViewTeam && currentEmpId != null) {
             if (service.isSubordinate(currentEmpId, id)) {
                 return ResponseEntity.ok(service.getById(id));
