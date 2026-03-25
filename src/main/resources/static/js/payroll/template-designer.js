@@ -1,9 +1,4 @@
-/**
- * Salary Slip Template Designer - JavaScript
- * Path: /resources/static/js/payroll/template-designer.js
- */
-
-// Global variables
+// @ts-nocheck
 const ORG_ID = $("#globalOrgId").val() || window.APP.ORG_ID;
 
 let availableFields = {};
@@ -17,14 +12,11 @@ let selectedFields = {
   summary: [],
 };
 
-// Initialize on document ready
 $(document).ready(function () {
   initializeTemplateDesigner();
 });
 
-/**
- * Initialize template designer
- */
+
 function initializeTemplateDesigner() {
   // Load available fields first
   loadAvailableFields().then(() => {
@@ -62,9 +54,6 @@ function setupEventListeners() {
   });
 }
 
-/**
- * Load available fields from backend
- */
 function loadAvailableFields() {
   return $.ajax({
     url: `/api/salary-slip-template/${ORG_ID}/available-fields`,
@@ -73,6 +62,7 @@ function loadAvailableFields() {
     .done(function (response) {
       if (response.success) {
         availableFields = response.data;
+        console.log("Available fields:", availableFields);
         renderFieldSections();
       } else {
         showAlert("danger", response.message);
@@ -144,6 +134,14 @@ function renderFieldSections() {
 
     container.append(sectionHtml);
   });
+
+  // Pre-select default summary fields
+  ["basePay", "totalEarnings", "totalDeductions", "netPay"].forEach(function (key) {
+    $("#field-summary-" + key).prop("checked", true);
+  });
+
+  // Sync JS state with the pre-checked boxes
+  updateSelectedFields();
 
   // Smoothly reveal once loaded
   container.hide().fadeIn(300);
@@ -301,8 +299,9 @@ function buildTemplateHtml() {
   }
   html += `</div>`;
 
-  // 4. COMPONENTS TABLE
-  html += `
+  // 4. COMPONENTS TABLE – only rendered when user selected at least one component
+  if (selectedFields.earnings.length > 0 || selectedFields.deductions.length > 0) {
+    html += `
     <div style="padding: 20px;">
         <table style="width: 100%; border-collapse: collapse; border: 1px solid #eee;">
             <thead>
@@ -315,6 +314,7 @@ function buildTemplateHtml() {
             </thead>
             <tbody style="font-size: 12px;">
                 <#assign maxRows = [(earnings?size)!0, (deductions?size)!0]?max>
+                <#if maxRows gt 0>
                 <#list 0..(maxRows - 1) as i>
                     <tr>
                         <td style="padding:8px; border-bottom: 1px solid #f9f9f9;"><#if earnings[i]??>\${earnings[i].name}</#if></td>
@@ -327,22 +327,40 @@ function buildTemplateHtml() {
                         </td>
                     </tr>
                 </#list>
+                </#if>
             </tbody>
         </table>
     </div>
   `;
+  }
 
-  // 5. SUMMARY
-  if (selectedFields.summary.includes("netPay")) {
-    html += `
-      <div style="margin: 0 20px 20px; padding: 15px; background: #28a745; color: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 12px;">
-              <div style="font-weight: bold; text-transform: uppercase;">Net Take Home Pay</div>
-              <div style="font-style: italic; margin-top: 4px; opacity: 0.9;">\${summary.netPayInWords!""}</div>
-          </div>
-          <div style="font-size: 20px; font-weight: bold;">\${summary.netPay!""}</div>
-      </div>
-    `;
+  // 5. SUMMARY – only the lines the user actually selected are rendered
+  const sumFields = selectedFields.summary;
+  if (sumFields.length > 0) {
+    // Detail rows (base pay / totals breakdown) above the net pay banner
+    const hasDetailRows = sumFields.some(f => ["basePay", "totalEarnings", "totalDeductions"].includes(f));
+    if (hasDetailRows) {
+      html += `<div style="margin: 0 20px 8px; padding: 12px 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; font-size: 12px;">`;
+      if (sumFields.includes("basePay"))
+        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Base Pay</span><span style="font-weight:600;">\${summary.basePay!""}</span></div>`;
+      if (sumFields.includes("totalEarnings"))
+        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Total Earnings</span><span style="font-weight:600;color:#28a745;">\${summary.totalEarnings!""}</span></div>`;
+      if (sumFields.includes("totalDeductions"))
+        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Total Deductions</span><span style="font-weight:600;color:#dc3545;">\${summary.totalDeductions!""}</span></div>`;
+      html += `</div>`;
+    }
+
+    if (sumFields.includes("netPay")) {
+      html += `
+        <div style="margin: 0 20px 20px; padding: 15px; background: #28a745; color: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 12px;">
+                <div style="font-weight: bold; text-transform: uppercase;">Net Take Home Pay</div>
+                ${sumFields.includes("netPayInWords") ? '<div style="font-style: italic; margin-top: 4px; opacity: 0.9;">\${summary.netPayInWords!""}</div>' : ""}
+            </div>
+            <div style="font-size: 20px; font-weight: bold;">\${summary.netPay!""}</div>
+        </div>
+      `;
+    }
   }
 
   // Footer
@@ -422,7 +440,7 @@ function saveTemplate() {
     0,
   );
   if (totalSelected === 0) {
-    showTost("warning", "Please select at least one field before saving");
+    showToast("warning", "Please select at least one field before saving");
     return;
   }
 
@@ -849,18 +867,3 @@ function getAlertIcon(type) {
   return icons[type] || "info-circle-fill";
 }
 
-/**
- * Escape HTML to prevent rendering issues
- */
-function escapeHtml(text) {
-  if (!text) return "";
-  return text.replace(/[&<>"']/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m];
-  });
-}

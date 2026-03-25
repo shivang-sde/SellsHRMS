@@ -1,5 +1,7 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipTemplateDTO;
 import com.sellspark.SellsHRMS.dto.payroll.TemplatePreviewRequest;
@@ -69,6 +71,7 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
     private final EmployeeBankRepository employeeBankRepository;
     private final PayRunRepository payRunRepository;
     private final StatutoryComponentRepository statutoryComponentRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String UPLOAD_DIR = "uploads/salary-templates/";
 
@@ -174,8 +177,14 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
                 ? request.getCustomData()
                 : getMockData(orgId);
 
-        return renderTemplateWithData(request.getTemplateHtml(), mockData);
+        // Filter earnings/deductions to only those the user actually selected.
+        // This prevents mock components that don't exist in the user's template
+        // from appearing in the preview.
+        if (request.getConfigJson() != null && !request.getConfigJson().isBlank()) {
+            filterMockDataBySelectedFields(mockData, request.getConfigJson());
+        }
 
+        return renderTemplateWithData(request.getTemplateHtml(), mockData);
     }
 
     @Override
@@ -242,31 +251,99 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
         payRunData.put("payDate", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")));
         data.put("payRun", payRunData);
 
-        // Mock Salary Components
+        // ── Salary Components: loaded from DB so they match the org's structure ──
         List<Map<String, Object>> earnings = new ArrayList<>();
-        earnings.add(createComponent("Basic Salary", 50000.00));
-        earnings.add(createComponent("HRA", 20000.00));
-        earnings.add(createComponent("Conveyance", 1600.00));
-        earnings.add(createComponent("Special Allowance", 8400.00));
+        List<Map<String, Object>> deductions = new ArrayList<>();
+
+        List<SalaryComponent> dbComponents = salaryComponentRepository.findByOrganisationIdAndActiveTrue(orgId);
+        for (SalaryComponent c : dbComponents) {
+            if (c.getType() == null)
+                continue;
+            if (c.getType().name().equalsIgnoreCase("EARNING")) {
+                earnings.add(createComponent(c.getName(), c.getAbbreviation(), 5000.0));
+            } else if (c.getType().name().equalsIgnoreCase("DEDUCTION")) {
+                deductions.add(createComponent(c.getName(), c.getAbbreviation(), 500.0));
+            }
+        }
+
+        List<StatutoryComponent> stComponents = statutoryComponentRepository
+                .findByOrganisation_IdAndIsActiveTrue(orgId);
+        for (StatutoryComponent sc : stComponents) {
+            deductions.add(createComponent(sc.getName(), sc.getCode(), 200.0));
+        }
 
         data.put("earnings", earnings);
-
-        List<Map<String, Object>> deductions = new ArrayList<>();
-        deductions.add(createComponent("Provident Fund", 6000.00));
-        deductions.add(createComponent("Professional Tax", 200.00));
-        deductions.add(createComponent("Income Tax (TDS)", 5000.00));
-
         data.put("deductions", deductions);
 
-        // Mock Summary
+        // ── Mock Summary ──────────────────────────────────────────────────────
+        double mockGross = earnings.stream().mapToDouble(e -> (Double) e.get("amount")).sum();
+        double mockDeductions = deductions.stream().mapToDouble(d -> (Double) d.get("amount")).sum();
+        double mockNet = mockGross - mockDeductions;
+
         Map<String, String> summary = new HashMap<>();
-        summary.put("totalEarnings", "₹80,000.00");
-        summary.put("totalDeductions", "₹11,200.00");
-        summary.put("netPay", "₹68,800.00");
-        summary.put("netPayInWords", "Sixty Eight Thousand Eight Hundred Rupees Only");
+        summary.put("basePay", formatAmount(50000.0));
+        summary.put("totalEarnings", formatAmount(mockGross));
+        summary.put("totalDeductions", formatAmount(mockDeductions));
+        summary.put("netPay", formatAmount(mockNet + 50000.0));
+        summary.put("netPayInWords", convertToWords(mockNet + 50000.0));
         data.put("summary", summary);
 
         return data;
+    }
+
+    /**
+     * Parses the template's {@code configJson} (sent from the front-end) and
+     * removes any earnings / deductions entries whose {@code key} (abbreviation)
+     * was NOT selected by the user.
+     *
+     * <p>
+     * This ensures the preview only shows the components that will actually
+     * appear in the final salary-slip template, eliminating the "why is this
+     * component here?" confusion.
+     */
+    @SuppressWarnings("unchecked")
+    private void filterMockDataBySelectedFields(Map<String, Object> mockData, String configJson) {
+        try {
+            JsonNode root = objectMapper.readTree(configJson);
+            JsonNode sections = root.get("sections");
+            if (sections == null || !sections.isArray())
+                return;
+
+            Map<String, List<String>> selectedBySection = new HashMap<>();
+            for (JsonNode section : sections) {
+                String sectionName = section.get("name").asText();
+                List<String> fields = new ArrayList<>();
+                section.get("fields").forEach(f -> fields.add(f.asText()));
+                selectedBySection.put(sectionName, fields);
+            }
+
+            // Filter earnings: keep only selected abbreviation keys
+            List<String> selectedEarnings = selectedBySection.getOrDefault("earnings", Collections.emptyList());
+            List<Map<String, Object>> allEarnings = (List<Map<String, Object>>) mockData.get("earnings");
+            if (allEarnings != null) {
+                mockData.put("earnings",
+                        selectedEarnings.isEmpty()
+                                ? Collections.emptyList()
+                                : allEarnings.stream()
+                                        .filter(e -> selectedEarnings.contains(e.get("key")))
+                                        .collect(Collectors.toList()));
+            }
+
+            // Filter deductions: keep only selected abbreviation keys
+            List<String> selectedDeductions = selectedBySection.getOrDefault("deductions", Collections.emptyList());
+            List<Map<String, Object>> allDeductions = (List<Map<String, Object>>) mockData.get("deductions");
+            if (allDeductions != null) {
+                mockData.put("deductions",
+                        selectedDeductions.isEmpty()
+                                ? Collections.emptyList()
+                                : allDeductions.stream()
+                                        .filter(d -> selectedDeductions.contains(d.get("key")))
+                                        .collect(Collectors.toList()));
+            }
+
+        } catch (Exception e) {
+            log.warn("Could not filter mock data by selected fields: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -290,9 +367,9 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
                 createField("phone", "Phone"),
                 createField("department", "Department"),
                 createField("designation", "Designation"),
-                createField("joiningDate", "Joining Date")
-
-        ));
+                createField("joiningDate", "Joining Date"),
+                createField("panNumber", "PAN Number"),
+                createField("uan", "UAN")));
 
         // Bank fields
         fields.put("bank", Arrays.asList(
@@ -385,7 +462,6 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
             builder.withHtmlContent(html, "file:///" + new File("uploads").getAbsolutePath() + "/"); // base URI
                                                                                                      // optional, useful
                                                                                                      // for relative
-                                                                                                     // image paths
             builder.toStream(baos);
             builder.run();
 
@@ -541,9 +617,19 @@ public class SalarySlipTemplateServiceImpl implements SalarySlipTemplateService 
 
     }
 
-    private Map<String, Object> createComponent(String name, Double amount) {
+    /**
+     * Creates a mock salary component entry.
+     *
+     * @param name   Human-readable component name
+     * @param key    Abbreviation/code — used by
+     *               {@link #filterMockDataBySelectedFields}
+     *               to match against the user's selection in configJson
+     * @param amount Mock monetary amount
+     */
+    private Map<String, Object> createComponent(String name, String key, Double amount) {
         Map<String, Object> comp = new HashMap<>();
         comp.put("name", name);
+        comp.put("key", key);
         comp.put("amount", amount);
         return comp;
     }

@@ -7,12 +7,6 @@
                 <div class="col">
                     <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Salary
                         Assignments</h2>
-                    <!-- <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="#">Payroll</a></li>
-                            <li class="breadcrumb-item active">Assignments</li>
-                        </ol>
-                    </nav> -->
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnAddAssignment">
@@ -21,16 +15,6 @@
                 </div>
             </div>
 
-            <!-- <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <small class="text-muted fw-bold text-uppercase">Total Active Payroll</small>
-                            <h3 class="mb-0 fw-bold text-primary" id="statTotalPayroll">₹0.00</h3>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-3">
@@ -221,21 +205,21 @@
 
         <!-- View Assignment Details Modal -->
         <div class="modal fade" id="viewAssignmentModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-eye me-2"></i>Assignment Details
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold text-dark">
+                            <i class="fas fa-file-invoice-dollar text-primary me-2"></i>Salary Assignment Details
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body bg-light mt-3 py-4 border-top">
                         <div class="row g-3" id="assignmentDetailsContent">
                             <!-- Dynamic content -->
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div class="modal-footer border-top-0 bg-light rounded-bottom">
+                        <button type="button" class="btn btn-secondary px-4 fw-bold rounded-pill" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>

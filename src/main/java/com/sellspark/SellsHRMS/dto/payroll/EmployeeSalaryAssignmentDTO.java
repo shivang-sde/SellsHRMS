@@ -35,4 +35,7 @@ public class EmployeeSalaryAssignmentDTO {
     private Boolean active;
 
     private List<Long> salarySlipIds; // Optional — for UI to show slip history
+    
+    // Add targetBreakdownJson to expose calculated breakdown
+    private String targetBreakdownJson;
 }

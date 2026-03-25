@@ -6,6 +6,7 @@ import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.payroll.SalaryComponentRepository;
 import com.sellspark.SellsHRMS.service.payroll.SalaryComponentService;
+
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -125,4 +126,30 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         if (d.getActive() != null)
             e.setActive(d.getActive());
     }
+
+    // In SalaryComponentServiceImpl.createComponent() and updateComponent()
+    // private void validateFormulaReferences(SalaryComponentDTO dto,
+    // List<SalaryComponent> existingComponents) {
+    // if (dto.getCalculationType() == "FORMULA" && dto.getFormula() != null) {
+    // Set<String> referencedComponents =
+    // extractTokensFromFormula(dto.getFormula());
+    // Set<String> existingAbbreviations = existingComponents.stream()
+    // .map(SalaryComponent::getAbbreviation)
+    // .collect(Collectors.toSet());
+
+    // // Add BASE as always available
+    // existingAbbreviations.add("BASE");
+
+    // List<String> missing = referencedComponents.stream()
+    // .filter(token -> !existingAbbreviations.contains(token))
+    // .collect(Collectors.toList());
+
+    // if (!missing.isEmpty()) {
+    // throw new ValidationException(
+    // "Formula references non-existent components: " + missing +
+    // ". Please create these components first or fix the formula.");
+    // }
+    // }
+    // }
+
 }

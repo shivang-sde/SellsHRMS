@@ -1,5 +1,5 @@
 $(document).ready(function () {
-  const orgId      = window.APP.ORG_ID;
+  const orgId = window.APP.ORG_ID;
   const employeeId = window.APP.EMPLOYEE_ID || $("#globalEmployeeId").val();
   if (!employeeId) return console.error("Employee ID missing!");
 
@@ -7,20 +7,25 @@ $(document).ready(function () {
 });
 
 function initAttendanceCard(employeeId, orgId) {
-  let currentPunchId    = null;
-  let timerInterval     = null;
+  let currentPunchId = null;
+  let timerInterval = null;
+
+  // Tracks today's punch state so applyPreCheckResult() never overwrites
+  // a real "Punched In" / "Punched Out" badge with a pre-check badge.
+  // Values: "none" | "punched-in" | "punched-out"
+  let punchState = "none";
 
   // ── pre-check results (populated by runPreCheck) ─────────────────────────
   let preCheck = {
-    canPunchIn:       false,
-    holiday:          false,
-    holidayName:      null,
-    onLeave:          false,
-    weekOff:          false,
-    weekOffDay:       null,
-    shiftStatus:      "BEFORE_SHIFT",
-    officeStart:      "--:--",
-    officeClosed:     "--:--",
+    canPunchIn: false,
+    holiday: false,
+    holidayName: null,
+    onLeave: false,
+    weekOff: false,
+    weekOffDay: null,
+    shiftStatus: "BEFORE_SHIFT",
+    officeStart: "--:--",
+    officeClosed: "--:--",
     lateGraceMinutes: 10,
   };
 
@@ -49,11 +54,11 @@ function initAttendanceCard(employeeId, orgId) {
   // Prevents double-submissions if user clicks quickly more than once.
   function throttle(fn, limitMs) {
     let lastCall = 0;
-    let pending  = false;
+    let pending = false;
     return function (...args) {
       const now = Date.now();
       if (pending || now - lastCall < limitMs) return;
-      pending  = true;
+      pending = true;
       lastCall = now;
       const btn = $(this);
       btn.prop("disabled", true);
@@ -72,7 +77,7 @@ function initAttendanceCard(employeeId, orgId) {
     $("#btnPunchIn").prop("disabled", true);
 
     $.ajax({
-      url:    `/api/attendance/pre-check?employeeId=${employeeId}&orgId=${orgId}`,
+      url: `/api/attendance/pre-check?employeeId=${employeeId}&orgId=${orgId}`,
       method: "GET",
       success: function (data) {
         preCheck = data;
@@ -93,6 +98,10 @@ function initAttendanceCard(employeeId, orgId) {
    * badge + button state accordingly.
    */
   function applyPreCheckResult(data) {
+    // ── Guard: if the employee already has a punch record today,
+    //    do NOT let the pre-check badge overwrite it.
+    if (punchState !== "none") return;
+
     // 1 ─ Holiday (highest priority)
     if (data.holiday) {
       const name = data.holidayName || "Holiday";
@@ -174,13 +183,13 @@ function initAttendanceCard(employeeId, orgId) {
     const $glow = $("#mainPunchCard .status-indicator-glow");
     const colours = {
       "punched-in": "#10b981",
-      "holiday":    "#f472b6",
-      "on-leave":   "#f87171",
-      "week-off":   "#94a3b8",
-      "default":    "#adb5bd",
+      "holiday": "#f472b6",
+      "on-leave": "#f87171",
+      "week-off": "#94a3b8",
+      "default": "#adb5bd",
     };
     $glow.css({
-      background:  colours[state] || colours.default,
+      background: colours[state] || colours.default,
       "box-shadow": state === "punched-in"
         ? "0 2px 12px rgba(16,185,129,0.45)"
         : "none",
@@ -215,9 +224,9 @@ function initAttendanceCard(employeeId, orgId) {
     $("#currentDate").text(
       now.toLocaleDateString("en-US", {
         weekday: "long",
-        year:    "numeric",
-        month:   "long",
-        day:     "numeric",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       }),
     );
   }
@@ -225,9 +234,10 @@ function initAttendanceCard(employeeId, orgId) {
   // ── Load today's punch record ─────────────────────────────────────────────
   function loadTodayPunch() {
     $.ajax({
-      url:    `/api/attendance/today/${employeeId}`,
+      url: `/api/attendance/today/${employeeId}`,
       method: "GET",
       success: function (data) {
+        console.log("data", data);
         if (data && data.punchIn) {
           displayPunchStatus(data);
         } else {
@@ -253,12 +263,14 @@ function initAttendanceCard(employeeId, orgId) {
     $("#todayTotalHours").text(data.workHours ? data.workHours.toFixed(2) + "h" : "0h");
 
     if (data.punchOut) {
+      punchState = "punched-out";
       setStatusBadge("punched-out", "Punched Out", "fa-user-check");
       updateGlowStrip("default");
       $("#btnPunchIn, #btnPunchOut").hide();
       $("#workingHours").hide();
       $("#punchedFromDiv").hide();
     } else if (data.punchIn) {
+      punchState = "punched-in";
       setStatusBadge("punched-in", "Punched In", "fa-user-clock");
       updateGlowStrip("punched-in");
       $("#btnPunchIn").hide();
@@ -273,6 +285,9 @@ function initAttendanceCard(employeeId, orgId) {
 
   // ── Reset punch UI ────────────────────────────────────────────────────────
   function resetPunchUI() {
+    // Clear punch state BEFORE calling applyPreCheckResult so the
+    // guard inside it doesn't short-circuit the badge update.
+    punchState = "none";
     // Re-apply pre-check badge (don't blindly say "Not Punched In" if it's a holiday)
     applyPreCheckResult(preCheck);
     $("#btnPunchIn").show();
@@ -288,8 +303,8 @@ function initAttendanceCard(employeeId, orgId) {
   function startWorkTimer(punchInTime) {
     stopWorkTimer();
     timerInterval = setInterval(() => {
-      const diff    = new Date() - new Date(punchInTime);
-      const hours   = Math.floor(diff / 3600000);
+      const diff = new Date() - new Date(punchInTime);
+      const hours = Math.floor(diff / 3600000);
       const minutes = Math.floor((diff % 3600000) / 60000);
       $("#hoursWorked").text(`${hours}h ${minutes}m`);
     }, 1000);
@@ -303,9 +318,9 @@ function initAttendanceCard(employeeId, orgId) {
   async function punchIn() {
     // Guard — pre-check is the authority
     if (!preCheck.canPunchIn) {
-      if (preCheck.holiday)         showToast("error", `Today is ${preCheck.holidayName || "a holiday"}.`);
-      else if (preCheck.onLeave)    showToast("error", "You are on approved leave today.");
-      else if (preCheck.weekOff)    showToast("error", "Today is your week-off.");
+      if (preCheck.holiday) showToast("error", `Today is ${preCheck.holidayName || "a holiday"}.`);
+      else if (preCheck.onLeave) showToast("error", "You are on approved leave today.");
+      else if (preCheck.weekOff) showToast("error", "Today is your week-off.");
       else if (preCheck.shiftStatus === "BEFORE_SHIFT")
         showToast("error", `Punch-in opens at ${earliestPunchTime(preCheck.officeStart)}.`);
       else if (preCheck.shiftStatus === "AFTER_SHIFT")
@@ -326,10 +341,10 @@ function initAttendanceCard(employeeId, orgId) {
       const { lat, lng } = await getLocation();
       await new Promise((resolve, reject) => {
         $.ajax({
-          url:         "/api/attendance/punch-in",
-          method:      "POST",
+          url: "/api/attendance/punch-in",
+          method: "POST",
           contentType: "application/json",
-          data:        JSON.stringify({ employeeId, punchIn: now, punchedFrom, lat, lng }),
+          data: JSON.stringify({ employeeId, punchIn: now, punchedFrom, lat, lng }),
           success: function (data) {
             showToast("success", "Punched in successfully!");
             displayPunchStatus(data);
@@ -359,10 +374,10 @@ function initAttendanceCard(employeeId, orgId) {
     const now = new Date().toISOString();
     await new Promise((resolve, reject) => {
       $.ajax({
-        url:         "/api/attendance/punch-out",
-        method:      "POST",
+        url: "/api/attendance/punch-out",
+        method: "POST",
         contentType: "application/json",
-        data:        JSON.stringify({ punchId: currentPunchId, punchOut: now }),
+        data: JSON.stringify({ punchId: currentPunchId, punchOut: now }),
         success: function (data) {
           showToast("success", "Punched out successfully!");
           displayPunchStatus(data);

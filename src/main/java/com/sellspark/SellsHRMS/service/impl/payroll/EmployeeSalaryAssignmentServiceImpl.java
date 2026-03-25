@@ -63,13 +63,13 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
                 : null;// optional
 
         EmployeeSalaryAssignment assignment = new EmployeeSalaryAssignment();
-        log.info("emp slry assign new {}", assignment.getEmployee().getFirstName());
         mapDtoToEntity(dto, assignment);
         assignment.setEmployee(employee);
         assignment.setOrganisation(org);
         assignment.setSalaryStructure(structure);
         assignment.setTaxSlab(taxSlab);
 
+        log.info("emp slry assign new {}", employee.getFirstName());
         /*
          * ----------- Futre Implementation -------------------
          * 
@@ -175,11 +175,12 @@ public class EmployeeSalaryAssignmentServiceImpl implements EmployeeSalaryAssign
                 .effectiveTo(e.getEffectiveTo())
                 .remarks(e.getRemarks())
                 .active(e.getActive())
+                .targetBreakdownJson(e.getTargetBreakdownJson())
                 .build();
     }
 
     private void mapDtoToEntity(EmployeeSalaryAssignmentDTO d, EmployeeSalaryAssignment e) {
-        log.info("mapdto to enity slry asign");
+
         if (d.getBasePay() != null)
             e.setBasePay(d.getBasePay());
         if (d.getVariablePay() != null)

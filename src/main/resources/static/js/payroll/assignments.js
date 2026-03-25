@@ -43,17 +43,24 @@ const SalaryAssignments = (() => {
     };
 
     const loadAssignments = async () => {
+        console.log('Loading assignments for orgId:', window.APP.ORG_ID);
+        console.log('API URL:', `${window.APP.CONTEXT_PATH}/api/payroll/assignments/organisation/${window.APP.ORG_ID}`);
+
+        showLoading(true);
         try {
             const response = await $.ajax({
                 url: `${window.APP.CONTEXT_PATH}/api/payroll/assignments/organisation/${window.APP.ORG_ID}`,
-                method: 'GET',
-                data: { orgId: window.APP.ORG_ID }
+                method: 'GET'
             });
             assignmentsData = response.data || response || [];
             renderAssignments(assignmentsData);
         } catch (error) {
-            console.error('Error loading assignments:', error);
-            showToast('error', 'Failed to load salary assignments');
+            console.error('Full error object:', error);
+            console.error('Error status:', error.status);
+            console.error('Error response:', error.responseJSON);
+            showToast('error', error.responseJSON?.message || "Error loading salary assignments");
+        } finally {
+            showLoading(false);
         }
     };
 
@@ -61,13 +68,12 @@ const SalaryAssignments = (() => {
         try {
             const response = await $.ajax({
                 url: `${window.APP.CONTEXT_PATH}/api/employees/org/${window.APP.ORG_ID}`,
-                method: 'GET',
-                data: { orgId: window.APP.ORG_ID, status: 'ACTIVE' }
+                method: 'GET'
             });
             employeesData = response.data || response || [];
             populateEmployeeDropdown();
         } catch (error) {
-            console.error('Error loading employees:', error);
+            showToast('error', error.responseJSON.message || "error loading employees" + error.status);
         }
     };
 
@@ -75,14 +81,13 @@ const SalaryAssignments = (() => {
         try {
             const response = await $.ajax({
                 url: `${window.APP.CONTEXT_PATH}/api/payroll/salary-structures/organisation/${window.APP.ORG_ID}`,
-                method: 'GET',
-                data: { orgId: window.APP.ORG_ID, active: true }
+                method: 'GET'
             });
             structuresData = response.data || response || [];
             populateStructureDropdown();
             populateFilterDropdowns();
         } catch (error) {
-            console.error('Error loading structures:', error);
+            showToast('error', error.responseJSON.message || "error loading structures" + error.status);
         }
     };
 
@@ -228,7 +233,10 @@ const SalaryAssignments = (() => {
 
     const saveAssignment = async () => {
         const form = $('#assignmentForm')[0];
-        if (!form.checkValidity()) return form.reportValidity();
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
 
         const data = {
             id: currentAssignmentId,
@@ -243,21 +251,32 @@ const SalaryAssignments = (() => {
             active: $('#assignmentIsActive').is(':checked')
         };
 
-        console.log("salary assign data", data)
+        console.log("Saving assignment data:", data);
+        console.log("Current assignment ID:", currentAssignmentId);
 
         try {
+            const url = currentAssignmentId
+                ? `${window.APP.CONTEXT_PATH}/api/payroll/assignments/${currentAssignmentId}`
+                : `${window.APP.CONTEXT_PATH}/api/payroll/assignments`;
+
+            console.log("Saving to URL:", url);
+            console.log("Using method:", currentAssignmentId ? 'PUT' : 'POST');
+
             await $.ajax({
-                url: `${window.APP.CONTEXT_PATH}/api/payroll/assignments${currentAssignmentId ? '/' + currentAssignmentId : ''}`,
+                url: url,
                 method: currentAssignmentId ? 'PUT' : 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(data)
             });
+
             showToast('success', 'Assignment saved successfully');
             assignmentModal.hide();
-            loadAssignments();
+            await loadAssignments(); // Wait for reload to complete
         } catch (error) {
-            console.error("error, repsonse", error)
-            showToast('error', error.meesage || "error saving salary assignment");
+            console.error('Save error:', error);
+            console.error('Error status:', error.status);
+            console.error('Error response:', error.responseJSON);
+            showToast('error', error.responseJSON?.message || "Error saving salary assignment");
         }
     };
 
@@ -265,14 +284,111 @@ const SalaryAssignments = (() => {
         const data = assignmentsData.find(a => a.id === id);
         if (!data) return;
 
+        let breakdownHtml = '';
+        if (data.targetBreakdownJson) {
+            try {
+                const breakdown = JSON.parse(data.targetBreakdownJson);
+                breakdownHtml = `
+                    <div class="col-12 mt-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom p-4">
+                                <h6 class="text-primary fw-bold mb-0 text-uppercase letter-spacing-1"><i class="fas fa-chart-pie me-2"></i>Estimated CTC Breakdown</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light text-muted small text-uppercase">
+                                            <tr>
+                                                <th class="border-0 ps-4 py-3">Component Name</th>
+                                                <th class="text-end border-0 pe-4 py-3">Monthly Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="border-top-0">
+                                            ${Object.entries(breakdown).map(([key, value]) => `
+                                                <tr>
+                                                    <td class="ps-4 text-dark fw-medium py-3 border-light">${key}</td>
+                                                    <td class="text-end pe-4 fw-bold text-dark py-3 border-light">₹${formatCurrency(value)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                        <tfoot class="bg-primary bg-opacity-10 border-top border-primary border-opacity-25">
+                                            <tr>
+                                                <td class="ps-4 py-4 fw-bolder text-dark text-uppercase small">Total Annual Cost To Company (CTC)</td>
+                                                <td class="text-end pe-4 py-4 fw-bolder text-primary fs-5">₹${formatCurrency(data.annualCtc)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error("Error parsing breakdown json", e);
+            }
+        }
+
         const content = `
-            <div class="col-md-6"><strong>Employee:</strong><p>${data.employeeName}</p></div>
-            <div class="col-md-6"><strong>Structure:</strong><p>${data.salaryStructureName}</p></div>
-            <div class="col-md-4"><strong>Base:</strong><p>₹${formatCurrency(data.basePay)}</p></div>
-            <div class="col-md-4"><strong>Variable:</strong><p>₹${formatCurrency(data.variablePay)}</p></div>
-            <div class="col-md-6"><strong>Effective From:</strong><p>${formatDate(data.effectiveFrom)}</p></div>
-            <div class="col-md-6"><strong>Status:</strong><p>${data.active ? 'Active' : 'Inactive'}</p></div>
-            <div class="col-12"><strong>Remarks:</strong><p>${data.remarks || 'N/A'}</p></div>
+            <div class="col-12 mb-1">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-3 bg-white p-3 rounded shadow-sm border border-light">
+                    <div class="d-flex align-items-center mb-3 mb-sm-0">
+                        <div class="avatar-md me-3 bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 50px; height: 50px;">
+                            ${data.employeeName ? data.employeeName.charAt(0) : '?'}
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-dark">${data.employeeName}</h5>
+                            <div class="text-muted small mt-1">
+                                <i class="fas fa-id-badge me-1"></i>${data.employeeCode || 'N/A'} <span class="mx-1">&bull;</span> <i class="fas fa-sitemap me-1"></i>${data.employeeDepartmentName || 'General'}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        ${data.active 
+                            ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>Active Assignment</span>' 
+                            : '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-ban me-1"></i>Inactive</span>'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="row g-3">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="bg-light p-3 rounded h-100 border border-light">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.70rem;"><i class="fas fa-layer-group me-1"></i>Structure</small>
+                            <div class="fw-bold text-dark mt-1 fs-6 text-truncate" title="${data.salaryStructureName}">${data.salaryStructureName}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="bg-light p-3 rounded h-100 border border-light">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.70rem;"><i class="fas fa-money-bill-wave me-1"></i>Base Pay</small>
+                            <div class="fw-bold text-dark mt-1 fs-6">₹${formatCurrency(data.basePay)}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="bg-light p-3 rounded h-100 border border-light">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.70rem;"><i class="fas fa-chart-line me-1"></i>Variable Pay</small>
+                            <div class="fw-bold text-dark mt-1 fs-6">₹${formatCurrency(data.variablePay || 0)}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="bg-light p-3 rounded h-100 border border-light">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.70rem;"><i class="fas fa-calendar-check me-1"></i>Effective</small>
+                            <div class="fw-bold text-dark mt-1 fs-6">${formatDate(data.effectiveFrom)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            ${data.remarks ? `
+            <div class="col-12 mt-3">
+                <div class="bg-warning bg-opacity-10 border-start border-warning border-4 p-3 rounded">
+                    <small class="text-warning text-uppercase fw-bold align-items-center d-flex" style="font-size: 0.75rem;"><i class="fas fa-comment-dots me-2"></i>Remarks</small>
+                    <p class="mb-0 text-dark mt-1 small">${data.remarks}</p>
+                </div>
+            </div>
+            ` : ''}
+
+            ${breakdownHtml}
         `;
         $('#assignmentDetailsContent').html(content);
         viewModal.show();
@@ -304,7 +420,7 @@ const SalaryAssignments = (() => {
             showToast('success', 'Assignment deactivated');
             loadAssignments();
         } catch (error) {
-            showToast('error', 'Failed to deactivate');
+            showToast('error', error.responseJSON.message || "error deactivating salary assignment");
         }
     };
 
