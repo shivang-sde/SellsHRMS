@@ -497,7 +497,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Punch details
         if (punch != null) {
             response.setPunchId(punch.getId());
-            if (punch.getPunchSource() != null) {
+            if (punch.getPunchSource() != null && !punch.getPunchSource().name().equals("null")) {
                 response.setPunchSource(punch.getPunchSource().name());
             } else {
                 response.setPunchSource("SYSTEM");

@@ -161,8 +161,7 @@ $(document).ajaxError(function (event, jqxhr) {
         1500,
       );
     } else {
-      console.error("AJAX Error:", res);
-      // showToast("error", res.message || "An unexpected system error occurred.");
+      showToast("error", res.message || "An unexpected system error occurred.");
     }
   } catch (e) {
     showToast("error", e.message || "An unexpected system error occurred.");
