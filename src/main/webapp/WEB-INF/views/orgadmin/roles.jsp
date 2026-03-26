@@ -21,6 +21,22 @@
   </div>
 </div>
 
+<!-- System Permissions List -->
+<div class="card shadow-sm p-4 mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0"><i class="fa fa-list-alt me-2 text-primary"></i>Available Module Permissions</h5>
+  </div>
+  <div class="alert alert-info py-2 small mb-0">
+    <i class="fa fa-info-circle me-1"></i> Below is the list of all system permissions grouped by their respective modules. These can be attached to any role.
+  </div>
+  <div id="permissionsList" class="row">
+      <div class="col-12 text-center py-4">
+          <div class="spinner-border text-primary"></div>
+          <p class="mt-2 text-muted">Loading available permissions...</p>
+      </div>
+  </div>
+</div>
+
 <style>
   .perms-badge {
     font-size: 0.875rem;
@@ -28,5 +44,6 @@
     background-color: #f1f1f1;
     padding: 2px 6px;
     border: 1px solid #ccc;
+    border-radius: 4px;
   }
 </style>

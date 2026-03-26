@@ -37,7 +37,6 @@ $(document).ready(function () {
     });
   });
 
-  // ✅ Now returns a Promise
   function loadPermissions() {
     return $.get('/api/permissions', function (data) {
       const container = $('#permissionsList');
@@ -77,10 +76,10 @@ $(document).ready(function () {
     });
   }
 
-  $('#permissionsList').on('change', '.permission-checkbox', function() {
+  $('#permissionsList').on('change', '.permission-checkbox', function () {
     const code = $(this).data('code');
     const checked = $(this).prop('checked');
-    
+
     if (code === 'EMPLOYEE_VIEW_ALL') {
       const $team = $('.permission-checkbox[data-code="EMPLOYEE_VIEW_TEAM"]');
       if (checked) {
