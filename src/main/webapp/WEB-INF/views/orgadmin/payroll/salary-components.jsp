@@ -31,7 +31,7 @@
                             <select class="form-select" id="filterCalcType">
                                 <option value="">All Calculation Types</option>
                                 <option value="FIXED">Fixed</option>
-                                <option value="PERCENTAGE">Percentage</option>
+                                <!-- <option value="PERCENTAGE">Percentage</option> -->
                                 <option value="FORMULA">Formula</option>
                             </select>
                         </div>
@@ -211,11 +211,13 @@
                                             <ul class="mb-1 ps-3">
                                                 <li>Use <code>BASE</code> to reference the employee’s Base Pay.</li>
                                                 <li>Use abbreviations of other salary components (e.g.,
-                                                    <code>HRA</code>, <code>DA</code>) to reference their values.</li>
+                                                    <code>HRA</code>, <code>DA</code>) to reference their values.
+                                                </li>
                                                 <li><strong>Important:</strong> Always write leading zeros for decimals!
                                                     Example: use <code>0.12</code> instead of <code>.12</code></li>
                                                 <li>Supported math operators: <code>+</code>, <code>-</code>,
-                                                    <code>*</code>, <code>/</code>, parentheses <code>()</code>.</li>
+                                                    <code>*</code>, <code>/</code>, parentheses <code>()</code>.
+                                                </li>
                                                 <li>Conditional logic can be added using ternary expressions:<br>
                                                     <code>(BASE &gt; 50000) ? BASE * 0.1 : 0</code>
                                                 </li>

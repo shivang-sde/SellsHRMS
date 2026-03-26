@@ -41,6 +41,7 @@ public class AttendanceRestController {
     private final HolidayService holidayService;
     private final LeaveService leaveService;
     private final OrganisationPolicyService policyService;
+    private final com.sellspark.SellsHRMS.repository.OrganisationRepository organisationRepository;
 
     // Employee punches in
     @PostMapping("/punch-in")
@@ -113,8 +114,12 @@ public class AttendanceRestController {
             @RequestParam Long employeeId,
             @RequestParam Long orgId) {
 
-        LocalDate today = LocalDate.now();
-        LocalTime now   = LocalTime.now();
+        java.time.ZoneId zoneId = organisationRepository.findById(orgId)
+                .map(org -> java.time.ZoneId.of(org.getTimeZone()))
+                .orElse(java.time.ZoneId.systemDefault());
+
+        LocalDate today = LocalDate.now(zoneId);
+        LocalTime now   = LocalTime.now(zoneId);
         DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HH:mm");
 
         // ── 1. Holiday check ──────────────────────────────────────────────────
