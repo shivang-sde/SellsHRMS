@@ -69,9 +69,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (leave.isPresent()) {
             throw new AttendanceAlreadyMarkedException("Can't punch in! You are on leave today");
         }
-        if (holidayRepo.existsByOrganisationAndHolidayDate(employee.getOrganisation(), LocalDate.now())) {
-            throw new AttendanceAlreadyMarkedException("Can't punch in! It is a holiday today");
-        }
         ZoneId zoneId = ZoneId.of(employee.getOrganisation().getTimeZone());
         LocalDate attendanceDate = LocalDate.ofInstant(request.getPunchIn(), zoneId);
 
@@ -145,9 +142,6 @@ public class AttendanceServiceImpl implements AttendanceService {
                 LocalDate.now());
         if (leave.isPresent()) {
             throw new AttendanceAlreadyMarkedException("Can't punch out! You are on leave today");
-        }
-        if (holidayRepo.existsByOrganisationAndHolidayDate(punch.getOrganisation(), LocalDate.now())) {
-            throw new AttendanceAlreadyMarkedException("Can't punch out! It is a holiday today");
         }
 
         if (punch.getPunchOut() != null) {

@@ -107,7 +107,6 @@ function initAttendanceCard(employeeId, orgId) {
       const name = data.holidayName || "Holiday";
       setStatusBadge("holiday", name, "fa-calendar-times");
       updateGlowStrip("holiday");
-      $("#btnPunchIn").prop("disabled", true);
       showShiftInfo(data);
       return;
     }
@@ -128,7 +127,6 @@ function initAttendanceCard(employeeId, orgId) {
         : "Week Off";
       setStatusBadge("week-off", day + " (Off)", "fa-couch");
       updateGlowStrip("week-off");
-      $("#btnPunchIn").prop("disabled", true);
       showShiftInfo(data);
       return;
     }
@@ -318,9 +316,7 @@ function initAttendanceCard(employeeId, orgId) {
   async function punchIn() {
     // Guard — pre-check is the authority
     if (!preCheck.canPunchIn) {
-      if (preCheck.holiday) showToast("error", `Today is ${preCheck.holidayName || "a holiday"}.`);
-      else if (preCheck.onLeave) showToast("error", "You are on approved leave today.");
-      else if (preCheck.weekOff) showToast("error", "Today is your week-off.");
+      if (preCheck.onLeave) showToast("error", "You are on approved leave today.");
       else if (preCheck.shiftStatus === "BEFORE_SHIFT")
         showToast("error", `Punch-in opens at ${earliestPunchTime(preCheck.officeStart)}.`);
       else if (preCheck.shiftStatus === "AFTER_SHIFT")
