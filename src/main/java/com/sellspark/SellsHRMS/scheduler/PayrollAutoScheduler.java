@@ -50,7 +50,7 @@ public class PayrollAutoScheduler {
                         Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0));
 
                 // Skip if not today
-                if (!today.equals(generationDate)) {
+                if (!today.isBefore(generationDate)) {
                     continue;
                 }
 
