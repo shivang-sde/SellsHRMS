@@ -336,13 +336,13 @@
                     <span class="input-group-text text-muted">of month</span>
                   </div>
                 </div>
-                <div class="col-md-4">
+                <!-- <div class="col-md-4">
                   <label class="form-label">Cycle Duration</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="cycleDuration" class="form-control" min="1" max="31" required disabled>
                     <span class="input-group-text text-muted">Days</span>
                   </div>
-                </div>
+                </div> -->
                 <div class="col-md-4">
                   <label class="form-label">Payslip Offset</label>
                   <div class="input-group flex-nowrap">

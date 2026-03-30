@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,67 +28,34 @@ public class PayrollAutoScheduler {
     private final PayrollCalculationService payrollService;
 
     /**
-     * Runs daily at 2 AM and checks if today is payroll generation day
+     * How many past cycles to look back and catch up if missed.
+     * 3 means: current cycle + 2 previous months.
      */
-    @Scheduled(cron = "0 48 11 * * *", zone = "Asia/Kolkata")
+    private static final int CATCHUP_CYCLES = 3;
+
+    @Scheduled(cron = "0 58 12 * * *", zone = "Asia/Kolkata")
     public void autoGeneratePayslips() {
         LocalDate today = LocalDate.now();
         log.info("🕑 Starting auto payroll scheduler for date: {}", today);
 
         List<Organisation> orgs = organisationRepository.findAll();
+
         for (Organisation org : orgs) {
             try {
                 Optional<OrganisationPolicy> optPolicy = policyRepository.findByOrganisationId(org.getId());
                 if (optPolicy.isEmpty()) {
-                    log.warn("No policy found for org {}", org.getName());
+                    log.warn("⚠️ No policy found for org {}", org.getName());
                     continue;
                 }
 
                 OrganisationPolicy policy = optPolicy.get();
 
-                LocalDate[] cycle = calculateCycleDates(today, policy);
-                LocalDate cycleStart = cycle[0];
-                LocalDate cycleEnd = cycle[1];
-                LocalDate generationDate = cycleEnd.plusDays(
-                        Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0));
+                // Build list of cycles to check: current + previous N-1
+                List<LocalDate[]> cyclesToCheck = buildCyclesToCheck(today, policy);
 
-                if (today.isBefore(generationDate)) {
-                    log.info("⏭ Skipping {} - before generation date (today={}, generation={})",
-                            org.getName(), today, generationDate);
-                    continue;
+                for (LocalDate[] cycle : cyclesToCheck) {
+                    processCycle(org, policy, cycle[0], cycle[1], today);
                 }
-
-                // Prevent duplicate/overlapping PayRuns
-                boolean exists = payRunRepository.existsOverlap(org.getId(), cycleStart, cycleEnd);
-                if (exists) {
-                    log.info("⏩ Skipping payroll for {}, overlap found ({} to {})", org.getName(), cycleStart,
-                            cycleEnd);
-                    continue;
-                }
-
-                // Create PayRun
-                PayRun payRun = PayRun.builder()
-                        .organisation(org)
-                        .startDate(cycleStart)
-                        .endDate(cycleEnd)
-                        .month(cycleStart.getMonthValue())
-                        .year(cycleStart.getYear())
-                        .periodLabel(cycleStart.getMonth().name() + " " + cycleStart.getYear())
-                        .status(PayRun.PayRunStatus.PROCESSING)
-                        .runDate(today)
-                        .build();
-                payRun = payRunRepository.save(payRun);
-
-                log.info("▶️ Running payroll for org {} for {} to {}", org.getName(), cycleStart, cycleEnd);
-
-                // Compute salary slips
-                payrollService.runPayroll(org.getId(), payRun);
-
-                // Mark completed
-                payRun.setStatus(PayRun.PayRunStatus.COMPLETED);
-                payRunRepository.save(payRun);
-
-                log.info("✅ Payroll completed for {} [{} - {}]", org.getName(), cycleStart, cycleEnd);
 
             } catch (Exception ex) {
                 log.error("❌ Error while processing payroll for org {}", org.getName(), ex);
@@ -96,35 +64,110 @@ public class PayrollAutoScheduler {
     }
 
     /**
-     * Decides payroll cycle based on organisation policy.
-     * Supports both fixed and variable duration cycles.
+     * Attempts to process a single cycle for a given org.
+     * Skips if not yet due, or if already processed.
      */
-    private LocalDate[] calculateCycleDates(LocalDate today, OrganisationPolicy policy) {
-        Integer startDay = Optional.ofNullable(policy.getSalaryCycleStartDay()).orElse(1);
-        Integer duration = Optional.ofNullable(policy.getCycleDuration()).orElse(30);
+    private void processCycle(Organisation org,
+            OrganisationPolicy policy,
+            LocalDate cycleStart,
+            LocalDate cycleEnd,
+            LocalDate today) {
 
-        // Calculate cycle start
-        LocalDate cycleStart = findPreviousCycleStart(today, startDay);
-        LocalDate cycleEnd = cycleStart.plusDays(duration - 1);
+        int offsetDays = Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0);
+        LocalDate generationDate = cycleEnd.plusDays(offsetDays);
 
-        return new LocalDate[] { cycleStart, cycleEnd };
+        // Not yet due for this cycle — skip
+        if (today.isBefore(generationDate)) {
+            log.debug("⏭ Skipping {} [{} to {}] — not yet due (generationDate={})",
+                    org.getName(), cycleStart, cycleEnd, generationDate);
+            return;
+        }
+
+        // Already processed — skip (this handles duplicates AND the normal flow)
+        boolean exists = payRunRepository.existsOverlap(org.getId(), cycleStart, cycleEnd);
+        if (exists) {
+            log.debug("⏩ Skipping {} [{} to {}] — PayRun already exists",
+                    org.getName(), cycleStart, cycleEnd);
+            return;
+        }
+
+        // This is either today's scheduled run OR a missed one — process it
+        boolean isCatchUp = today.isAfter(generationDate);
+        log.info("{} payroll for org {} [{} to {}]",
+                isCatchUp ? "🔁 Catching up missed" : "▶️ Running scheduled",
+                org.getName(), cycleStart, cycleEnd);
+
+        PayRun payRun = PayRun.builder()
+                .organisation(org)
+                .startDate(cycleStart)
+                .endDate(cycleEnd)
+                .month(cycleStart.getMonthValue())
+                .year(cycleStart.getYear())
+                .periodLabel(cycleStart.getMonth().name() + " " + cycleStart.getYear())
+                .status(PayRun.PayRunStatus.PROCESSING)
+                .runDate(today)
+                .build();
+
+        payRun = payRunRepository.save(payRun);
+
+        try {
+            payrollService.runPayroll(org.getId(), payRun);
+            payRun.setStatus(PayRun.PayRunStatus.COMPLETED);
+            log.info("✅ Payroll completed for {} [{} to {}]", org.getName(), cycleStart, cycleEnd);
+        } catch (Exception ex) {
+            payRun.setStatus(PayRun.PayRunStatus.FAILED);
+            log.error("❌ Payroll FAILED for {} [{} to {}]", org.getName(), cycleStart, cycleEnd, ex);
+        } finally {
+            payRunRepository.save(payRun);
+        }
     }
 
     /**
-     * Finds the start date of the current cycle.
-     * Example: startDay = 26, today = 5 Feb → start = 26 Jan
+     * Builds a list of [cycleStart, cycleEnd] pairs to check.
+     * Starts from CATCHUP_CYCLES months back and works up to the current cycle.
+     *
+     * Example with CATCHUP_CYCLES=3 and today=May 15, startDay=26:
+     * → [Mar 26 – Apr 25], [Apr 26 – May 25], [May 26 – Jun 25] (only first two are
+     * due)
      */
-    private LocalDate findPreviousCycleStart(LocalDate today, int startDay) {
-        if (today.getDayOfMonth() < startDay) {
-            // Start in previous month
-            LocalDate prevMonth = today.minusMonths(1);
-            int maxDay = prevMonth.lengthOfMonth();
-            startDay = Math.min(startDay, maxDay); // handle Feb case
-            return LocalDate.of(prevMonth.getYear(), prevMonth.getMonth(), startDay);
-        } else {
-            int maxDay = today.lengthOfMonth();
-            startDay = Math.min(startDay, maxDay);
-            return LocalDate.of(today.getYear(), today.getMonth(), startDay);
+    private List<LocalDate[]> buildCyclesToCheck(LocalDate today, OrganisationPolicy policy) {
+        List<LocalDate[]> cycles = new ArrayList<>();
+
+        // Find the current cycle start, then go back CATCHUP_CYCLES-1 more
+        LocalDate[] currentCycle = calculateCycleDates(today, policy);
+        LocalDate currentCycleStart = currentCycle[0];
+
+        for (int i = CATCHUP_CYCLES - 1; i >= 0; i--) {
+            // Shift back by i months to get a historical anchor date
+            LocalDate anchorDate = currentCycleStart.minusMonths(i);
+            LocalDate[] cycle = calculateCycleDates(anchorDate, policy);
+            cycles.add(cycle);
         }
+
+        return cycles;
+    }
+
+    /**
+     * Given any date that falls within a cycle, returns [cycleStart, cycleEnd].
+     */
+    private LocalDate[] calculateCycleDates(LocalDate referenceDate, OrganisationPolicy policy) {
+        int startDay = Optional.ofNullable(policy.getSalaryCycleStartDay()).orElse(1);
+
+        LocalDate cycleStart;
+        if (referenceDate.getDayOfMonth() < startDay) {
+            LocalDate prevMonth = referenceDate.minusMonths(1);
+            int validStartDay = Math.min(startDay, prevMonth.lengthOfMonth());
+            cycleStart = LocalDate.of(prevMonth.getYear(), prevMonth.getMonth(), validStartDay);
+        } else {
+            int validStartDay = Math.min(startDay, referenceDate.lengthOfMonth());
+            cycleStart = LocalDate.of(referenceDate.getYear(), referenceDate.getMonth(), validStartDay);
+        }
+
+        LocalDate nextMonth = cycleStart.plusMonths(1);
+        int validNextStartDay = Math.min(startDay, nextMonth.lengthOfMonth());
+        LocalDate nextCycleStart = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), validNextStartDay);
+        LocalDate cycleEnd = nextCycleStart.minusDays(1);
+
+        return new LocalDate[] { cycleStart, cycleEnd };
     }
 }

@@ -169,8 +169,8 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         if (dto.getSalaryCycleStartDay() != null)
             entity.setSalaryCycleStartDay(dto.getSalaryCycleStartDay());
 
-        if (dto.getCycleDuration() != null)
-            entity.setCycleDuration(dto.getCycleDuration());
+        // if (dto.getCycleDuration() != null)
+        // entity.setCycleDuration(dto.getCycleDuration());
 
         if (dto.getPayslipGenerationOffsetDays() != null)
             entity.setPayslipGenerationOffsetDays(dto.getPayslipGenerationOffsetDays());
@@ -196,7 +196,7 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
         dto.setMaxWorkHoursBeforeAutoPunchOut(policy.getMaxWorkHoursBeforeAutoPunchOut());
         dto.setWeekOffDays(policy.getWeekOffDays());
         dto.setSalaryCycleStartDay(policy.getSalaryCycleStartDay());
-        dto.setCycleDuration(policy.getCycleDuration());
+        // dto.setCycleDuration(policy.getCycleDuration());
         dto.setPayslipGenerationOffsetDays(policy.getPayslipGenerationOffsetDays());
         dto.setLateGraceMinutes(policy.getLateGraceMinutes());
         dto.setEarlyOutGraceMinutes(policy.getEarlyOutGraceMinutes());

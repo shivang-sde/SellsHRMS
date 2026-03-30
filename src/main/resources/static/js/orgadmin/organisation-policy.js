@@ -38,7 +38,7 @@ $(document).ready(function () {
     $('#autoPunchOutTime').val(d.autoPunchOutTime);
     setWeekOffDays(d.weekOffDays);
     $('#salaryCycleStartDay').val(d.salaryCycleStartDay);
-    $('#cycleDuration').val(d.cycleDuration);
+    // $('#cycleDuration').val(d.cycleDuration);
     $('#payslipGenerationOffsetDays').val(d.payslipGenerationOffsetDays);
     $('#officeStartTime').val(d.officeStart);
     $('#officeClosedTime').val(d.officeClosed);
@@ -157,7 +157,7 @@ $(document).ready(function () {
       encashmentEnabled: $('#encashmentEnabled').is(':checked'),
 
       salaryCycleStartDay: parseInt($('#salaryCycleStartDay').val()),
-      cycleDuration: parseInt($('#cycleDuration').val()),
+      // cycleDuration: parseInt($('#cycleDuration').val()),
       payslipGenerationOffsetDays: parseInt($('#payslipGenerationOffsetDays').val()),
 
       additionalNotes: $('#additionalNotes').val()

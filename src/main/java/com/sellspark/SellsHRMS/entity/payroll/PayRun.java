@@ -14,9 +14,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tbl_pay_run",
-     uniqueConstraints = { @UniqueConstraint(columnNames = {"month", "year", "organisation_id"})}
-)
+@Table(name = "tbl_pay_run", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "month", "year", "organisation_id" }) })
 public class PayRun {
 
     @Id
@@ -31,7 +30,6 @@ public class PayRun {
     private LocalDate endDate;
 
     private String periodLabel; // e.g. "January 2026"
-    
 
     private LocalDate runDate;
 
@@ -52,13 +50,13 @@ public class PayRun {
     @OneToMany(mappedBy = "payRun", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SalarySlip> salarySlips = new ArrayList<>();
 
-    @Column(name="month")
+    @Column(name = "month")
     private Integer month; // 1-12
 
-    @Column(name="year")
+    @Column(name = "year")
     private Integer year;
 
-    public enum PayRunStatus { PROCESSING, READY, APPROVED, COMPLETED, CANCELLED }
+    public enum PayRunStatus {
+        PROCESSING, READY, APPROVED, COMPLETED, CANCELLED, FAILED
+    }
 }
-
-
