@@ -29,7 +29,7 @@ public class PayrollAutoScheduler {
     /**
      * Runs daily at 2 AM and checks if today is payroll generation day
      */
-    @Scheduled(cron = "0 15 11 * * *")
+    @Scheduled(cron = "0 48 11 * * *", zone = "Asia/Kolkata")
     public void autoGeneratePayslips() {
         LocalDate today = LocalDate.now();
         log.info("🕑 Starting auto payroll scheduler for date: {}", today);
