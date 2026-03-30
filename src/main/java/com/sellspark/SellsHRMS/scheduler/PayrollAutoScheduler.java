@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +52,7 @@ public class PayrollAutoScheduler {
                 OrganisationPolicy policy = optPolicy.get();
 
                 // Build list of cycles to check: current + previous N-1
-                List<LocalDate[]> cyclesToCheck = buildCyclesToCheck(today, policy);
+                List<LocalDate[]> cyclesToCheck = buildCyclesToCheck(today, policy, org);
 
                 for (LocalDate[] cycle : cyclesToCheck) {
                     processCycle(org, policy, cycle[0], cycle[1], today);
@@ -84,7 +85,7 @@ public class PayrollAutoScheduler {
         }
 
         // Already processed — skip (this handles duplicates AND the normal flow)
-        boolean exists = payRunRepository.existsOverlap(org.getId(), cycleStart, cycleEnd);
+        boolean exists = payRunRepository.existsSuccessfulOrActiveOverlap(org.getId(), cycleStart, cycleEnd);
         if (exists) {
             log.debug("⏩ Skipping {} [{} to {}] — PayRun already exists",
                     org.getName(), cycleStart, cycleEnd);
@@ -130,17 +131,34 @@ public class PayrollAutoScheduler {
      * → [Mar 26 – Apr 25], [Apr 26 – May 25], [May 26 – Jun 25] (only first two are
      * due)
      */
-    private List<LocalDate[]> buildCyclesToCheck(LocalDate today, OrganisationPolicy policy) {
+    private List<LocalDate[]> buildCyclesToCheck(LocalDate today,
+            OrganisationPolicy policy,
+            Organisation org) {
         List<LocalDate[]> cycles = new ArrayList<>();
 
-        // Find the current cycle start, then go back CATCHUP_CYCLES-1 more
+        // Use createdAt as the org boundary — they can't have payroll before they
+        // existed
+        LocalDate orgBoundary = Optional.ofNullable(org.getCreatedAt())
+                .map(LocalDateTime::toLocalDate)
+                .orElse(today); // safe fallback: if somehow null, only run today's cycle
+
         LocalDate[] currentCycle = calculateCycleDates(today, policy);
         LocalDate currentCycleStart = currentCycle[0];
 
         for (int i = CATCHUP_CYCLES - 1; i >= 0; i--) {
-            // Shift back by i months to get a historical anchor date
             LocalDate anchorDate = currentCycleStart.minusMonths(i);
             LocalDate[] cycle = calculateCycleDates(anchorDate, policy);
+
+            // Cycle end must be on or after org creation date
+            // (if the cycle ended before they joined, skip it entirely)
+            if (cycle[1].isBefore(orgBoundary)) {
+                log.info("⏭ Skipping cycle [{} to {}] for org '{}' — before org creation date ({})",
+                        cycle[0], cycle[1], org.getName(), orgBoundary);
+                continue;
+            }
+
+            // If org was created mid-cycle, we still include the cycle
+            // but attendance/pro-ration handles the partial days naturally
             cycles.add(cycle);
         }
 

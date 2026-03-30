@@ -29,6 +29,15 @@ public interface PayRunRepository extends JpaRepository<PayRun, Long> {
             """)
     boolean existsOverlap(Long orgId, LocalDate cycleStart, LocalDate cycleEnd);
 
+    @Query("""
+                SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
+                FROM PayRun p
+                WHERE p.organisation.id = :orgId
+                AND (p.startDate <= :cycleEnd AND p.endDate >= :cycleStart)
+                AND p.status IN ('COMPLETED', 'APPROVED', 'PROCESSING')
+            """)
+    boolean existsSuccessfulOrActiveOverlap(Long orgId, LocalDate cycleStart, LocalDate cycleEnd);
+
     // 🔹 Active/Ready pay runs
     List<PayRun> findByOrganisation_IdAndStatus(Long organisationId, PayRunStatus status);
 

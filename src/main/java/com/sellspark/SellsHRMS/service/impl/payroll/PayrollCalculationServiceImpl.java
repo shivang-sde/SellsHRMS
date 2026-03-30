@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,11 +49,43 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         List<EmployeeSalaryAssignment> assignments = assignmentRepository
                 .findByOrganisationIdAndActiveTrue(organisationId);
 
+        LocalDate cycleStart = payRun.getStartDate();
+        LocalDate cycleEnd = payRun.getEndDate();
+
+        // Total days in the full cycle — used for pro-ration denominator
+        long totalCycleDays = ChronoUnit.DAYS.between(cycleStart, cycleEnd) + 1;
+
         List<SalarySlipDTO> slips = new ArrayList<>();
+
         for (EmployeeSalaryAssignment assignment : assignments) {
-            SalarySlipDTO slip = computeForEmployee(assignment, payRun, org);
+            Employee emp = assignment.getEmployee();
+            LocalDate doj = emp.getDateOfJoining();
+            LocalDate dox = emp.getDateOfExit();
+
+            // Not joined yet by cycle end — skip
+            if (doj != null && doj.isAfter(cycleEnd)) {
+                log.info("⏭ Skipping {} — joins {} after cycle end {}",
+                        emp.getEmployeeCode(), doj, cycleEnd);
+                continue;
+            }
+
+            // Already exited before cycle started — skip
+            if (dox != null && dox.isBefore(cycleStart)) {
+                log.info("⏭ Skipping {} — exited {} before cycle start {}",
+                        emp.getEmployeeCode(), dox, cycleStart);
+                continue;
+            }
+
+            // Inactive employees — skip
+            if (emp.getStatus() == Employee.EmployeeStatus.INACTIVE) {
+                log.info("⏭ Skipping {} — status INACTIVE", emp.getEmployeeCode());
+                continue;
+            }
+
+            SalarySlipDTO slip = computeForEmployee(assignment, payRun, org, totalCycleDays);
             slips.add(slip);
         }
+
         return slips;
     }
 
@@ -66,29 +99,39 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .orElseThrow(() -> new ResourceNotFoundException("Employee salary assignment not found"));
 
         Organisation org = assignment.getOrganisation();
+
+        LocalDate now = LocalDate.now();
+        LocalDate start = now.withDayOfMonth(1);
+        LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+
+        // For manual preview we use calendar month — full cycle is the whole month
+        long totalCycleDays = ChronoUnit.DAYS.between(start, end) + 1;
+
         PayRun dummyRun = new PayRun();
         dummyRun.setId(-1L);
-        LocalDate now = LocalDate.now();
-        dummyRun.setStartDate(now.withDayOfMonth(1));
-        dummyRun.setEndDate(now.withDayOfMonth(now.lengthOfMonth()));
+        dummyRun.setStartDate(start);
+        dummyRun.setEndDate(end);
         dummyRun.setMonth(now.getMonthValue());
         dummyRun.setYear(now.getYear());
-        dummyRun.setPeriodLabel(now.getMonth().name() + "" + now.getYear());
+        dummyRun.setPeriodLabel(now.getMonth().name() + " " + now.getYear());
 
-        return computeForEmployee(assignment, dummyRun, org);
+        return computeForEmployee(assignment, dummyRun, org, totalCycleDays);
     }
 
     // ───────────────────────────────────────────────
     // Core computation for one employee
     // ───────────────────────────────────────────────
-    private SalarySlipDTO computeForEmployee(EmployeeSalaryAssignment assignment, PayRun payRun, Organisation org) {
+    private SalarySlipDTO computeForEmployee(EmployeeSalaryAssignment assignment,
+            PayRun payRun,
+            Organisation org,
+            long totalCycleDays) {
 
         // Prevent duplication
         Optional<SalarySlip> existing = slipRepository
                 .findByEmployee_IdAndPayRun_Id(assignment.getEmployee().getId(), payRun.getId());
         if (existing.isPresent()) {
-            log.info("Payslip already exists for employee {} in payrun {}", assignment.getEmployee().getId(),
-                    payRun.getId());
+            log.info("Payslip already exists for employee {} in payrun {}",
+                    assignment.getEmployee().getId(), payRun.getId());
             return mapToDTO(existing.get());
         }
 
@@ -100,11 +143,14 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         LocalDate to = payRun.getEndDate();
 
         // ───── Attendance derived days ─────
+        // Query always uses full cycleStart→cycleEnd.
+        // Employees who joined mid-cycle simply won't have records before their DOJ,
+        // so paymentDays naturally reflects only days they were present.
         Map<String, Double> att = calculateAttendanceStats(assignment.getEmployee().getId(), from, to);
 
         log.info("Attendance stats: {}", att);
-        double workingDays = att.getOrDefault("WORKING_DAYS", 0.0);
-        double paymentDays = att.getOrDefault("PAYMENT_DAYS", 0.0);
+        double workingDays = att.getOrDefault("WORKING_DAYS", 0.0); // = totalCycleDays always
+        double paymentDays = att.getOrDefault("PAYMENT_DAYS", 0.0); // = actual days paid
         double lopDays = att.getOrDefault("LOP_DAYS", 0.0);
 
         // ───── Build runtime context for formulas ─────
@@ -121,18 +167,37 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         double totalEarnings = 0.0;
         double totalDeductions = 0.0;
 
-        // 1. Base Pay Pro-rata
-        double pratedBase = round(assignment.getBasePay() * (paymentDays / workingDays));
+        // ───── Step 1: Base Pay pro-rated against full cycle ─────
+        // PRO-RATION KEY CHANGE:
+        // denominator = totalCycleDays (full cycle length, e.g. 31)
+        // numerator = paymentDays (days actually paid, e.g. 12 for mid-joiner)
+        //
+        // Mid-cycle joiner example:
+        // Cycle Mar 1–31 = 31 days, joined Mar 20, present all 12 days
+        // pratedBase = 40,000 * (12 / 31) = 12,903.22 ✅
+        //
+        // Full month employee example:
+        // Cycle Mar 1–31 = 31 days, present 28 days, 3 LOP
+        // pratedBase = 40,000 * (28 / 31) = 36,129.03 ✅
+        //
+        // Using (paymentDays / workingDays) was WRONG for mid-joiners because
+        // workingDays = daysInPeriod from attendance query which equals totalCycleDays
+        // anyway — but kept here explicitly using totalCycleDays for clarity.
+        double pratedBase = round(assignment.getBasePay() * (paymentDays / totalCycleDays));
         totalEarnings += pratedBase;
-        // Add Base Pay as the first component
-        slipComponents.add(
-                createSlipComponent(null, "Base Pay", "BASE", "EARNING", pratedBase, "Pro-rated Base Pay", context));
 
-        // Crucial: Add BASE to context so other components can use it
+        slipComponents.add(createSlipComponent(
+                null, "Base Pay", "BASE", "EARNING", pratedBase,
+                "Pro-rated Base Pay: " + assignment.getBasePay()
+                        + " * (" + paymentDays + " / " + totalCycleDays + ")",
+                context));
+
+        // BASE in context is already pro-rated — all downstream formula components
+        // like HRA (BASE * 0.40) automatically get the correct pro-rated value
         context.put("BASE", pratedBase);
         context.put("COMP:BASE", pratedBase);
 
-        // ───── Step 2:Loop Salary Structure Components ─────
+        // ───── Step 2: Loop Salary Structure Components ─────
         List<SalaryComponent> orderedComponents = SalaryComponentDependencySorter
                 .sortByDependencies(structure.getComponents());
 
@@ -148,22 +213,22 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                     comp.getAbbreviation());
 
             double amount = computeComponentAmount(comp, context);
-
             log.info("component {} -> amount {}", comp.getAbbreviation(), amount);
 
-            // Apply pro-rata if depends on payment days
-            if (Boolean.TRUE.equals(comp.getDependsOnPaymentDays()) && workingDays > 0) {
-                amount = amount * (paymentDays / workingDays);
+            // dependsOnPaymentDays flag: for FIXED components that need explicit pro-ration
+            // (formula-based components are already pro-rated via BASE in context)
+            if (Boolean.TRUE.equals(comp.getDependsOnPaymentDays()) && totalCycleDays > 0) {
+                amount = amount * (paymentDays / totalCycleDays);
             }
             amount = round(amount);
 
-            // Add to context for formulas
-            context.put(comp.getAbbreviation(), amount); // for formula references
-            context.put("COMP:" + comp.getAbbreviation(), amount); // for COMP:XXX references
+            context.put(comp.getAbbreviation(), amount);
+            context.put("COMP:" + comp.getAbbreviation(), amount);
             componentValueMap.put(comp, amount);
 
-            slipComponents.add(createSlipComponent(comp, comp.getName(), comp.getAbbreviation(), comp.getType().name(),
-                    amount, comp.getFormula(), context));
+            slipComponents.add(createSlipComponent(
+                    comp, comp.getName(), comp.getAbbreviation(),
+                    comp.getType().name(), amount, comp.getFormula(), context));
 
             log.info("component computed map -> {}", componentValueMap);
 
@@ -174,18 +239,16 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         }
 
         // ───── Step 3: Statutory deductions ─────
-        Map<String, StatutoryResult> statutoryMap = statutoryEngine.computeDetailed(assignment,
-                componentValueMap, org);
+        Map<String, StatutoryResult> statutoryMap = statutoryEngine.computeDetailed(
+                assignment, componentValueMap, org);
 
         double totalEmployerContribution = 0.0;
 
         for (var entry : statutoryMap.entrySet()) {
             StatutoryResult result = entry.getValue();
             double empDed = round(result.employeeDeduction());
-            // 1. Employee Part (Deduction)
             totalDeductions += empDed;
             slipComponents.add(createStatutoryComponent(entry.getKey(), empDed, "Statutory"));
-            // 2. Employer Part (Contribution - NOT a deduction)
             totalEmployerContribution += round(result.employerContribution());
         }
 
@@ -197,19 +260,8 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
             slipComponents.add(createStatutoryComponent("INCOME TAX (TDS)", tds, "Income Tax Slab Calculation"));
         }
 
-        // // Remove old TDS if any (for re-runs)
-        // slipComponents.removeIf(c -> "INCOME TAX
-        // (TDS)".equals(c.getComponentName()));
-        // totalDeduction = totalDeduction - slipComponents.stream()
-        // .filter(c -> "INCOME TAX (TDS)".equals(c.getComponentName()))
-        // .mapToDouble(SalarySlipComponent::getAmount).sum();
-
-        // ───── Step 5:Final Net ─────
-        // double netPay = round(totalEarnings - totalDeductions);
-
-        // ───── Step 6: Build and save slip ─────
+        // ───── Step 5: Build and save slip ─────
         SalarySlip slip = SalarySlip.builder()
-                .grossPay(round(totalEarnings))
                 .status(SalarySlip.SlipStatus.GENERATED)
                 .organisation(org)
                 .employee(assignment.getEmployee())
@@ -224,17 +276,14 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 .netPay(round(totalEarnings - totalDeductions))
                 .components(slipComponents)
                 .build();
-        // Then set slip reference for components
+
         slipComponents.forEach(c -> c.setSalarySlip(slip));
         slip.setComponents(slipComponents);
 
-        // save components
         slipRepository.save(slip);
 
         SalarySlipDTO dto = mapToDTO(slip);
         log.info("Salary slip DTO: {}", dto);
-
-        // generateAndStorePdf(slip, dto, org, payRun); // PDF generation
 
         return dto;
     }
@@ -250,7 +299,6 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     // Build runtime context for formulas
     // ───────────────────────────────────────────────
     private Map<String, Object> buildContext(EmployeeSalaryAssignment assignment, Organisation org) {
-
         log.info("base pay assignment {}", assignment.getBasePay());
         double basePay = Optional.ofNullable(assignment.getBasePay()).orElse(0.0);
         double varPay = Optional.ofNullable(assignment.getVariablePay()).orElse(0.0);
@@ -279,19 +327,17 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
             case FIXED -> Optional.ofNullable(comp.getAmount()).orElse(0.0);
             case FORMULA -> FormulaExpressionEvaluator.evaluate(comp.getFormula(), context);
             case PERCENTAGE -> {
-                // If a formula exists, use it; otherwise, default to BASE * percent
                 if (comp.getFormula() != null && !comp.getFormula().isBlank()) {
                     log.info("Processing percentage via formula: {}", comp.getFormula());
                     yield FormulaExpressionEvaluator.evaluate(comp.getFormula(), context);
                 }
-
-                // Default fallback (backward compatibility)
                 double base = context.containsKey("BASE") ? ((Number) context.get("BASE")).doubleValue() : 0.0;
                 double percent = Optional.ofNullable(comp.getAmount()).orElse(0.0);
                 log.info("percent {}, base {}, yield {}", percent, base, base * (percent / 100.0));
                 yield base * (percent / 100.0);
             }
         };
+
         log.info("Computed amount for {}: {}", comp.getAbbreviation(), resultAmount);
         log.info("--- computeComponentAmount END ---");
         return resultAmount;
@@ -304,32 +350,28 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         List<AttendanceSummary> records = attendanceSummaryRepository
                 .findByEmployeeIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(employeeId, from, to);
 
-        double present = 0, half = 0, holiday = 0, weekOff = 0, onLeave = 0, absent = 0;
+        double present = 0, half = 0, holiday = 0, weekOff = 0, onLeave = 0, absent = 0, shortDay = 0;
 
         for (AttendanceSummary rec : records) {
             if (rec.getStatus() == null)
                 continue;
-
             switch (rec.getStatus()) {
                 case PRESENT -> present++;
                 case HALF_DAY -> half++;
+                case SHORT_DAY -> shortDay++;
                 case HOLIDAY -> holiday++;
                 case WEEK_OFF -> weekOff++;
                 case ABSENT -> absent++;
                 case ON_LEAVE -> onLeave++;
-                default -> throw new IllegalArgumentException("Unexpected value: " + rec.getStatus()); // this change is
-                                                                                                       // made
-
+                default -> log.warn("⚠️ Unhandled attendance status '{}' for employee {} — skipping",
+                        rec.getStatus(), employeeId);
             }
         }
 
-        // 1. Calculate days in the pay period (e.g., 30 days)
-        long daysInPeriod = java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1;
+        long daysInPeriod = ChronoUnit.DAYS.between(from, to) + 1;
 
-        // 2. Use double for precision (half / 2.0 = 0.5)
-        double paymentDays = present + onLeave + holiday + weekOff + (half / 2.0);
-
-        // 3. LOP is the difference
+        double halfEquivalent = half + shortDay;
+        double paymentDays = present + onLeave + holiday + weekOff + (halfEquivalent / 2.0);
         double lopDays = daysInPeriod - paymentDays;
 
         Map<String, Double> map = new HashMap<>();
