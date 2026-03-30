@@ -34,7 +34,7 @@ public class PayrollAutoScheduler {
      */
     private static final int CATCHUP_CYCLES = 3;
 
-    @Scheduled(cron = "0 34 03 * * *", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 37 15 * * *", zone = "Asia/Kolkata")
     public void autoGeneratePayslips() {
         LocalDate today = LocalDate.now();
         log.info("🕑 Starting auto payroll scheduler for date: {}", today);
