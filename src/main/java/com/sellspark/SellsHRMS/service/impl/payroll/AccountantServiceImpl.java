@@ -1,7 +1,6 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,10 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.html.simpleparser.HTMLWorker;
-import com.lowagie.text.pdf.PdfWriter;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.sellspark.SellsHRMS.dto.common.PagedResponse;
 import com.sellspark.SellsHRMS.dto.payroll.SalarySlipDTO;
 import com.sellspark.SellsHRMS.entity.Organisation;
@@ -197,7 +193,8 @@ public class AccountantServiceImpl implements AccountantService {
         try {
             // Step 1: Render the HTML using the organisation’s default template
             String html = salaryTemplateService.renderSalarySlip(slip.getId(), org.getId());
-
+            html = html.replaceAll("src=\"/files", "src=\"" + baseUrl + "/files");
+            html = html.replaceAll("href=\"/files", "href=\"" + baseUrl + "/files");
             // Step 2: Convert HTML → PDF
             byte[] pdfBytes = convertHtmlToPdf(html);
 
@@ -233,15 +230,13 @@ public class AccountantServiceImpl implements AccountantService {
 
     private byte[] convertHtmlToPdf(String htmlContent) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Document document = new Document(PageSize.A4);
 
-        PdfWriter.getInstance(document, baos);
-        document.open();
+        PdfRendererBuilder builder = new PdfRendererBuilder();
+        builder.useFastMode();
+        builder.withHtmlContent(htmlContent, baseUrl); // IMPORTANT for images
+        builder.toStream(baos);
+        builder.run();
 
-        HTMLWorker htmlWorker = new HTMLWorker(document);
-        htmlWorker.parse(new StringReader(htmlContent));
-
-        document.close();
         return baos.toByteArray();
     }
 

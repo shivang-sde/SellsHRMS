@@ -13,22 +13,19 @@
 
               <c:choose>
                 <c:when test="${not empty sessionScope.LOGO_URL}">
-                  <a href="${pageContext.request.contextPath}/org/dashboard" class="brand-link text-decoration-none">
-                    <div class="brand-logo-wrap" title="Company Logo">
-                      <img src="${sessionScope.LOGO_URL}" alt="Company Logo"
-                        onerror="this.src='${pageContext.request.contextPath}/img/logo-placeholder.png'">
-                    </div>
-                  </a>
+                  <div class="brand-logo-wrap" title="Company Logo">
+                    <img src="${sessionScope.LOGO_URL}" alt="Company Logo"
+                      onerror="this.src='${pageContext.request.contextPath}/img/logo-placeholder.png'">
+                  </div>
+
                 </c:when>
                 <c:otherwise>
-                  <a href="${pageContext.request.contextPath}/org/dashboard" class="brand-link text-decoration-none">
-                    <div class="brand-logo-wrap">
-                      <i class="fa fa-building fa-xl text-primary"></i>
-                    </div>
-                    <span class="ms-2 fw-bold text-dark d-none d-lg-inline"
-                      style="letter-spacing: -0.5px; font-size: 1.1rem;">Sells<span
-                        class="text-primary">HRMS</span></span>
-                  </a>
+                  <div class="brand-logo-wrap">
+                    <i class="fa fa-building fa-xl text-primary"></i>
+                  </div>
+                  <span class="ms-2 fw-bold text-dark d-none d-lg-inline"
+                    style="letter-spacing: -0.5px; font-size: 1.1rem;">Sells<span
+                      class="text-primary">HRMS</span></span>
                 </c:otherwise>
               </c:choose>
             </div>

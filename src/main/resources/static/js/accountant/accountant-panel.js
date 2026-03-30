@@ -308,9 +308,7 @@ $(document).ready(function () {
 
         try {
             const res = await axiosClient.post(`/api/accountant/${orgId}/slip/${slipId}/generate-pdf`);
-            showToast("success", "Payslip PDF generated successfully");
 
-            // Replace button with Download link
             $btn.replaceWith(`
             <a href="${res.pdfUrl}" target="_blank" class="btn btn-sm btn-outline-success">
                 <i class="fa-solid fa-download"></i> Download PDF
