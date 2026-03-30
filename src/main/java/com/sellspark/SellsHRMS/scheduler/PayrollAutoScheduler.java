@@ -136,11 +136,9 @@ public class PayrollAutoScheduler {
             Organisation org) {
         List<LocalDate[]> cycles = new ArrayList<>();
 
-        // Use createdAt as the org boundary — they can't have payroll before they
-        // existed
         LocalDate orgBoundary = Optional.ofNullable(org.getCreatedAt())
                 .map(LocalDateTime::toLocalDate)
-                .orElse(today); // safe fallback: if somehow null, only run today's cycle
+                .orElse(today);
 
         LocalDate[] currentCycle = calculateCycleDates(today, policy);
         LocalDate currentCycleStart = currentCycle[0];
@@ -149,20 +147,55 @@ public class PayrollAutoScheduler {
             LocalDate anchorDate = currentCycleStart.minusMonths(i);
             LocalDate[] cycle = calculateCycleDates(anchorDate, policy);
 
-            // Cycle end must be on or after org creation date
-            // (if the cycle ended before they joined, skip it entirely)
-            if (cycle[1].isBefore(orgBoundary)) {
-                log.info("⏭ Skipping cycle [{} to {}] for org '{}' — before org creation date ({})",
-                        cycle[0], cycle[1], org.getName(), orgBoundary);
+            LocalDate cycleStart = cycle[0];
+            LocalDate cycleEnd = cycle[1];
+
+            // Rule 1: Entire cycle ended before org existed — skip completely
+            if (cycleEnd.isBefore(orgBoundary)) {
+                log.info("⏭ Skipping cycle [{} to {}] for org '{}' — cycle ended before org creation ({})",
+                        cycleStart, cycleEnd, org.getName(), orgBoundary);
                 continue;
             }
 
-            // If org was created mid-cycle, we still include the cycle
-            // but attendance/pro-ration handles the partial days naturally
+            // Rule 2: Cycle started before org was created but ends after —
+            // this is a partial first cycle (e.g. org created Mar 10, cycle Feb 25–Mar 24)
+            // Adjust the cycle start to org creation date so we don't imply
+            // payroll responsibility before they existed.
+            // Attendance records won't exist before orgBoundary anyway,
+            // but we log it clearly for traceability.
+            if (cycleStart.isBefore(orgBoundary)) {
+                log.info("📅 Org '{}' created mid-cycle. Effective start adjusted: [{} → {}] (cycle end: {})",
+                        org.getName(), cycleStart, orgBoundary, cycleEnd);
+                // Replace cycleStart with orgBoundary for this cycle only
+                cycle[0] = orgBoundary;
+            }
+
             cycles.add(cycle);
         }
 
         return cycles;
+
+        /*
+         * ```
+         * ---
+         * ###
+         * 
+         * Why adjusting`cycle[0]` is safe
+         * The adjusted`cycleStart`
+         * flows into`processCycle`→`PayRun.startDate`→`calculateAttendanceStats(from,
+         * to)`. Since attendance records only exist from the org's first active day
+         * anyway, the query result is the same — but now the `PayRun` record in your DB
+         * accurately reflects when the org actually started, not a date before they
+         * even existed on your platform.
+         * ```
+         * Org created: Mar 10
+         * Cycle (raw): Feb 25 – Mar 24
+         * Cycle (adjusted): Mar 10 – Mar 24 ← saved in tbl_pay_run
+         * Attendance query: Mar 10 – Mar 24 ← correct window
+         * Pro-ration: totalCycleDays = DAYS(Feb 25, Mar 24) + 1 = 28
+         * paymentDays from attendance (Mar 10–24 only)
+         * salary = basePay * (paymentDays / 28) ✅
+         */
     }
 
     /**

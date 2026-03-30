@@ -52,8 +52,11 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         LocalDate cycleStart = payRun.getStartDate();
         LocalDate cycleEnd = payRun.getEndDate();
 
-        // Total days in the full cycle — used for pro-ration denominator
-        long totalCycleDays = ChronoUnit.DAYS.between(cycleStart, cycleEnd) + 1;
+        // IMPORTANT: totalCycleDays must always be the FULL cycle length
+        // regardless of whether the org or employee joined mid-cycle.
+        // This is the denominator for pro-ration.
+        // We recompute from policy so it's always the canonical cycle length.
+        long totalCycleDays = computeFullCycleDays(cycleStart, cycleEnd, org);
 
         List<SalarySlipDTO> slips = new ArrayList<>();
 
@@ -87,6 +90,32 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
         }
 
         return slips;
+    }
+
+    /**
+     * Recomputes the full canonical cycle length.
+     * Even if payRun.startDate was adjusted for org boundary,
+     * pro-ration denominator must be the original full cycle.
+     *
+     * e.g. Cycle is always Feb 25 – Mar 24 = 28 days
+     * even if org joined Mar 10 and payRun.startDate = Mar 10
+     */
+    private long computeFullCycleDays(LocalDate cycleStart, LocalDate cycleEnd, Organisation org) {
+        // cycleEnd is never adjusted — it's always the true end of the cycle.
+        // We recompute the true cycle start as the same day-of-month as cycleStart
+        // but in the month it belongs to, ignoring any org boundary adjustment.
+        // Since cycleEnd = nextCycleStart - 1, full length = cycleEnd - trueStart + 1
+        // trueStart day-of-month = same as cycleStart day-of-month (from policy)
+        // but we need the month it originally fell in.
+        //
+        // Simplest and most reliable: full cycle = cycleEnd.plusDays(1) minus one
+        // month.
+        // This gives us the true first day of this cycle regardless of any adjustment.
+        LocalDate trueStart = cycleEnd.plusDays(1).minusMonths(1);
+        long days = ChronoUnit.DAYS.between(trueStart, cycleEnd) + 1;
+        log.info("📐 Full cycle days: {} [{} to {}] (payRun may start from adjusted date)",
+                days, trueStart, cycleEnd);
+        return days;
     }
 
     // ───────────────────────────────────────────────
@@ -512,3 +541,31 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     }
 
 }
+
+/*
+ * 
+ * ### Complete picture of all three boundaries working together
+ * ```
+ * Org created: Mar 10, 2026
+ * Cycle start day: 25
+ * Today: Mar 30, 2026
+ * 
+ * Cycle Jan 25–Feb 24 → cycleEnd Feb 24 < Mar 10 → skipped entirely ✅
+ * Cycle Feb 25–Mar 24 → cycleStart Feb 25 < Mar 10 → adjusted to Mar 10 ✅
+ * PayRun saved as [Mar 10 – Mar 24]
+ * totalCycleDays = 28 (Feb 25–Mar 24, full cycle)
+ * paymentDays from attendance Mar 10–24 only
+ * Cycle Mar 25–Apr 24 → full cycle, no adjustment needed ✅
+ * 
+ * Employee DOJ Mar 20:
+ * Cycle Feb 25–Mar 24 (adjusted Mar 10–Mar 24):
+ * attendance query Mar 10–Mar 24, but records only exist from Mar 20
+ * paymentDays = days present Mar 20–24 = 5
+ * salary = basePay * (5 / 28)
+ * 
+ * Cycle Mar 25–Apr 24:
+ * full cycle, attended from Mar 25
+ * paymentDays = all days present
+ * salary = basePay * (paymentDays / 31)
+ * 
+ */

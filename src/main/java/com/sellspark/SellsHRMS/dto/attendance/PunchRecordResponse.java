@@ -12,6 +12,7 @@ public class PunchRecordResponse {
     private String employeeName;
     private String department;
     private String employeeCode;
+    private String attendanceDate;
     private LocalDateTime punchIn;
     private LocalDateTime punchOut;
     private Double workHours;

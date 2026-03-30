@@ -521,6 +521,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         // Attendance data
+        response.setAttendanceDate(
+                summary.getAttendanceDate() != null ? summary.getAttendanceDate().toString() : "N/A");
         response.setPunchIn(
                 summary.getEffectivePunchIn() != null ? safeConvert(summary.getEffectivePunchIn(), zoneId) : null);
         response.setPunchOut(
