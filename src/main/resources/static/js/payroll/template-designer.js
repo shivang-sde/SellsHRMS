@@ -257,7 +257,7 @@ function buildTemplateHtml() {
     html += `
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px; border-bottom: 2px solid #444;">
           <div style="text-align: left;">
-              ${selectedFields.organisation.includes("logoUrl") ? '<img src="${organisation.logoUrl!""}" alt="Logo" style="max-height: 70px; display: block; margin-bottom: 10px;">' : ""}
+              ${selectedFields.organisation.includes("logoUrl") ? '<img src="${organisation.logoUrl!""}" alt="Logo" style="max-height: 70px; display: block; margin-bottom: 10px;" />' : ""}
               ${selectedFields.organisation.includes("name") ? '<h2 style="margin: 0; color: #1a1a1a; font-size: 22px; text-transform: uppercase;">${organisation.name!""}</h2>' : ""}
           </div>
           <div style="text-align: right; font-size: 12px; color: #555; line-height: 1.4;">
