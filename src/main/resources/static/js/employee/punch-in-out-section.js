@@ -254,7 +254,7 @@ function initAttendanceCard(employeeId, orgId) {
 
   // ── Display punch status ──────────────────────────────────────────────────
   function displayPunchStatus(data) {
-    currentPunchId = data.id;
+    currentPunchId = data.punchId;
 
     $("#todayPunchIn").text(formatTime(data.punchIn));
     $("#todayPunchOut").text(data.punchOut ? formatTime(data.punchOut) : "--");
