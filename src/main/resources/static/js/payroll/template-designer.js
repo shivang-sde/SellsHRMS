@@ -245,130 +245,186 @@ function generatePreview() {
  * Build template HTML from selected fields (Dynamic FreeMarker version)
  */
 function buildTemplateHtml() {
-  // Use a clean variable for the currency symbol to avoid escaping issues
   const curr = "₹";
 
   let html = `
-    <div class="salary-slip" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 850px; margin: 20px auto; border: 1px solid #d1d1d1; background: #fff;">
+  <div style="font-family: Arial, sans-serif; max-width: 850px; margin: 20px auto; border: 1px solid #ccc; background: #fff;">
   `;
 
-  // 1. ORGANISATION HEADER
+  // ================= HEADER =================
   if (selectedFields.organisation.length > 0) {
     html += `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px; border-bottom: 2px solid #444;">
-          <div style="text-align: left;">
-              ${selectedFields.organisation.includes("logoUrl") ? '<img src="${organisation.logoUrl!""}" alt="Logo" style="max-height: 70px; display: block; margin-bottom: 10px;" />' : ""}
-              ${selectedFields.organisation.includes("name") ? '<h2 style="margin: 0; color: #1a1a1a; font-size: 22px; text-transform: uppercase;">${organisation.name!""}</h2>' : ""}
+    <table style="width:100%; border-bottom:2px solid #444; padding:20px;">
+      <tr>
+        <td style="text-align:left;">
+          ${selectedFields.organisation.includes("logoUrl")
+        ? '<img src="${organisation.logoUrl!""}" style="max-height:60px;" />'
+        : ""}
+          ${selectedFields.organisation.includes("name")
+        ? '<div style="font-size:20px; font-weight:bold;">${organisation.name!""}</div>'
+        : ""}
+        </td>
+        <td style="text-align:right; font-size:12px; color:#555;">
+          ${selectedFields.organisation.includes("address")
+        ? '<div>${organisation.address!""}</div>'
+        : ""}
+          <div>
+            ${selectedFields.organisation.includes("email")
+        ? 'Email: ${organisation.email!""}'
+        : ""}
+            ${selectedFields.organisation.includes("phone")
+        ? '<br/>Ph: ${organisation.phone!""}'
+        : ""}
           </div>
-          <div style="text-align: right; font-size: 12px; color: #555; line-height: 1.4;">
-              ${selectedFields.organisation.includes("address") ? '<div>${organisation.address!""}</div>' : ""}
-              <div>
-                ${selectedFields.organisation.includes("email") ? 'Email: ${organisation.email!""}' : ""}
-                ${selectedFields.organisation.includes("phone") ? ' | Ph: ${organisation.phone!""}' : ""}
-              </div>
-          </div>
-      </div>
+        </td>
+      </tr>
+    </table>
     `;
   }
 
-  // 2. SLIP TITLE
+  // ================= TITLE =================
   html += `
-    <div style="text-align: center; padding: 15px; background-color: #fcfcfc; border-bottom: 1px solid #eee;">
-        <h3 style="margin: 0; color: #333; letter-spacing: 2px; font-size: 18px;">PAYSLIP</h3>
-        ${selectedFields.payRun.includes("payPeriod") ? '<div style="margin-top: 5px; font-size: 13px; color: #666;">Period: <strong>${payRun.payPeriod!""}</strong></div>' : ""}
-    </div>
+  <div style="text-align:center; padding:10px; border-bottom:1px solid #ddd;">
+    <div style="font-size:16px; font-weight:bold;">PAYSLIP</div>
+    ${selectedFields.payRun.includes("payPeriod")
+      ? '<div style="font-size:12px; color:#666;">Period: ${payRun.payPeriod!""}</div>'
+      : ""
+    }
+  </div>
   `;
 
-  // 3. DETAILS GRID
-  html += `<div style="padding: 20px; display: flex; gap: 20px; border-bottom: 1px solid #eee;">`;
+  // ================= EMPLOYEE + BANK =================
+  html += `<table style="width:100%; padding:15px; border-bottom:1px solid #eee;"><tr>`;
 
-  // Left Side: Employee
-  html += `<div style="flex: 1;"><table style="width: 100%; font-size: 12px; border-collapse: collapse;">`;
+  // Employee
+  html += `<td style="width:50%; vertical-align:top;">
+    <table style="width:100%; font-size:12px;">`;
+
   selectedFields.employee.forEach(field => {
-    html += `<tr><td style="padding: 4px 0; color: #777;">${getLabelForField("employee", field)}</td><td style="padding: 4px 0; font-weight: 600;">: \${employee.${field}!""}</td></tr>`;
+    html += `
+      <tr>
+        <td style="color:#777; padding:3px 0;">${getLabelForField("employee", field)}</td>
+        <td style="font-weight:bold;">: \${employee.${field}!""}</td>
+      </tr>`;
   });
-  html += `</table></div>`;
 
-  // Right Side: Bank
+  html += `</table></td>`;
+
+  // Bank
   if (selectedFields.bank.length > 0) {
-    html += `<div style="flex: 1; border-left: 1px solid #f0f0f0; padding-left: 20px;"><table style="width: 100%; font-size: 12px; border-collapse: collapse;">`;
-    selectedFields.bank.forEach(field => {
-      html += `<tr><td style="padding: 4px 0; color: #777;">${getLabelForField("bank", field)}</td><td style="padding: 4px 0; font-weight: 600;">: \${bank.${field}!""}</td></tr>`;
-    });
-    html += `</table></div>`;
-  }
-  html += `</div>`;
+    html += `<td style="width:50%; vertical-align:top;">
+      <table style="width:100%; font-size:12px;">`;
 
-  // 4. COMPONENTS TABLE – only rendered when user selected at least one component
+    selectedFields.bank.forEach(field => {
+      html += `
+        <tr>
+          <td style="color:#777; padding:3px 0;">${getLabelForField("bank", field)}</td>
+          <td style="font-weight:bold;">: \${bank.${field}!""}</td>
+        </tr>`;
+    });
+
+    html += `</table></td>`;
+  }
+
+  html += `</tr></table>`;
+
+  // ================= EARNINGS / DEDUCTIONS =================
   if (selectedFields.earnings.length > 0 || selectedFields.deductions.length > 0) {
     html += `
-    <div style="padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #eee;">
-            <thead>
-                <tr style="background-color: #f8f9fa; color: #333; border-bottom: 2px solid #ddd;">
-                    <th style="padding: 10px; text-align: left; font-size: 12px;">EARNINGS</th>
-                    <th style="padding: 10px; text-align: right; font-size: 12px; border-right: 1px solid #eee;">AMOUNT</th>
-                    <th style="padding: 10px; text-align: left; font-size: 12px;">DEDUCTIONS</th>
-                    <th style="padding: 10px; text-align: right; font-size: 12px;">AMOUNT</th>
-                </tr>
-            </thead>
-            <tbody style="font-size: 12px;">
-                <#assign maxRows = [(earnings?size)!0, (deductions?size)!0]?max>
-                <#if maxRows gt 0>
-                <#list 0..(maxRows - 1) as i>
-                    <tr>
-                        <td style="padding:8px; border-bottom: 1px solid #f9f9f9;"><#if earnings[i]??>\${earnings[i].name}</#if></td>
-                        <td style="padding:8px; text-align:right; border-bottom: 1px solid #f9f9f9; border-right: 1px solid #eee; font-weight: 600;">
-                            <#if earnings[i]??>${curr}\${earnings[i].amount?string["0.00"]}</#if>
-                        </td>
-                        <td style="padding:8px; border-bottom: 1px solid #f9f9f9;"><#if deductions[i]??>\${deductions[i].name}</#if></td>
-                        <td style="padding:8px; text-align:right; border-bottom: 1px solid #f9f9f9; font-weight: 600;">
-                            <#if deductions[i]??>${curr}\${deductions[i].amount?string["0.00"]}</#if>
-                        </td>
-                    </tr>
-                </#list>
-                </#if>
-            </tbody>
-        </table>
+    <div style="padding:15px;">
+      <table style="width:100%; border-collapse:collapse; border:1px solid #ddd;">
+        <thead>
+          <tr style="background:#f5f5f5;">
+            <th style="padding:8px; text-align:left;">EARNINGS</th>
+            <th style="padding:8px; text-align:right;">AMOUNT</th>
+            <th style="padding:8px; text-align:left;">DEDUCTIONS</th>
+            <th style="padding:8px; text-align:right;">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <#assign maxRows = [(earnings?size)!0, (deductions?size)!0]?max>
+          <#list 0..(maxRows - 1) as i>
+          <tr>
+            <td style="padding:6px; border-top:1px solid #eee;">
+              <#if earnings[i]??>\${earnings[i].name}</#if>
+            </td>
+            <td style="padding:6px; text-align:right; border-top:1px solid #eee;">
+              <#if earnings[i]??>${curr}\${earnings[i].amount?string["0.00"]}</#if>
+            </td>
+            <td style="padding:6px; border-top:1px solid #eee;">
+              <#if deductions[i]??>\${deductions[i].name}</#if>
+            </td>
+            <td style="padding:6px; text-align:right; border-top:1px solid #eee;">
+              <#if deductions[i]??>${curr}\${deductions[i].amount?string["0.00"]}</#if>
+            </td>
+          </tr>
+          </#list>
+        </tbody>
+      </table>
     </div>
-  `;
+    `;
   }
 
-  // 5. SUMMARY – only the lines the user actually selected are rendered
+  // ================= SUMMARY =================
   const sumFields = selectedFields.summary;
+
   if (sumFields.length > 0) {
-    // Detail rows (base pay / totals breakdown) above the net pay banner
-    const hasDetailRows = sumFields.some(f => ["basePay", "totalEarnings", "totalDeductions"].includes(f));
-    if (hasDetailRows) {
-      html += `<div style="margin: 0 20px 8px; padding: 12px 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; font-size: 12px;">`;
-      if (sumFields.includes("basePay"))
-        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Base Pay</span><span style="font-weight:600;">\${summary.basePay!""}</span></div>`;
-      if (sumFields.includes("totalEarnings"))
-        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Total Earnings</span><span style="font-weight:600;color:#28a745;">\${summary.totalEarnings!""}</span></div>`;
-      if (sumFields.includes("totalDeductions"))
-        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#555;">Total Deductions</span><span style="font-weight:600;color:#dc3545;">\${summary.totalDeductions!""}</span></div>`;
-      html += `</div>`;
+
+    html += `<table style="width:100%; padding:10px 15px;">`;
+
+    if (sumFields.includes("basePay")) {
+      html += `
+      <tr>
+        <td>Base Pay</td>
+        <td style="text-align:right;">\${summary.basePay!""}</td>
+      </tr>`;
     }
 
+    if (sumFields.includes("totalEarnings")) {
+      html += `
+      <tr>
+        <td>Total Earnings</td>
+        <td style="text-align:right; color:green;">\${summary.totalEarnings!""}</td>
+      </tr>`;
+    }
+
+    if (sumFields.includes("totalDeductions")) {
+      html += `
+      <tr>
+        <td>Total Deductions</td>
+        <td style="text-align:right; color:red;">\${summary.totalDeductions!""}</td>
+      </tr>`;
+    }
+
+    html += `</table>`;
+
+    // Net Pay Box
     if (sumFields.includes("netPay")) {
       html += `
-        <div style="margin: 0 20px 20px; padding: 15px; background: #28a745; color: white; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 12px;">
-                <div style="font-weight: bold; text-transform: uppercase;">Net Take Home Pay</div>
-                ${sumFields.includes("netPayInWords") ? '<div style="font-style: italic; margin-top: 4px; opacity: 0.9;">\${summary.netPayInWords!""}</div>' : ""}
-            </div>
-            <div style="font-size: 20px; font-weight: bold;">\${summary.netPay!""}</div>
-        </div>
+      <table style="width:100%; margin:10px 0; background:#28a745; color:#fff;">
+        <tr>
+          <td style="padding:10px;">
+            <div style="font-size:12px;">NET PAY</div>
+            ${sumFields.includes("netPayInWords")
+          ? '<div style="font-size:11px;">\${summary.netPayInWords!""}</div>'
+          : ""
+        }
+          </td>
+          <td style="text-align:right; padding:10px; font-size:18px; font-weight:bold;">
+            \${summary.netPay!""}
+          </td>
+        </tr>
+      </table>
       `;
     }
   }
 
-  // Footer
+  // ================= FOOTER =================
   html += `
-        <div style="padding: 15px; text-align: center; color: #999; font-size: 10px; border-top: 1px solid #eee; background: #fafafa;">
-            <p style="margin: 0;">This is a system-generated document and does not require a signature.</p>
-        </div>
-    </div>
+  <div style="text-align:center; font-size:10px; color:#777; padding:10px; border-top:1px solid #eee;">
+    This is a system-generated document and does not require a signature.
+  </div>
+  </div>
   `;
 
   return html;

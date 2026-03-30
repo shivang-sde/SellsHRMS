@@ -72,8 +72,9 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 // 🔓 Static resources
-                                                .requestMatchers("/css/**", "/js/**", "/images/**",
-                                                                "/bundles/**", "/plugins/**", "/fonts/**",
+                                                .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**",
+                                                                "/files/hrms/**", "/bundles/**", "/plugins/**",
+                                                                "/fonts/**",
                                                                 "/audio/**", "/ajax.cloudflare.com/**")
                                                 .permitAll()
 
