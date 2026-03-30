@@ -17,19 +17,21 @@ public class SalaryFormulaValidator {
     private static final Pattern COMPONENT_REF_PATTERN = Pattern.compile("\\b[A-Za-z_][A-Za-z0-9_]*\\b");
 
     public void validateFormula(SalaryComponentDTO dto, List<SalaryComponent> currentOrgComponents) {
-        if (!"FORMULA".equalsIgnoreCase(dto.getCalculationType()) && !"PERCENTAGE".equalsIgnoreCase(dto.getCalculationType())) {
+        if (!"FORMULA".equalsIgnoreCase(dto.getCalculationType())
+                && !"PERCENTAGE".equalsIgnoreCase(dto.getCalculationType())) {
             return;
         }
 
         String formula = dto.getFormula();
         if ("PERCENTAGE".equalsIgnoreCase(dto.getCalculationType())) {
-             if (formula == null || formula.isBlank()) {
-                 return; // PERCENTAGE can fallback to BASE * percent, so formula is optional
-             }
+            if (formula == null || formula.isBlank()) {
+                return; // PERCENTAGE can fallback to BASE * percent, so formula is optional
+            }
         } else {
-             if (formula == null || formula.isBlank()) {
-                 throw new IllegalArgumentException("Formula cannot be empty for " + dto.getCalculationType() + " calculation type.");
-             }
+            if (formula == null || formula.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Formula cannot be empty for " + dto.getCalculationType() + " calculation type.");
+            }
         }
 
         // 1. Gather existing component abbreviations
@@ -39,8 +41,11 @@ public class SalaryFormulaValidator {
                 .map(SalaryComponent::getAbbreviation)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        
-        Set<String> builtinKeys = new HashSet<>(Arrays.asList("BASE", "WORKING_DAYS", "PAYMENT_DAYS", "LOP_DAYS", "VARPAY", "COUNTRY", "ORG_ID", "DATE_NOW", "BASEPAY", "GROSS"));
+
+        // right now only base is supported in our payroll calculation engine
+        // later check for more built-in keys, and implement that also
+        Set<String> builtinKeys = new HashSet<>(Arrays.asList("BASE", "WORKING_DAYS", "PAYMENT_DAYS", "LOP_DAYS",
+                "VARPAY", "COUNTRY", "ORG_ID", "DATE_NOW", "BASEPAY", "GROSS"));
 
         Set<String> validTokens = new HashSet<>(existingAbbreviations);
         validTokens.addAll(builtinKeys);
@@ -54,11 +59,13 @@ public class SalaryFormulaValidator {
 
         // 2. Validate referenced components exist
         List<String> missing = referencedTokens.stream()
-                .filter(token -> !validTokens.contains(token) && !isNumeric(token) && !isKeyword(token) && !token.startsWith("COMP"))
+                .filter(token -> !validTokens.contains(token) && !isNumeric(token) && !isKeyword(token)
+                        && !token.startsWith("COMP"))
                 .collect(Collectors.toList());
 
         if (!missing.isEmpty()) {
-            throw new IllegalArgumentException("Formula references non-existent components: " + missing + ". Please create these components first or fix the formula.");
+            throw new IllegalArgumentException("Formula references non-existent components: " + missing
+                    + ". Please create these components first or fix the formula.");
         }
 
         // 3. Syntax check with sample context
@@ -95,7 +102,8 @@ public class SalaryFormulaValidator {
 
         Map<String, Set<String>> dependencyGraph = new HashMap<>();
         for (SalaryComponent comp : components) {
-            if (comp.getAbbreviation() == null) continue;
+            if (comp.getAbbreviation() == null)
+                continue;
             Set<String> deps = new HashSet<>();
             if (comp.getFormula() != null) {
                 Matcher matcher = COMPONENT_REF_PATTERN.matcher(comp.getFormula());
@@ -116,7 +124,8 @@ public class SalaryFormulaValidator {
         Queue<String> ready = new ArrayDeque<>();
 
         localGraph.forEach((node, deps) -> {
-            if (deps.isEmpty()) ready.add(node);
+            if (deps.isEmpty())
+                ready.add(node);
         });
 
         while (!ready.isEmpty()) {
@@ -136,10 +145,10 @@ public class SalaryFormulaValidator {
         }
 
         if (sorted.size() < dependencyGraph.size()) {
-             List<String> cycleNodes = dependencyGraph.keySet().stream()
-                     .filter(k -> !sorted.contains(k))
-                     .collect(Collectors.toList());
-             throw new IllegalArgumentException("Circular dependency detected involving components: " + cycleNodes);
+            List<String> cycleNodes = dependencyGraph.keySet().stream()
+                    .filter(k -> !sorted.contains(k))
+                    .collect(Collectors.toList());
+            throw new IllegalArgumentException("Circular dependency detected involving components: " + cycleNodes);
         }
     }
 

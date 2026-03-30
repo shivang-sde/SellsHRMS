@@ -79,7 +79,7 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
     }
 
     // ───────────────────────────────────────────────
-    // Core computation for one employee (Optimized)
+    // Core computation for one employee
     // ───────────────────────────────────────────────
     private SalarySlipDTO computeForEmployee(EmployeeSalaryAssignment assignment, PayRun payRun, Organisation org) {
 
@@ -141,6 +141,11 @@ public class PayrollCalculationServiceImpl implements PayrollCalculationService 
                 continue;
             if (!FormulaExpressionEvaluator.evaluateCondition(comp.getComponentCondition(), context))
                 continue;
+
+            log.info("Condition '{}' evaluated to {} for component {}",
+                    comp.getComponentCondition(),
+                    FormulaExpressionEvaluator.evaluateCondition(comp.getComponentCondition(), context),
+                    comp.getAbbreviation());
 
             double amount = computeComponentAmount(comp, context);
 

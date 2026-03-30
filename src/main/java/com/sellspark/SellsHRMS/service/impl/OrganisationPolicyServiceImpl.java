@@ -62,6 +62,9 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
                 .organisation(org)
                 .officeStart(LocalTime.of(10, 0))
                 .officeClosed(LocalTime.of(19, 0))
+                .salaryCycleStartDay(1)
+                .cycleDuration(30)
+                .payslipGenerationOffsetDays(5)
                 .standardDailyHours(8.0)
                 .weeklyHours(40.0)
                 .monthlyHours(160.0)
@@ -69,9 +72,9 @@ public class OrganisationPolicyServiceImpl implements OrganisationPolicyService 
                 .maxWorkHoursBeforeAutoPunchOut(10)
                 .lateGraceMinutes(10)
                 .earlyOutGraceMinutes(10)
-                .weekOffDays(new ArrayList<>(List.of(DayOfWeek.SUNDAY))) // 👈 your rule
-                .carryForwardEnabled(true)
-                .encashmentEnabled(true)
+                .weekOffDays(new ArrayList<>(List.of(DayOfWeek.SUNDAY)))
+                .carryForwardEnabled(false)
+                .encashmentEnabled(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

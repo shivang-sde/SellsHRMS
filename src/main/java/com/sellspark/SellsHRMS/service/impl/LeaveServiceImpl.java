@@ -306,7 +306,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         return leaves.stream().map(leave -> {
             LeaveResponseDTO dto = toResponseDTO(leave);
-            dto.setCanApprove(true); // ✅ always true since they’re subordinates
+            dto.setCanApprove(true); // always true since they’re subordinates
             return dto;
         }).toList();
     }

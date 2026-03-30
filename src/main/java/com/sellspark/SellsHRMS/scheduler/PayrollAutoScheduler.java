@@ -29,7 +29,7 @@ public class PayrollAutoScheduler {
     /**
      * Runs daily at 2 AM and checks if today is payroll generation day
      */
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 15 11 * * *")
     public void autoGeneratePayslips() {
         LocalDate today = LocalDate.now();
         log.info("🕑 Starting auto payroll scheduler for date: {}", today);
@@ -38,8 +38,10 @@ public class PayrollAutoScheduler {
         for (Organisation org : orgs) {
             try {
                 Optional<OrganisationPolicy> optPolicy = policyRepository.findByOrganisationId(org.getId());
-                if (optPolicy.isEmpty())
+                if (optPolicy.isEmpty()) {
+                    log.warn("No policy found for org {}", org.getName());
                     continue;
+                }
 
                 OrganisationPolicy policy = optPolicy.get();
 
@@ -49,8 +51,9 @@ public class PayrollAutoScheduler {
                 LocalDate generationDate = cycleEnd.plusDays(
                         Optional.ofNullable(policy.getPayslipGenerationOffsetDays()).orElse(0));
 
-                // Skip if not today
-                if (!today.isBefore(generationDate)) {
+                if (today.isBefore(generationDate)) {
+                    log.info("⏭ Skipping {} - before generation date (today={}, generation={})",
+                            org.getName(), today, generationDate);
                     continue;
                 }
 

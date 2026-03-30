@@ -44,21 +44,21 @@ public class FormulaExpressionEvaluator {
         log.info("FormulaExpressionEvaluator - Initial Context keys: {}", context.keySet());
 
         try {
-            // Step 1️⃣: Replace COMP: references with actual values
+            // Step 1️: Replace COMP: references with actual values
             String parsedFormula = replaceComponentRefs(formula, context);
             log.info("FormulaExpressionEvaluator - After COMP replacement: '{}'", parsedFormula);
 
-            // Step 2️⃣: Replace missing direct tokens (e.g., BASE, BASIC, PF) with "0"
+            // Step 2️: Replace missing direct tokens (e.g., BASE, BASIC, PF) with "0"
             parsedFormula = replaceMissingTokens(parsedFormula, context);
             log.info("FormulaExpressionEvaluator - After Missing Token replacement: '{}'", parsedFormula);
 
-            // Step 3️⃣: Create safe evaluation context
+            // Step 3️: Create safe evaluation context
             StandardEvaluationContext evalContext = new StandardEvaluationContext(context);
             evalContext.addPropertyAccessor(new MapAccessor());
             evalContext.setRootObject(context);
             Object value = parser.parseExpression(parsedFormula).getValue(evalContext);
             log.info("FormulaExpressionEvaluator - Evaluation Result: {}", value);
-            
+
             if (value instanceof Number num)
                 return num.doubleValue();
             return 0.0;
@@ -82,11 +82,11 @@ public class FormulaExpressionEvaluator {
         try {
             String parsed = replaceComponentRefs(formula, sampleContext);
             parsed = replaceMissingTokens(parsed, sampleContext);
-            
+
             StandardEvaluationContext ctx = new StandardEvaluationContext(sampleContext);
             ctx.addPropertyAccessor(new MapAccessor());
             ctx.setRootObject(sampleContext);
-            
+
             parser.parseExpression(parsed).getValue(ctx);
             return true;
         } catch (Exception e) {

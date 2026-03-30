@@ -1,8 +1,6 @@
 package com.sellspark.SellsHRMS.service.impl.payroll;
 
-
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -38,8 +36,6 @@ public class StatutoryComponentMappingServiceImpl implements StatutoryComponentM
     public StatutoryComponentMappingDTO createMapping(StatutoryComponentMappingDTO dto) {
         validateInput(dto);
 
-
-
         StatutoryComponent statutoryComponent = statutoryComponentRepository.findById(dto.getStatutoryComponentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Statutory Component not found"));
 
@@ -50,13 +46,11 @@ public class StatutoryComponentMappingServiceImpl implements StatutoryComponentM
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
 
         if (mappingRepository.existsByStatutoryComponentIdAndSalaryComponentIdAndOrganisationId(
-            dto.getStatutoryComponentId(),
-            dto.getSalaryComponentId(),
-             dto.getOrganisationId()
-            )) {
-        throw new InvalidOperationException("Mapping already exists between these components.");
-}
-
+                dto.getStatutoryComponentId(),
+                dto.getSalaryComponentId(),
+                dto.getOrganisationId())) {
+            throw new InvalidOperationException("Mapping already exists between these components.");
+        }
 
         StatutoryComponentMapping mapping = StatutoryComponentMapping.builder()
                 .statutoryComponent(statutoryComponent)
@@ -64,7 +58,22 @@ public class StatutoryComponentMappingServiceImpl implements StatutoryComponentM
                 .organisation(organisation)
                 .countryCode(dto.getCountryCode())
                 .stateCode(dto.getStateCode())
-                .employeePercent(statutoryComponent.getRules().getFirst().getEmployeeContributionPercent()) // later you have to make sure only one rules for the one component or if planing to have more then make sure you get the latest one.
+                .employeePercent(statutoryComponent.getRules().getFirst().getEmployeeContributionPercent()) // later you
+                                                                                                            // have to
+                                                                                                            // make sure
+                                                                                                            // only one
+                                                                                                            // rules for
+                                                                                                            // the one
+                                                                                                            // component
+                                                                                                            // or if
+                                                                                                            // planing
+                                                                                                            // to have
+                                                                                                            // more then
+                                                                                                            // make sure
+                                                                                                            // you get
+                                                                                                            // the
+                                                                                                            // latest
+                                                                                                            // one.
                 .employerPercent(statutoryComponent.getRules().getFirst().getEmployeeContributionPercent())
                 .customRuleConfig(dto.getCustomRuleConfig())
                 .active(dto.getActive() != null ? dto.getActive() : true)
@@ -82,15 +91,16 @@ public class StatutoryComponentMappingServiceImpl implements StatutoryComponentM
                 .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
 
         if (dto.getEmployeePercent() != null)
-            mapping.setEmployeePercent(dto.getEmployeePercent());  // override and exiting will be same no override concepts for now
+            mapping.setEmployeePercent(dto.getEmployeePercent()); // override and exiting will be same no override
+                                                                  // concepts for now
         if (dto.getEmployerPercent() != null)
             mapping.setEmployerPercent(dto.getEmployerPercent());
         if (dto.getCustomRuleConfig() != null)
             mapping.setCustomRuleConfig(dto.getCustomRuleConfig());
         // if (dto.getCountryCode() != null)
-        //     mapping.setCountryCode(dto.getCountryCode());
+        // mapping.setCountryCode(dto.getCountryCode());
         // if (dto.getStateCode() != null)
-        //     mapping.setStateCode(dto.getStateCode());
+        // mapping.setStateCode(dto.getStateCode());
         if (dto.getActive() != null)
             mapping.setActive(dto.getActive());
         if (dto.getIncludeInCalculation() != null)
@@ -147,12 +157,12 @@ public class StatutoryComponentMappingServiceImpl implements StatutoryComponentM
                 .organisationId(mapping.getOrganisation().getId())
                 .countryCode(mapping.getCountryCode())
                 .stateCode(mapping.getStateCode())
-                .employeePercent(mapping.getEmployeePercent() != null 
-                    ? mapping.getEmployeePercent() 
-                    : sc.getRules().getFirst().getEmployeeContributionPercent() )
-                .employerPercent(mapping.getEmployerPercent() != null 
-                    ? mapping.getEmployerPercent()
-                    : sc.getRules().getFirst().getEmployerContributionPercent()  )
+                .employeePercent(mapping.getEmployeePercent() != null
+                        ? mapping.getEmployeePercent()
+                        : sc.getRules().getFirst().getEmployeeContributionPercent())
+                .employerPercent(mapping.getEmployerPercent() != null
+                        ? mapping.getEmployerPercent()
+                        : sc.getRules().getFirst().getEmployerContributionPercent())
                 .customRuleConfig(mapping.getCustomRuleConfig())
                 .active(mapping.getActive())
                 .includeInCalculation(mapping.getIncludeInCalculation())

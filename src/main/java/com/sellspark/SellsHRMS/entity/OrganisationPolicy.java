@@ -79,9 +79,13 @@ public class OrganisationPolicy {
     @Builder.Default
     private Boolean flexibleHourModelEnabled = false;
 
-    private Integer salaryCycleStartDay; // e.g. 1
-    private Integer cycleDuration; // e.g. 30
-    private Integer payslipGenerationOffsetDays; // e.g. 5 days after cycle end
+    @Builder.Default
+    private Integer salaryCycleStartDay = 1; // e.g. 1
+
+    @Builder.Default
+    private Integer cycleDuration = 30; // e.g. 30
+    @Builder.Default
+    private Integer payslipGenerationOffsetDays = 5; // e.g. 5 days after cycle end
 
     // Leave policies
     @Builder.Default
