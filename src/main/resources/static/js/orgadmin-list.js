@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<tr><td colspan="6" class="text-center">No admins found</td></tr>`;
     } catch (err) {
       console.error(err);
+      showToast("error", err.message);
       tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">Failed to load admins</td></tr>`;
     }
   }
@@ -53,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
       loadAdmins();
     } catch (err) {
       console.error(err);
-      showToast("error", "Error updating admin status");
+      showToast("error", err.message);
     }
   };
 

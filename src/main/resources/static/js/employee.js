@@ -71,6 +71,7 @@ async function loadEmployees(orgId) {
 
   } catch (err) {
     console.error(err);
+    showToast("error", err.message);
     tbody.innerHTML = `<tr><td colspan="8" class="text-danger text-center">Failed to load employees</td></tr>`;
   }
 }
@@ -198,7 +199,7 @@ async function editEmployee(id) {
 
   } catch (err) {
     console.error(err);
-    showToast("error", "Failed to load employee for edit");
+    showToast("error", err.message);
   }
 }
 
@@ -215,7 +216,7 @@ async function deleteEmployee(id) {
     showToast("success", "Employee deleted (soft)");
   } catch (err) {
     console.error(err);
-    showToast("error", "Delete failed");
+    showToast("error", err.message);
   }
 }
 
@@ -239,7 +240,7 @@ async function toggleStatus(id, currentStatus) {
     showToast("success", `Status set to ${next}`);
   } catch (err) {
     console.error(err);
-    showToast("error", "Status update failed");
+    showToast("error", err.message);
   }
 }
 
@@ -343,6 +344,6 @@ function showToast(type, msg) {
 function escapeHtml(s) {
   if (s == null) return "";
   return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }

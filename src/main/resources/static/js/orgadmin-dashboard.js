@@ -20,6 +20,7 @@ async function loadDashboardStats(orgId) {
         document.getElementById("countDepartments").innerText = org.totalDepartments;
         document.getElementById("maxEmpLimit").innerText = org.maxEmployees ?? "--";
     } catch (err) {
+        showToast("error", err.message);
         console.error("Dashboard stats failed", err);
     }
 }

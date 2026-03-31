@@ -133,7 +133,7 @@ $(document).ready(async function () {
       $("#reportingToSelect").val(data.reportingToId);
     } catch (err) {
       console.error(err);
-      showToast("error", "Failed to load employee data");
+      showToast("error", err.message);
     }
   }
 

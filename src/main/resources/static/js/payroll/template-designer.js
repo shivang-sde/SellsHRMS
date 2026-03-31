@@ -69,7 +69,7 @@ function loadAvailableFields() {
       }
     })
     .fail(function (xhr) {
-      showAlert("danger", "Failed to load available fields. Please refresh the page.");
+      showAlert("danger", xhr.responseJSON.message);
       console.error("Error loading fields:", xhr);
     });
 }
@@ -237,6 +237,7 @@ function generatePreview() {
                 </div>
             `);
       console.error("Preview error:", xhr);
+      showToast("error", xhr.responseJSON.message);
     },
   });
 }
@@ -471,7 +472,7 @@ function uploadLogo() {
       }
     },
     error: function (xhr) {
-      showToast("danger", "Failed to upload logo. Please try again.");
+      showToast("danger", xhr.responseJSON.message);
       console.error("Upload error:", xhr);
     },
   });
@@ -544,7 +545,7 @@ function saveTemplate() {
       }
     },
     error: function (xhr) {
-      showToast("error", "Failed to save template. Please try again.");
+      showToast("error", xhr.responseJSON.message);
       console.error("Save error:", xhr);
     },
   });
@@ -572,7 +573,7 @@ function loadTemplates() {
     },
     error: function (xhr) {
       $("#templateListLoader").hide();
-      showToast("danger", "Failed to load templates");
+      showToast("danger", xhr.responseJSON.message);
       console.error("Load templates error:", xhr);
     },
   });
@@ -658,7 +659,7 @@ function setTemplateAsDefault(id) {
       }
     },
     error: function (xhr) {
-      showToast("danger", "Failed to set template as default");
+      showToast("danger", xhr.responseJSON.message);
       console.error("Set default error:", xhr);
     },
   });
@@ -693,7 +694,7 @@ function deleteTemplate(id) {
       }
     },
     error: function (xhr) {
-      showToast("danger", "Failed to delete template");
+      showToast("error", xhr.responseJSON.message);
       console.error("Delete error:", xhr);
     },
   });
@@ -743,7 +744,7 @@ function loadExistingTemplate(id) {
       }
     },
     error: function (xhr) {
-      showToast("danger", "Failed to load template");
+      showToast("danger", xhr.responseJSON.message);
       console.error("Load template error:", xhr);
     },
   });
@@ -852,7 +853,7 @@ function exportToPDF() {
     .then(() => showAlert("success", "PDF downloaded successfully"))
     .catch((err) => {
       console.error("PDF export error:", err);
-      showAlert("danger", "Failed to generate PDF. Please try again.");
+      showAlert("danger", err.responseJSON.message);
     });
 }
 

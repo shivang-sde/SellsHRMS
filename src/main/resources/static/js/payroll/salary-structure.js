@@ -46,7 +46,7 @@ const SalaryStructures = (() => {
             renderStructures(structuresData);
         } catch (error) {
             console.error('Error loading structures:', error);
-            showToast('error', 'Failed to load salary structures');
+            showToast('error', error.responseJSON.message);
         }
     };
 
@@ -62,6 +62,7 @@ const SalaryStructures = (() => {
             populateComponentSelect();
         } catch (error) {
             console.error('Error loading components:', error);
+            showToast('error', error.responseJSON.message);
         }
     };
 
@@ -253,7 +254,7 @@ const SalaryStructures = (() => {
             loadStructures();
         } catch (error) {
             console.error('Error deactivating structure:', error);
-            showToast('error', 'Failed to deactivate structure');
+            showToast('error', error.responseJSON.message);
         }
     };
 

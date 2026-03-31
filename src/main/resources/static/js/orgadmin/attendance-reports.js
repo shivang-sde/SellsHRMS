@@ -29,8 +29,9 @@ $(document).ready(function () {
         });
         $("#filterEmployee").html(options);
       },
-      error: function () {
+      error: function (xhr) {
         console.error("Failed to load employees");
+        showToast("error", xhr.responseJSON.message);
       },
     });
   }

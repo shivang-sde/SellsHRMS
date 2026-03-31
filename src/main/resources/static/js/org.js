@@ -23,6 +23,7 @@ async function loadOrgs() {
         });
     } catch (e) {
         console.error('loadOrgs error', e);
+        showToast("error", e.message);
     }
 }
 
@@ -67,7 +68,7 @@ document.addEventListener('click', function (e) {
                 if (modalInstance) modalInstance.hide();
                 showToast('success', 'Organisation updated');
             } catch (e) {
-                alert('Network error');
+                showToast("error", e.message);
                 console.error(e);
             }
         })();

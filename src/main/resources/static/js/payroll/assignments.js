@@ -325,6 +325,7 @@ const SalaryAssignments = (() => {
                 `;
             } catch (e) {
                 console.error("Error parsing breakdown json", e);
+                showToast("error", "Error parsing breakdown json");
             }
         }
 
@@ -343,9 +344,9 @@ const SalaryAssignments = (() => {
                         </div>
                     </div>
                     <div>
-                        ${data.active 
-                            ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>Active Assignment</span>' 
-                            : '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-ban me-1"></i>Inactive</span>'}
+                        ${data.active
+                ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i>Active Assignment</span>'
+                : '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill"><i class="fas fa-ban me-1"></i>Inactive</span>'}
                     </div>
                 </div>
             </div>

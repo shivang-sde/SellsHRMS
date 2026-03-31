@@ -20,7 +20,7 @@ async function loadDashboardData() {
     renderUpcomingReminders(data.upcomingDeadlines || []);
   } catch (error) {
     console.error("Failed to load dashboard:", error);
-    showToast("error", "Failed to load dashboard data");
+    showToast("error", error.responseJSON.message);
   }
 }
 

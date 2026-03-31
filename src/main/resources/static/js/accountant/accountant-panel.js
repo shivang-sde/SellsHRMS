@@ -337,7 +337,7 @@ $(document).ready(function () {
             showToast("success", "PDFs generated successfully for selected employees");
             loadSalarySlips(); // reload to update buttons
         } catch (err) {
-            showToast("error", "Some PDFs failed to generate");
+            showToast("error", err.message);
             console.error(err);
         }
 

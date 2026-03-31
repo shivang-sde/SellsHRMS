@@ -9,7 +9,7 @@ $(document).ready(function () {
     function updateDateDisplay(dateStr) {
         const dateObj = dateStr ? new Date(dateStr) : new Date();
         const isToday = !dateStr || dateStr === todayStr;
-        
+
         $('#attendancePageTitle').text(isToday ? "Today's Attendance" : "Attendance");
         $('#currentDate').html(`<i class="far fa-calendar-alt me-2"></i>${dateObj.toLocaleDateString('en-US', {
             weekday: 'long',
@@ -29,7 +29,7 @@ $(document).ready(function () {
     $('#btnFilter').on('click', filterAttendance);
     $('#searchEmployee').on('keyup', filterAttendance);
     $('#btnExport').on('click', exportToExcel);
-    $('#attendanceDate').on('change', function() {
+    $('#attendanceDate').on('change', function () {
         updateDateDisplay($(this).val());
         loadTodayAttendance();
     });
@@ -86,8 +86,9 @@ $(document).ready(function () {
                 });
                 $('#filterDepartment').html(options);
             },
-            error: function () {
+            error: function (xhr) {
                 console.error('Failed to load departments');
+                showToast("error", xhr.responseJSON.message);
             }
         });
     }

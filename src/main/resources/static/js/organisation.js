@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("success", "Logo uploaded successfully!");
     } catch (err) {
       console.error(err);
-      showToast("error", "Failed to upload logo.");
+      showToast("error", err.message || "Failed to upload logo.");
     }
   });
 
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (err) {
       console.error(err);
-      showToast("error", "Error while saving organisation.");
+      showToast("error", err.message || "Error while saving organisation.");
     }
   });
 
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       console.error("Error loading organisation data:", err);
-      showToast("error", "Failed to load organisation details.");
+      showToast("error", err.message || "Failed to load organisation details.");
     }
   }
 

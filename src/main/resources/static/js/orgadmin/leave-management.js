@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     const orgId = window.APP.ORG_ID || $('#globalOrgId').val();
     let allLeaves = [];
 
@@ -26,12 +26,12 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/leaves/org/${orgId}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 allLeaves = data;
                 updateStatistics(data);
                 filterLeaves();
             },
-            error: function() {
+            error: function () {
                 showToast('error', 'Failed to load leaves');
                 $('#leavesTableBody').html(`
                     <tr>
@@ -49,15 +49,16 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/leave-types/org/${orgId}`,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 let options = '<option value="">All Types</option>';
                 data.forEach(type => {
                     options += `<option value="${type.id}">${type.name}</option>`;
                 });
                 $('#filterLeaveType').html(options);
             },
-            error: function() {
+            error: function (xhr) {
                 console.error('Failed to load leave types');
+                showToast("error", xhr.responseJSON.message);
             }
         });
     }
@@ -84,13 +85,13 @@ $(document).ready(function() {
         const endDateFilter = $('#filterEndDate').val();
 
         let filtered = allLeaves.filter(leave => {
-            const matchesSearch = !search || 
+            const matchesSearch = !search ||
                 (leave.employeeName && leave.employeeName.toLowerCase().includes(search)) ||
                 (leave.employeeCode && leave.employeeCode.toLowerCase().includes(search));
-            
+
             const matchesStatus = !statusFilter || leave.leaveStatus === statusFilter;
             const matchesType = !leaveTypeFilter || leave.leaveTypeId == leaveTypeFilter;
-            
+
             const matchesStartDate = !startDateFilter || leave.startDate >= startDateFilter;
             const matchesEndDate = !endDateFilter || leave.endDate <= endDateFilter;
 
@@ -139,7 +140,7 @@ $(document).ready(function() {
         $('#leavesTableBody').html(html);
 
         // Attach event handlers
-        $('.btn-view').on('click', function() {
+        $('.btn-view').on('click', function () {
             const leaveId = $(this).data('id');
             viewLeaveDetails(leaveId);
         });
@@ -150,7 +151,7 @@ $(document).ready(function() {
         $.ajax({
             url: `/api/leaves/${leaveId}`,
             method: 'GET',
-            success: function(leave) {
+            success: function (leave) {
                 const html = `
                     <div class="row g-3">
                         <div class="col-12">
@@ -196,12 +197,12 @@ $(document).ready(function() {
                         ` : ''}
                     </div>
                 `;
-                
+
                 $('#leaveDetailBody').html(html);
                 const modal = new bootstrap.Modal(document.getElementById('leaveDetailModal'));
                 modal.show();
             },
-            error: function() {
+            error: function () {
                 showToast('error', 'Failed to load leave details');
             }
         });
@@ -213,7 +214,7 @@ $(document).ready(function() {
         const statusFilter = $('#filterStatus').val();
 
         let filtered = allLeaves.filter(leave => {
-            const matchesSearch = !search || 
+            const matchesSearch = !search ||
                 (leave.employeeName && leave.employeeName.toLowerCase().includes(search)) ||
                 (leave.employeeCode && leave.employeeCode.toLowerCase().includes(search));
             const matchesStatus = !statusFilter || leave.leaveStatus === statusFilter;

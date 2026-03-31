@@ -3,7 +3,7 @@ $(document).ready(function () {
   const employeeId = window.APP.EMPLOYEE_ID;
   if (!orgId) return console.warn("No ORG_ID in session");
 
-       loadUpcomingReminders();
+  loadUpcomingReminders();
 
   // --------------------------
   // 1️⃣ Load main dashboard data
@@ -29,21 +29,21 @@ $(document).ready(function () {
     renderList("#eventsContainer", combined, i => i.label);
   }).fail(() => showToast("error", "Failed to load dashboard data"));
 
-async function loadUpcomingReminders() {
+  async function loadUpcomingReminders() {
     const container = $('#remindersContainer');
     container.html('<div class="text-muted small">Loading...</div>');
 
     try {
-        const res = await fetch(`${window.APP.CONTEXT_PATH}/api/tasks/reminders/upcoming?organisationId=${organisationId}&employeeId=${employeeId}`);
-        const data = await res.json();
-        const reminders = data?.data || [];
+      const res = await fetch(`${window.APP.CONTEXT_PATH}/api/tasks/reminders/upcoming?organisationId=${organisationId}&employeeId=${employeeId}`);
+      const data = await res.json();
+      const reminders = data?.data || [];
 
-        if (!reminders.length) {
-            container.html('<div class="text-muted small">No reminders in next 3 days</div>');
-            return;
-        }
+      if (!reminders.length) {
+        container.html('<div class="text-muted small">No reminders in next 3 days</div>');
+        return;
+      }
 
-        const html = reminders.map(r => `
+      const html = reminders.map(r => `
             <div class="border-bottom mb-2 pb-1">
                 <div class="fw-bold text-truncate" title="${r.title}">${r.title}</div>
                 <div class="small text-muted text-truncate" title="${r.description || '-'}">
@@ -55,20 +55,20 @@ async function loadUpcomingReminders() {
             </div>
         `).join('');
 
-        container.html(html);
+      container.html(html);
 
     } catch (err) {
-        console.error('Failed to load reminders', err);
-        container.html('<div class="text-danger small">Failed to load reminders</div>');
+      console.error('Failed to load reminders', err.message);
+      container.html('<div class="text-danger small">Failed to load reminders</div>');
     }
-}
+  }
 
-// Helper function to format LocalDateTime string from backend
-function formatDateTime(dtString) {
+  // Helper function to format LocalDateTime string from backend
+  function formatDateTime(dtString) {
     if (!dtString) return '-';
     const dt = new Date(dtString);
     return dt.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+  }
 
 
 
@@ -78,57 +78,57 @@ function formatDateTime(dtString) {
   // --------------------------
   // loadKnowledgeBase(); 
 
-//   function loadKnowledgeBase() {
-//   const kbContainer = $("#knowledgeContainer");
-//   kbContainer.html('<p class="text-center text-muted small mb-0"><i class="fa fa-spinner fa-spin"></i> Loading...</p>');
+  //   function loadKnowledgeBase() {
+  //   const kbContainer = $("#knowledgeContainer");
+  //   kbContainer.html('<p class="text-center text-muted small mb-0"><i class="fa fa-spinner fa-spin"></i> Loading...</p>');
 
-//   $.getJSON(`/api/kb/org/${orgId}/dashboard`, function (response) {
-//     const subjects = response.data || response || [];
-//     console.log("KB Dashboard:", subjects);
-//     kbContainer.empty();
+  //   $.getJSON(`/api/kb/org/${orgId}/dashboard`, function (response) {
+  //     const subjects = response.data || response || [];
+  //     console.log("KB Dashboard:", subjects);
+  //     kbContainer.empty();
 
-//     if (!subjects || subjects.length === 0) {
-//       kbContainer.html('<p class="text-muted small mb-0">No knowledge base subjects found.</p>');
-//       return;
-//     }
+  //     if (!subjects || subjects.length === 0) {
+  //       kbContainer.html('<p class="text-muted small mb-0">No knowledge base subjects found.</p>');
+  //       return;
+  //     }
 
-//     const list = $('<ul class="list-group list-group-flush small"></ul>');
-//     subjects.slice(0, 3).forEach(s => {
-//       const item = $(`
-//         <li class="list-group-item">
-//           <div class="fw-bold text-primary">${s.title}</div>
-//           <div class="text-muted small">${s.description || ''}</div>
-//           <ul class="small ps-3 mt-1 mb-0">
-//             ${(s.recentTopics && s.recentTopics.length > 0)
-//               ? s.recentTopics.slice(0, 3).map(t => `
-//                   <li>
-//                     ${t.title}
-//                     ${t.hasAttachment ? `<i class="fa fa-paperclip text-secondary ms-1"></i>` : ''}
-//                   </li>
-//                 `).join('')
-//               : '<li class="text-muted">No topics yet.</li>'}
-//           </ul>
-//           <div class="mt-1 text-end">
-//             <a href="#" class="text-decoration-none view-topics" data-id="${s.id}">
-//               View All <i class="fa fa-chevron-right small"></i>
-//             </a>
-//           </div>
-//         </li>
-//       `);
-//       list.append(item);
-//     });
+  //     const list = $('<ul class="list-group list-group-flush small"></ul>');
+  //     subjects.slice(0, 3).forEach(s => {
+  //       const item = $(`
+  //         <li class="list-group-item">
+  //           <div class="fw-bold text-primary">${s.title}</div>
+  //           <div class="text-muted small">${s.description || ''}</div>
+  //           <ul class="small ps-3 mt-1 mb-0">
+  //             ${(s.recentTopics && s.recentTopics.length > 0)
+  //               ? s.recentTopics.slice(0, 3).map(t => `
+  //                   <li>
+  //                     ${t.title}
+  //                     ${t.hasAttachment ? `<i class="fa fa-paperclip text-secondary ms-1"></i>` : ''}
+  //                   </li>
+  //                 `).join('')
+  //               : '<li class="text-muted">No topics yet.</li>'}
+  //           </ul>
+  //           <div class="mt-1 text-end">
+  //             <a href="#" class="text-decoration-none view-topics" data-id="${s.id}">
+  //               View All <i class="fa fa-chevron-right small"></i>
+  //             </a>
+  //           </div>
+  //         </li>
+  //       `);
+  //       list.append(item);
+  //     });
 
-//     kbContainer.append(list);
-//   }).fail(() => {
-//     kbContainer.html('<p class="text-muted small mb-0">Failed to load knowledge base.</p>');
-//   });
-// }
+  //     kbContainer.append(list);
+  //   }).fail(() => {
+  //     kbContainer.html('<p class="text-muted small mb-0">Failed to load knowledge base.</p>');
+  //   });
+  // }
 
 
   // --------------------------
   // 3️⃣ Load Topics when clicked
   // --------------------------
-//    
+  //    
 
   // function loadTopics(subjectId) {
   //   const kbContainer = $("#knowledgeContainer");

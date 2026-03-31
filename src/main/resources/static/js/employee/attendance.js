@@ -224,7 +224,7 @@ $(document).ready(function () {
       console.error("Unable to get location:", err);
       showToast(
         "error",
-        "Unable to get your location. Please enable location permission.",
+        err.message || "Unable to get your location. Please enable location permission.",
       );
     }
   }

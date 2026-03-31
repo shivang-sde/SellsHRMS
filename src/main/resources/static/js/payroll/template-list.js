@@ -32,7 +32,7 @@ function loadAllTemplates() {
         },
         error: function (xhr) {
             hideLoading();
-            showError('Failed to load templates. Please refresh the page.');
+            showToast("error", xhr.responseJSON.message);
             console.error('Error loading templates:', xhr);
         }
     });
@@ -208,7 +208,7 @@ function setAsDefault(id) {
             }
         },
         error: function (xhr) {
-            showError('Failed to set template as default');
+            showToast("error", xhr.responseJSON.message);
             console.error('Set default error:', xhr);
         }
     });
@@ -247,7 +247,7 @@ function confirmDelete() {
             }
         },
         error: function (xhr) {
-            showError('Failed to delete template');
+            showToast("error", xhr.responseJSON.message);
             console.error('Delete error:', xhr);
         }
     });

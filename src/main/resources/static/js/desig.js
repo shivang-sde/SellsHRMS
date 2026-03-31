@@ -192,58 +192,58 @@
 
     // --- Delete ---
     window.deleteDesignation = async function (id) {
-    if (!confirm("Delete this designation?")) return;
+        if (!confirm("Delete this designation?")) return;
 
-    try {
-        const res = await fetch(`/api/designations/${id}`, {
-            method: "DELETE",
-            headers: { "Accept": "application/json" }
-        });
+        try {
+            const res = await fetch(`/api/designations/${id}`, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
 
-        const body = await res.json().catch(() => null);
+            const body = await res.json().catch(() => null);
 
-        console.log("DELETE designation response:", res.status, body);
+            console.log("DELETE designation response:", res.status, body);
 
-        if (!res.ok) {
-            handleApiError(res.status, body);
+            if (!res.ok) {
+                handleApiError(res.status, body);
+                return;
+            }
+
+            showToast("success", body?.message || "Designation deleted successfully");
+
+            await loadDesignations();
+            await loadRoles();
+
+        } catch (err) {
+            console.error("Network error:", err);
+            showToast("error", err.message);
+        }
+    };
+
+    function handleApiError(status, error) {
+        if (!error) {
+            showToast("error", "Unexpected error occurred.");
             return;
         }
 
-        showToast("success", body?.message || "Designation deleted successfully");
+        switch (error.errorCode) {
 
-        await loadDesignations();
-        await loadRoles();
+            case "RESOURCE_IN_USE":
+                showToast("warning", error.message);
+                break;
 
-    } catch (err) {
-        console.error("Network error:", err);
-        showToast("error", "Network error. Please try again.");
+            case "DUPLICATE_ENTRY":
+                showToast("error", error.message);
+                break;
+
+            case "VALIDATION_FAILED":
+                showToast("error", "Please correct the highlighted fields.");
+                break;
+
+            default:
+                showToast("error", error.message || "Operation failed.");
+        }
     }
-    };
-    
-    function handleApiError(status, error) {
-    if (!error) {
-        showToast("error", "Unexpected error occurred.");
-        return;
-    }
-
-    switch (error.errorCode) {
-
-        case "RESOURCE_IN_USE":
-            showToast("warning", error.message);
-            break;
-
-        case "DUPLICATE_ENTRY":
-            showToast("error", error.message);
-            break;
-
-        case "VALIDATION_FAILED":
-            showToast("error", "Please correct the highlighted fields.");
-            break;
-
-        default:
-            showToast("error", error.message || "Operation failed.");
-    }
-}
 
 
 

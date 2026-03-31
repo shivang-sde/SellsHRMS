@@ -38,6 +38,7 @@ function loadDevices() {
         })
         .catch(error => {
             console.error("Error loading devices", error);
+            showToast("error", error.message);
             document.getElementById("deviceTableBody").innerHTML =
                 `<tr><td colspan="4" class="text-center text-danger">Error loading devices</td></tr>`;
         });
@@ -85,7 +86,7 @@ function saveDevice() {
         })
         .catch(error => {
             console.error("Error creating device", error);
-            alert(error.response?.data?.message || "Failed to create device");
+            showToast("error", error.message);
             document.getElementById("saveDeviceBtn").disabled = false;
         });
 }
@@ -95,6 +96,5 @@ function copyApiKey() {
     copyText.select();
     copyText.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(copyText.value);
-
-    // Optional: Tooltip or toast could be added here
+    showToast("success", "API Key copied to clipboard");
 }

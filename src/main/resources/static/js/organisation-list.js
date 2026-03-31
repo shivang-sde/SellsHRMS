@@ -82,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     } catch (err) {
       console.error("Error loading orgs", err);
+      showToast("error", err.message);
       tbody.innerHTML = `<tr><td colspan="8" class="text-danger text-center">Error loading data.</td></tr>`;
     }
   }
@@ -120,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
       loadOrganisations();
     } catch (err) {
       console.error(err);
-      showToast("error", "Error extending validity");
+      showToast("error", err.message);
     }
   };
 
@@ -134,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
       loadOrganisations();
     } catch (err) {
       console.error(err);
-      showToast("error", "Error updating max employees");
+      showToast("error", err.message);
     }
   };
 
@@ -202,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
       new bootstrap.Modal(document.getElementById("manageModulesModal")).show();
     } catch (err) {
       console.error("Failed to load modules", err);
-      showToast("error", "Error loading modules.");
+      showToast("error",);
     }
   };
 
@@ -228,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bootstrap.Modal.getInstance(document.getElementById("manageModulesModal")).hide();
     } catch (err) {
       console.error(err);
-      showToast("error", "Error saving modules.");
+      showToast("error", err.message);
     }
   });
 

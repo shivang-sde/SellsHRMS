@@ -135,6 +135,7 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         console.error('Error loading leave types:', xhr);
+        showToast("error", xhr.responseJSON.message);
       }
     });
   }
@@ -482,6 +483,7 @@ $(document).ready(function () {
       },
       error: function (xhr) {
         console.error('Error loading stats:', xhr);
+        showToast("error", xhr.responseJSON.message);
       }
     });
   }

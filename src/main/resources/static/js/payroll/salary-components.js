@@ -42,7 +42,7 @@ const SalaryComponents = (() => {
         $('#componentFormula').on('blur', validateFormulaRealTime);
 
         // Auto-correct decimal errors like ".5" -> "0.5"
-        $('#componentFormula').on('change', function() {
+        $('#componentFormula').on('change', function () {
             let val = $(this).val();
             let corrected = val.replace(/(^|[^0-9])\.([0-9]+)/g, '$10.$2');
             if (val !== corrected) {
@@ -53,7 +53,7 @@ const SalaryComponents = (() => {
         });
 
         // Formula builder actions
-        $('.btn-formula-action').on('click', function(e) {
+        $('.btn-formula-action').on('click', function (e) {
             e.preventDefault();
             const valToInsert = $(this).data('val');
             const $textarea = $('#componentFormula');
@@ -61,13 +61,13 @@ const SalaryComponents = (() => {
             const v = $textarea.val();
             const textBefore = v.substring(0, cursorPos);
             const textAfter = v.substring(cursorPos, v.length);
-            
+
             // Add spaces around operators if appropriate
             let insertStr = valToInsert;
             if (['+', '-', '*', '/'].includes(valToInsert)) {
                 insertStr = ' ' + valToInsert + ' ';
             }
-            
+
             $textarea.val(textBefore + insertStr + textAfter);
             $textarea.prop('selectionStart', cursorPos + insertStr.length);
             $textarea.prop('selectionEnd', cursorPos + insertStr.length);
@@ -99,7 +99,7 @@ const SalaryComponents = (() => {
             window.showToast('success', 'Components loaded successfully');
         } catch (error) {
             console.error('Error loading components:', error);
-            window.showToast('error', 'Failed to load salary components');
+            window.showToast('error', error.message);
             showEmptyState(true);
         } finally {
             showLoading(false);
@@ -273,7 +273,7 @@ const SalaryComponents = (() => {
             componentModal.hide();
             loadComponents();
         } catch (error) {
-            console.error('Error saving component:', error);
+            console.error('Error saving component:', error.responseJSON.message);
             const errorMsg = error.responseText || 'Failed to save component';
             window.showToast('error', errorMsg);
         } finally {
@@ -310,7 +310,7 @@ const SalaryComponents = (() => {
             loadComponents();
         } catch (error) {
             console.error('Error deactivating component:', error);
-            window.showToast('error', 'Failed to deactivate component');
+            window.showToast('error', error.responseJSON.message);
         }
     };
 
@@ -399,7 +399,7 @@ const SalaryComponents = (() => {
         }
 
         const validVars = new Set(['BASE', 'WORKING_DAYS', 'PAYMENT_DAYS', 'LOP_DAYS', 'VARPAY', 'COUNTRY', 'ORG_ID', 'DATE_NOW', 'BASEPAY', 'GROSS']);
-        
+
         componentsData.forEach(c => {
             if (c.id !== currentComponentId && c.active && c.abbreviation) {
                 validVars.add(c.abbreviation);
