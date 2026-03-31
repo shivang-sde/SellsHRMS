@@ -36,12 +36,14 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         Organisation org = organisationRepository.findById(dto.getOrganisationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organisation not found"));
 
-        List<SalaryComponent> existingComponents = componentRepository.findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
-        
+        List<SalaryComponent> existingComponents = componentRepository
+                .findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
+
         boolean isDuplicate = existingComponents.stream()
                 .anyMatch(c -> c.getAbbreviation().equalsIgnoreCase(dto.getAbbreviation()));
         if (isDuplicate) {
-            throw new IllegalArgumentException("A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
+            throw new IllegalArgumentException(
+                    "A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
         }
 
         formulaValidator.validateFormula(dto, existingComponents);
@@ -61,14 +63,16 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         SalaryComponent component = componentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary component not found"));
 
-        List<SalaryComponent> existingComponents = componentRepository.findByOrganisationIdAndActiveTrue(component.getOrganisation().getId());
-        
+        List<SalaryComponent> existingComponents = componentRepository
+                .findByOrganisationIdAndActiveTrue(component.getOrganisation().getId());
+
         boolean isDuplicate = existingComponents.stream()
                 .anyMatch(c -> c.getAbbreviation().equalsIgnoreCase(dto.getAbbreviation()) && !c.getId().equals(id));
         if (isDuplicate) {
-            throw new IllegalArgumentException("A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
+            throw new IllegalArgumentException(
+                    "A component with abbreviation '" + dto.getAbbreviation() + "' already exists.");
         }
-        
+
         dto.setId(id);
         formulaValidator.validateFormula(dto, existingComponents);
 
@@ -98,6 +102,12 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     @Override
     public List<SalaryComponentDTO> getActiveComponents(Long organisationId) {
         return componentRepository.findByOrganisationIdAndActiveTrue(organisationId)
+                .stream().map(this::mapEntityToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SalaryComponentDTO> getAllComponents(Long organisationId) {
+        return componentRepository.findByOrganisationId(organisationId)
                 .stream().map(this::mapEntityToDto).collect(Collectors.toList());
     }
 

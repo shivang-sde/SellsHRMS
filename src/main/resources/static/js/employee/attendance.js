@@ -77,7 +77,7 @@ $(document).ready(function () {
         if (xhr.status === 404) {
           resetPunchUI();
         } else {
-          showToast("error", xhr.responseJSON.message);
+          showToast("error", "No attendance record found for today");
         }
       },
     });

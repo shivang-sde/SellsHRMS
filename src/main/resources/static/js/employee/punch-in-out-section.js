@@ -246,7 +246,7 @@ function initAttendanceCard(employeeId, orgId) {
         if (xhr.status === 404) {
           resetPunchUI();
         } else {
-          showToast("error", xhr.responseJSON?.message || "Failed to load punch status.");
+          showToast("error", "No attendance record found for today");
         }
       },
     });

@@ -23,13 +23,15 @@ public class SalaryComponentRestController {
     public ResponseEntity<?> validateFormula(@RequestBody SalaryComponentDTO dto) {
         try {
             if (dto.getOrganisationId() == null) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("valid", false, "message", "Organisation ID is required for evaluation."));
+                return ResponseEntity.badRequest().body(
+                        java.util.Map.of("valid", false, "message", "Organisation ID is required for evaluation."));
             }
-            java.util.List<com.sellspark.SellsHRMS.entity.payroll.SalaryComponent> existing = 
-                componentRepository.findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
-            
+            java.util.List<com.sellspark.SellsHRMS.entity.payroll.SalaryComponent> existing = componentRepository
+                    .findByOrganisationIdAndActiveTrue(dto.getOrganisationId());
+
             formulaValidator.validateFormula(dto, existing);
-            return ResponseEntity.ok(java.util.Map.of("valid", true, "message", "Formula is syntactically correct and logical."));
+            return ResponseEntity
+                    .ok(java.util.Map.of("valid", true, "message", "Formula is syntactically correct and logical."));
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(java.util.Map.of("valid", false, "message", ex.getMessage()));
         }
@@ -62,14 +64,20 @@ public class SalaryComponentRestController {
         }
     }
 
-    @GetMapping("/organisation/{orgId}")
+    @GetMapping("/organisation/{orgId}/active")
     public ResponseEntity<List<SalaryComponentDTO>> getActiveByOrg(@PathVariable Long orgId) {
         return ResponseEntity.ok(service.getActiveComponents(orgId));
     }
 
+    @GetMapping("/organisation/{orgId}")
+    public ResponseEntity<List<SalaryComponentDTO>> getAllByOrg(@PathVariable Long orgId) {
+        return ResponseEntity.ok(service.getAllComponents(orgId));
+    }
+
     // @GetMapping("/country/{countryCode}")
-    // public ResponseEntity<List<SalaryComponentDTO>> getByCountry(@PathVariable String countryCode) {
-    //     return ResponseEntity.ok(service.getComponentsByCountry(countryCode));
+    // public ResponseEntity<List<SalaryComponentDTO>> getByCountry(@PathVariable
+    // String countryCode) {
+    // return ResponseEntity.ok(service.getComponentsByCountry(countryCode));
     // }
 
     @PatchMapping("/{id}/deactivate")

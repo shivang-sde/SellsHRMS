@@ -61,12 +61,12 @@ $(document).ready(function () {
                 filterAttendance();
             },
             error: function (xhr) {
-                showToast('error', 'Failed to load attendance');
+                showToast('error', 'No attendance record found for today');
                 $('#attendanceTableBody').html(`
                     <tr>
                         <td colspan="10" class="text-center text-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Failed to load attendance data
+                            No attendance record found for today
                         </td>
                     </tr>
                 `);

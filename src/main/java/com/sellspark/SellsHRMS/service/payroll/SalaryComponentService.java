@@ -31,6 +31,11 @@ public interface SalaryComponentService {
     List<SalaryComponentDTO> getActiveComponents(Long organisationId);
 
     /**
+     * Get all components for an organisation.
+     */
+    List<SalaryComponentDTO> getAllComponents(Long organisationId);
+
+    /**
      * Get all components by country for multi-country support.
      */
     // List<SalaryComponentDTO> getComponentsByCountry(String countryCode);
