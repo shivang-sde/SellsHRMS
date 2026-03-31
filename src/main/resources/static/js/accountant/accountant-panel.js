@@ -202,7 +202,7 @@ $(document).ready(function () {
     ${!s.isCredited ? `<li><a class="dropdown-item btnMarkCredited" data-id="${s.id}" href="javascript:void(0)">Mark Credited</a></li>` : ''}
     
     ${s.pdfUrl
-                    ? `<li><a class="dropdown-item" href="${s.pdfUrl}" target="_blank"><i class="fa-solid fa-download text-success"></i> Download PDF</a></li>`
+                    ? `<li><a class="dropdown-item" href="${pageContext.request.contextPath}/${s.pdfUrl}" target="_blank"><i class="fa-solid fa-download text-success"></i> Download PDF</a></li>`
                     : `<li><a class="dropdown-item btnGeneratePDF" data-id="${s.id}" href="javascript:void(0)"><i class="fa-solid fa-file-pdf text-danger"></i> Generate PDF</a></li>`
                 }
 </ul>
