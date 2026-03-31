@@ -119,7 +119,8 @@ public class AttendanceScheduler {
     public void reconcileDailyAttendance() {
 
         log.info("========== RECONCILE START ==========");
-        LocalDate today = LocalDate.now();
+
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
 
         List<AttendanceSummary> summaries = summaryRepo.findByAttendanceDate(today);
 
@@ -137,66 +138,68 @@ public class AttendanceScheduler {
                     continue;
                 }
 
-                // skip fixed statuses
+                // ✅ Skip fixed statuses
                 if (summary.getStatus() == AttendanceSummary.AttendanceStatus.HOLIDAY ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.WEEK_OFF ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.ON_LEAVE) {
                     continue;
                 }
 
-                // ABSENT FINAL
-                if (summary.getStatus() == AttendanceSummary.AttendanceStatus.ABSENT) {
+                // ✅ If no punch at all → remain ABSENT
+                if (summary.getPunchRecord() == null) {
                     summary.setRemarks("Absent - No punch");
                     summaryRepo.save(summary);
                     continue;
                 }
 
-                // AUTO PUNCH OUT
-                if (summary.getStatus() == AttendanceSummary.AttendanceStatus.PRESENT &&
-                        summary.getEffectivePunchOut() == null &&
-                        summary.getPunchRecord() != null) {
-
-                    PunchInOut punch = summary.getPunchRecord();
-
-                    LocalTime autoTime = policy.getAutoPunchOutTime();
-                    double standardHours = Optional.ofNullable(policy.getStandardDailyHours()).orElse(8.0);
-
-                    // Build auto punch-out
-                    Instant autoPunchOut = LocalDateTime.of(today, autoTime)
-                            .atZone(ZoneId.systemDefault())
-                            .toInstant();
-
-                    // Safety fallback
-                    if (autoPunchOut.isBefore(punch.getPunchIn())) {
-                        autoPunchOut = punch.getPunchIn()
-                                .plus(Duration.ofMinutes((long) (standardHours * 60)));
-                    }
-
-                    Duration duration = Duration.between(punch.getPunchIn(), autoPunchOut);
-                    double hours = Math.max(0, duration.toMinutes() / 60.0);
-
-                    double fullDay = policy.getStandardDailyHours();
-                    double halfDay = fullDay / 2;
-
-                    if (hours >= fullDay) {
-                        summary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
-                    } else if (hours >= halfDay) {
-                        summary.setStatus(AttendanceSummary.AttendanceStatus.HALF_DAY);
-                    } else {
-                        summary.setStatus(AttendanceSummary.AttendanceStatus.SHORT_DAY);
-                    }
-
-                    // SAVE punch
-                    punch.setPunchOut(autoPunchOut);
-                    punch.setWorkHours(hours);
-                    punchRepo.save(punch);
-
-                    // UPDATE summary
-                    summary.setEffectivePunchOut(autoPunchOut);
-                    summary.setWorkHours(hours);
-                    summary.setRemarks("Auto punched out (Policy: " + autoTime + ")");
-                    summaryRepo.save(summary);
+                // Skip if already punched out (idempotent)
+                if (summary.getEffectivePunchOut() != null) {
+                    continue;
                 }
+
+                // ================= AUTO PUNCH-OUT =================
+
+                PunchInOut punch = summary.getPunchRecord();
+
+                LocalTime autoTime = policy.getAutoPunchOutTime();
+
+                // Optional grace (0 if not configured)
+                int graceMinutes = Optional.ofNullable(policy.getLateGraceMinutes()).orElse(0);
+                LocalTime finalAutoTime = autoTime.plusMinutes(graceMinutes);
+
+                Instant autoPunchOut = LocalDateTime.of(today, finalAutoTime)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant();
+
+                // Calculate hours (no validation, no fallback)
+                Duration duration = Duration.between(punch.getPunchIn(), autoPunchOut);
+                double hours = Math.max(0, duration.toMinutes() / 60.0);
+
+                // Round for payroll consistency
+                hours = Math.round(hours * 100.0) / 100.0;
+
+                double fullDay = Optional.ofNullable(policy.getStandardDailyHours()).orElse(8.0);
+                double halfDay = fullDay / 2;
+
+                // Decide attendance status
+                if (hours >= fullDay) {
+                    summary.setStatus(AttendanceSummary.AttendanceStatus.PRESENT);
+                } else if (hours >= halfDay) {
+                    summary.setStatus(AttendanceSummary.AttendanceStatus.HALF_DAY);
+                } else {
+                    summary.setStatus(AttendanceSummary.AttendanceStatus.SHORT_DAY);
+                }
+
+                // Save punch
+                punch.setPunchOut(autoPunchOut);
+                punch.setWorkHours(hours);
+                punchRepo.save(punch);
+
+                // Update summary
+                summary.setEffectivePunchOut(autoPunchOut);
+                summary.setWorkHours(hours);
+                summary.setRemarks("Auto punched out (Policy: " + finalAutoTime + ")");
+                summaryRepo.save(summary);
 
             } catch (Exception e) {
                 log.error("Error reconcile summary {}: {}", summary.getId(), e.getMessage());
