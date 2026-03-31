@@ -78,7 +78,7 @@ function renderSlipTable(data) {
 
     // Download & preview buttons
     const downloadBtn = s.pdfUrl
-      ? `<a href="${window.APP.REQUEST_URL}/${s.pdfUrl}" class="btn btn-outline-success btn-sm" target="_blank">
+      ? `<a href="${window.APP.BASE_URL}/${s.pdfUrl}" class="btn btn-outline-success btn-sm" target="_blank">
           <i class="bi bi-file-earmark-arrow-down"></i> Download
         </a>`
       : `<span class="badge bg-secondary">Not Available</span>`;

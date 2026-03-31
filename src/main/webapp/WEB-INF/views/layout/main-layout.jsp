@@ -116,7 +116,7 @@
                         LAST_LOGIN: "${sessionScope.LAST_LOGIN}",
                         LOGO_URL: "${sessionScope.LOGO_URL}",
                         CONTEXT_PATH: "${pageContext.request.contextPath}",
-                        REQUEST_URL: "${pageContext.request.requestURL}"
+                        BASE_URL: window.location.origin
                     });
 
                     console.log("%c🔧 SellsHRMS App Context Loaded", "color:#0ea5e9;font-weight:bold;");
