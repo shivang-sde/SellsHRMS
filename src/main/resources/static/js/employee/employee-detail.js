@@ -87,17 +87,20 @@ console.log("Resolved Employee ID:", employeeId);
         $('#employmentType').text(formatText(data.employmentType));
 
         // Personal info tab
-        $('#firstName').text(data.fullName.split(' ')[0] || '--');
-        $('#lastName').text(data.fullName.split(' ')[1] || '--');
+        $('#firstName').text(data.firstName || '--');
+        $('#lastName').text(data.lastName || '--');
         $('#dob').text(data.dob || '--');
         $('#gender').text(formatText(data.gender) || '--');
         $('#personalEmail').text(data.personalEmail || data.email);
-        $('#alternatePhone').text(data.alternatePhone || data.phone || '--');
+        $('#alternatePhone').text(data.alternatePhone || '--');
         $('#fatherName').text(data.fatherName || '--');
         $('#nationality').text(data.nationality || '--');
         $('#maritalStatus').text(formatText(data.maritalStatus) || '--');
         $('#referenceName').text(data.referenceName || '--');
         $('#referencePhone').text(data.referencePhone || '--');
+        $('#aadharNumber').text(data.aadharNumber || '--');
+        $('#panNumber').text(data.panNumber || '--');
+        $('#uanNumber').text(data.uanNumber || '--');
 
         // Address tab
         if (data.localAddress) {
@@ -118,6 +121,7 @@ console.log("Resolved Employee ID:", employeeId);
         $('#desg').text(data.designation || '--');
         $('#reportingTo').text(data.reportingToName || '--');
         $('#shift').text(data.shift || '--');
+        $('#role').text(data.role || '--');
 
         // Photo
         if (data.photoUrl) {

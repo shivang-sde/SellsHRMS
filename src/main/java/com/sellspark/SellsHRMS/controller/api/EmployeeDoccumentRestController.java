@@ -20,30 +20,27 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
-
 @RestController
 @RequestMapping("/api/employee/documents")
 @RequiredArgsConstructor
-@org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
 public class EmployeeDoccumentRestController {
-    
+
     private final EmployeeDocumentService docService;
 
     @GetMapping("/{empId}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL')")
+    // @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN',
+    // 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL')")
     public ResponseEntity<List<EmployeeDocumentResponse>> list(@PathVariable Long empId) {
         return ResponseEntity.ok(docService.getByEmployee(empId));
     }
-    
 
-    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/upload", consumes = { "multipart/form-data" })
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
-    public ResponseEntity<EmployeeDocumentResponse>upload(
-        @RequestParam("employeeId") Long empId,
-        @RequestParam("documentType") String docType,
-        @RequestParam("file") MultipartFile file) throws Exception {
-            return ResponseEntity.ok(docService.uploadFile(empId, docType, file));
+    public ResponseEntity<EmployeeDocumentResponse> upload(
+            @RequestParam("employeeId") Long empId,
+            @RequestParam("documentType") String docType,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        return ResponseEntity.ok(docService.uploadFile(empId, docType, file));
     }
 
     @PostMapping("/link")
@@ -58,6 +55,5 @@ public class EmployeeDoccumentRestController {
         docService.delete(id);
         return ResponseEntity.ok().build();
     }
-    
-    
+
 }
