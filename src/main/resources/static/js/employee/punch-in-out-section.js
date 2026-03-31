@@ -321,9 +321,7 @@ function initAttendanceCard(employeeId, orgId) {
         showToast("error", `Punch-in opens at ${earliestPunchTime(preCheck.officeStart)}.`);
       else if (preCheck.shiftStatus === "AFTER_SHIFT")
         showToast("error", `Punch-in closed. Office hours ended at ${preCheck.officeClosed}.`);
-      else
-        showToast("error", "You are not eligible to punch in at this time.");
-      return;
+      return
     }
 
     const punchedFrom = $("#punchedFrom").val();

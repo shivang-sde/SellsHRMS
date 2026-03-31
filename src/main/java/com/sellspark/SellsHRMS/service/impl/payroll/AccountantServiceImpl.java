@@ -204,11 +204,11 @@ public class AccountantServiceImpl implements AccountantService {
             String fileName = "payslip-" + slip.getEmployee().getEmployeeCode() + "-" + payRun.getId() + "-"
                     + safePeriodLabel + ".pdf";
 
-            String relativePath = folderPath + "/" + fileName;
+            String relativePath = uploadUrlPath + "/" + folderPath + "/" + fileName;
             // String pdfUrl = uploadUrlPath + "/" + relativePath;
 
             // Public URL (for frontend)
-            String pdfUrl = baseUrl + uploadUrlPath + "/" + relativePath;
+            String pdfUrl = baseUrl + "/" + relativePath;
 
             Path dir = Paths.get(baseDir).resolve(folderPath);
             Files.createDirectories(dir);
