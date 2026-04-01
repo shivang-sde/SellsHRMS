@@ -10,7 +10,8 @@ let editingTicketId = null;
 
 
 $(document).ready(async function () {
-  await Promise.all([loadProjectDetails(), loadSubordinates()]);
+  await loadProjectDetails(); // Wait for project data first
+  await loadSubordinates();   // Then load subordinates based on that data
 });
 
 $(document).on('change', '#attachmentType', function () {
@@ -214,6 +215,12 @@ async function removeMember(empId) {
 // ============================================================
 function renderTickets(tickets) {
   const tbody = $('#ticketsTable tbody');
+
+  if (!projectData || !projectData.members) {
+    console.warn("Attempted to render tickets before projectData was ready.");
+    return;
+  }
+
   if (!tickets || !tickets.length) {
     tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">No tickets found</td></tr>');
     return;
@@ -228,18 +235,17 @@ function renderTickets(tickets) {
 
   const html = tickets
     .map(t => {
-      // console.log("isManagerOrLead:", isManagerOrLead);
-      // console.log("t.assigneeIds:", t.assigneeIds);
-      // console.log("projectData.members:", projectData.members);
-      // console.log("employeeId:", employeeId);
-      // console.log("is employee a member?", projectData.members.some(
-      //   m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID)
-      // ));
-      const condition1 = !isManagerOrLead;
-      const condition2 = !t.assigneeIds || t.assigneeIds.length === 0;
-      const condition3 = projectData.members.some(
-        m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID));
-      // console.log({ condition1, condition2, condition3 }); const canPick = condition1 && condition2 && condition3; console.log("canPick:", canPick);
+      // 1. Check if user is a member of this project
+      const isUserMember = projectData.members.some(
+        m => String(m.employeeId || m.id) === String(employeeId)
+      );
+
+      // 2. Check if ticket is unassigned
+      const isUnassigned = !t.assigneeIds || t.assigneeIds.length === 0;
+
+      // 3. Define canPick logic
+      // User can pick if: They aren't already a Lead/Manager AND ticket is unassigned AND they are in the project
+      const canPick = !isManagerOrLead && isUnassigned && isUserMember;
       return `
         <tr>
           <td class="px-3"><a href="${window.APP.CONTEXT_PATH}/work/tickets/${t.id}" class="fw-semibold text-wrap" style="min-width: 150px; display: inline-block;">${escapeHtml(t.title)}</a></td>
