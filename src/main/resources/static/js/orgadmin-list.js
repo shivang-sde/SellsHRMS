@@ -16,16 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.innerHTML = (data || []).length
         ? data.map(a => `
           <tr>
-            <td>${a.id}</td>
-            <td>${escapeHtml(a.fullName)}</td>
-            <td>${escapeHtml(a.email)}</td>
+            <td class="px-3">${a.id}</td>
+            <td><div class="text-wrap fw-semibold" style="min-width: 150px;">${escapeHtml(a.fullName)}</div></td>
+            <td><div class="text-wrap text-break" style="min-width: 150px;">${escapeHtml(a.email)}</div></td>
             <td>${a.lastLogin ? new Date(lastLogin).toLocaleString() : '-'}</td>
             <td>
               <span class="badge ${a.isActive ? 'bg-success' : 'bg-danger'}">
                 ${a.isActive ? 'Active' : 'Inactive'}
               </span>
             </td>
-            <td>
+            <td class="px-3">
               <div class="btn-group btn-group-sm">
                 <button class="btn btn-${a.isActive ? 'warning' : 'success'}"
                         onclick="toggleAdminStatus(${a.id}, ${a.isActive})">
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </td>
           </tr>
         `).join("")
-        : `<tr><td colspan="6" class="text-center">No admins found</td></tr>`;
+        : `<tr><td colspan="6" class="text-center py-4">No admins found</td></tr>`;
     } catch (err) {
       console.error(err);
       showToast("error", err.message);

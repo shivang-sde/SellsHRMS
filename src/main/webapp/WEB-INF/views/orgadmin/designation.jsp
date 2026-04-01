@@ -12,20 +12,22 @@
         </div>
 
         <div class="card-body p-0">
-            <table class="table table-striped align-middle mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th scope="col" style="width: 15%">Department</th>
-                    <th scope="col" style="width: 15%">Role</th>
-                    <th scope="col" style="width: 20%">Title</th>
-                    <th scope="col" style="width: 35%">Description</th>
-                    <th scope="col" style="width: 15%">Actions</th>
-                </tr>
-                </thead>
-                <tbody id="designationTableBody">
-                <tr><td colspan="5" class="text-center py-3">Loading...</td></tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle text-nowrap mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="px-3">Department</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col" class="px-3">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="designationTableBody">
+                    <tr><td colspan="5" class="text-center py-3">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

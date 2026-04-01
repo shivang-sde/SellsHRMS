@@ -102,9 +102,9 @@ function renderMembers(members) {
 
       return `
         <tr>
-          <td>${escapeHtml(m.employeeName)}</td>
-          <td>${escapeHtml(m.departmentName || '-')}</td>
-          <td class="text-end">
+          <td class="px-3"><div class="fw-semibold text-wrap" style="min-width: 150px;">${escapeHtml(m.employeeName)}</div></td>
+          <td><div class="text-wrap" style="min-width: 120px;">${escapeHtml(m.departmentName || '-')}</div></td>
+          <td class="text-end px-3">
             ${isManagerOrLead && !isProtected
           ? `<button class="btn btn-sm btn-outline-danger" onclick="removeMember(${m.employeeId})"><i class="fas fa-trash"></i></button>`
           : ''}
@@ -215,12 +215,13 @@ function renderTickets(tickets) {
       console.log({ condition1, condition2, condition3 }); const canPick = condition1 && condition2 && condition3; console.log("canPick:", canPick);
       return `
         <tr>
-          <td><a href="${window.APP.CONTEXT_PATH}/work/tickets/${t.id}" class="fw-semibold">${escapeHtml(t.title)}</a></td>
+          <td class="px-3"><a href="${window.APP.CONTEXT_PATH}/work/tickets/${t.id}" class="fw-semibold text-wrap" style="min-width: 150px; display: inline-block;">${escapeHtml(t.title)}</a></td>
           <td>${getStatusBadge(t.status)}</td>
-          <td>${escapeHtml((t.assigneeNames || []).join(', ') || '-')}</td>
+          <td><div class="text-wrap" style="min-width: 150px; max-width: 250px;">${escapeHtml((t.assigneeNames || []).join(', ') || '-')}</div></td>
           <td>${formatDate(t.startDate)}</td>
           <td>${formatDate(t.endDate)}</td>
-          <td>
+          <td class="px-3">
+            <div class="d-flex flex-nowrap gap-1">
             ${isManagerOrLead
           ? `
                 <button class="btn btn-sm btn-outline-warning" onclick="editTicket(${t.id})"><i class="fas fa-edit"></i></button>
@@ -228,6 +229,7 @@ function renderTickets(tickets) {
           : canPick
             ? `<button class="btn btn-sm btn-outline-success" onclick="pickTicket(${t.id})">Pick</button>`
             : `<button class="btn btn-sm btn-outline-primary" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i></button>`}
+            </div>
           </td>
         </tr>`;
     })

@@ -9,18 +9,24 @@
   </a> -->
 </div>
 
-<div class="card">
-  <div class="card-body">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th>ID</th><th>Name</th><th>Email</th><th>Last Login</th>
-          <th>Active</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="orgAdminsBody">
-        <tr><td colspan="6" class="text-center">Loading...</td></tr>
-      </tbody>
-    </table>
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle text-nowrap mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="px-3">ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Last Login</th>
+            <th>Active</th>
+            <th class="px-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="orgAdminsBody">
+          <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

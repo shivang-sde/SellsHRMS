@@ -86,15 +86,18 @@
               </button>
             </div>
             <div class="card-body p-0">
-              <table class="table table-striped mb-0" id="membersTable">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Department</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-striped align-middle text-nowrap mb-0" id="membersTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="px-3">Name</th>
+                      <th>Department</th>
+                      <th class="px-3 text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -107,19 +110,21 @@
               </button>
             </div>
             <div class="card-body p-0">
-              <table class="table table-hover align-middle mb-0" id="ticketsTable">
-                <thead class="table-light">
-                  <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Assignees</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle text-nowrap mb-0" id="ticketsTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="px-3">Title</th>
+                      <th>Status</th>
+                      <th>Assignees</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th class="px-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
 

@@ -8,9 +8,9 @@
     <div class="container-fluid mt-4">
 
       <!-- Page Header -->
-      <div class="policy-page-header">
-        <h4><i class="fa fa-file-contract me-2" style="color:#0284c7"></i>Organisation Policy</h4>
-        <p>Configure your organisation's financial year, work hours, attendance, and leave policies.</p>
+      <div class="policy-page-header mb-4">
+        <h4 class="fw-bold"><i class="fa fa-file-contract me-2 text-primary"></i>Organisation Policy</h4>
+        <p class="text-muted text-wrap" style="max-width: 600px;">Configure your organisation's financial year, work hours, attendance, and leave policies.</p>
       </div>
 
       <!-- No Policy Alert -->
@@ -40,24 +40,21 @@
           </button>
         </div>
 
-        <div class="card-body">
+        <div class="card-body p-4 p-md-5">
           <form id="organisationPolicyForm">
             <input type="hidden" id="policyId">
 
             <!-- ═══════ Financial Year Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon financial">
-                  <i class="fa fa-calendar-alt"></i>
-                </div>
-                <div>
-                  <h6>Financial Year</h6>
-                  <p>Set the start date for your organisation's financial year</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-calendar-alt me-2"></i>Financial Year</h6>
+                  <p class="text-muted small mb-0">Set the start date for your organisation's financial year</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-6">
-                  <label class="form-label">Start Month</label>
+                  <label class="form-label"><i class="fa fa-calendar me-1 text-secondary"></i>Start Month</label>
                   <select id="financialYearStartMonth" class="form-select" required disabled>
                     <option value="" disabled selected>Select Month...</option>
                     <option value="1">1 - January</option>
@@ -75,7 +72,7 @@
                   </select>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Start Day</label>
+                  <label class="form-label"><i class="fa fa-calendar-day me-1 text-secondary"></i>Start Day</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="financialYearStartDay" class="form-control" min="1" max="31" required
                       disabled>
@@ -86,21 +83,16 @@
             </div>
 
             <!-- ═══════ Leave Year Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="d-flex align-items-center">
-                  <div class="section-icon leave">
-                    <i class="fa fa-calendar-check"></i>
-                  </div>
-                  <div>
-                    <h6>Leave Year</h6>
-                    <p>Define when the leave cycle begins for balance calculations</p>
-                  </div>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-calendar-check me-2"></i>Leave Year</h6>
+                  <p class="text-muted small mb-0">Define when the leave cycle begins for balance calculations</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-6">
-                  <label class="form-label">Start Month</label>
+                  <label class="form-label"><i class="fa fa-calendar me-1 text-secondary"></i>Start Month</label>
                   <select id="leaveYearStartMonth" class="form-select" required disabled>
                     <option value="" disabled selected>Select Month...</option>
                     <option value="1">1 - January</option>
@@ -118,7 +110,7 @@
                   </select>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Start Day</label>
+                  <label class="form-label"><i class="fa fa-calendar-day me-1 text-secondary"></i>Start Day</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="leaveYearStartDay" class="form-control" min="1" max="31" required disabled>
                     <span class="input-group-text text-muted">Day</span>
@@ -128,21 +120,16 @@
             </div>
 
             <!-- ═══════ Work Hours Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="d-flex align-items-center">
-                  <div class="section-icon work">
-                    <i class="fa fa-business-time"></i>
-                  </div>
-                  <div>
-                    <h6>Work Hours & Office Timing</h6>
-                    <p>Standard working hours and office schedule configuration</p>
-                  </div>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-business-time me-2"></i>Work Hours & Office Timing</h6>
+                  <p class="text-muted small mb-0">Standard working hours and office schedule configuration</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-6 col-lg-3">
-                  <label class="form-label" for="officeStartTime">Office Timing</label>
+                  <label class="form-label" for="officeStartTime"><i class="fa fa-clock me-1 text-secondary"></i>Office Timing</label>
                   <div class="office-timing-group">
                     <input type="time" name="officeStartTime" id="officeStartTime" class="form-control custom-time">
                     <span class="timing-separator">to</span>
@@ -150,7 +137,7 @@
                   </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                  <label class="form-label">Standard Daily Hours</label>
+                  <label class="form-label"><i class="fa fa-hourglass-half me-1 text-secondary"></i>Standard Daily Hours</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="standardDailyHours" class="form-control" step="0.1" min="0" required
                       disabled>
@@ -158,14 +145,14 @@
                   </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                  <label class="form-label">Weekly Hours</label>
+                  <label class="form-label"><i class="fa fa-calendar-week me-1 text-secondary"></i>Weekly Hours</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="weeklyHours" class="form-control" step="0.1" min="0" required disabled>
                     <span class="input-group-text text-muted">Hrs</span>
                   </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                  <label class="form-label">Min. Monthly Hours</label>
+                  <label class="form-label"><i class="fa fa-calendar-alt me-1 text-secondary"></i>Min. Monthly Hours</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="minMonthlyHours" class="form-control" step="0.1" min="0" required disabled>
                     <span class="input-group-text text-muted">Hrs</span>
@@ -174,19 +161,16 @@
               </div>
             </div>
 
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon">
-                  <i class="fa fa-calendar-day"></i>
-                </div>
-                <div>
-                  <h6>Week Off</h6>
-                  <p>Select weekly off days</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-calendar-day me-2"></i>Week Off</h6>
+                  <p class="text-muted small mb-0">Select weekly off days</p>
                 </div>
               </div>
 
-              <div class="week-off-container mt-2">
-                <div class="d-flex flex-wrap gap-2">
+              <div class="week-off-container mt-4">
+                <div class="d-flex flex-wrap gap-3">
                   <input type="checkbox" class="btn-check week-off-checkbox" id="wo-sun" value="SUNDAY"
                     autocomplete="off" disabled>
                   <label class="btn btn-outline-primary rounded-pill px-4" for="wo-sun">Sun</label>
@@ -219,30 +203,27 @@
             </div>
 
             <!-- ═══════ Time & Grace Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon grace">
-                  <i class="fa fa-hourglass-half"></i>
-                </div>
-                <div>
-                  <h6>Time & Grace Periods</h6>
-                  <p>Auto punch-out and grace minutes for late check-in / early check-out</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-hourglass-half me-2"></i>Time & Grace Periods</h6>
+                  <p class="text-muted small mb-0">Auto punch-out and grace minutes for late check-in / early check-out</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-4">
-                  <label class="form-label">Auto Punch Out Time</label>
+                  <label class="form-label"><i class="fa fa-user-clock me-1 text-secondary"></i>Auto Punch Out Time</label>
                   <input type="time" id="autoPunchOutTime" class="form-control custom-time" required disabled>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Late Grace Limit</label>
+                  <label class="form-label"><i class="fa fa-running me-1 text-secondary"></i>Late Grace Limit</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="lateGraceMinutes" class="form-control" min="0" required disabled>
                     <span class="input-group-text text-muted">Mins</span>
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Early Out Grace</label>
+                  <label class="form-label"><i class="fa fa-door-open me-1 text-secondary"></i>Early Out Grace</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="earlyOutGraceMinutes" class="form-control" min="0" required disabled>
                     <span class="input-group-text text-muted">Mins</span>
@@ -252,23 +233,20 @@
             </div>
 
             <!-- ═══════ Policy Toggles Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon toggles">
-                  <i class="fa fa-sliders-h"></i>
-                </div>
-                <div>
-                  <h6>Policy Toggles</h6>
-                  <p>Enable or disable specific policies for your organisation</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-sliders-h me-2"></i>Policy Toggles</h6>
+                  <p class="text-muted small mb-0">Enable or disable specific policies for your organisation</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-6 col-lg-4">
                   <div class="toggle-card d-flex align-items-center w-100">
                     <div class="form-check form-switch m-0 p-0 d-flex align-items-center flex-nowrap gap-2 w-100">
                       <input class="form-check-input flex-shrink-0 m-0" type="checkbox" role="switch"
                         id="overtimeAllowed" disabled>
-                      <label class="form-check-label mb-0 text-nowrap" for="overtimeAllowed">Overtime Allowed</label>
+                      <label class="form-check-label mb-0 text-nowrap" for="overtimeAllowed"><i class="fa fa-user-plus me-1 text-secondary"></i>Overtime Allowed</label>
                     </div>
                   </div>
                 </div>
@@ -276,7 +254,7 @@
                   <div class="toggle-card d-flex align-items-center w-100">
                     <div class="overtime-multiplier-wrap w-100">
                       <div class="d-flex w-100 justify-content-between align-items-center flex-nowrap gap-2">
-                        <label class="form-label mb-0 text-nowrap" for="overtimeMultiplier">Overtime Multiplier</label>
+                        <label class="form-label mb-0 text-nowrap" for="overtimeMultiplier"><i class="fa fa-times-circle me-1 text-secondary"></i>Overtime Multiplier</label>
                         <div class="input-group input-group-sm m-0 flex-nowrap" style="width: 100px;">
                           <span class="input-group-text">x</span>
                           <input type="number" id="overtimeMultiplier" class="form-control text-center px-1" step="0.1"
@@ -290,7 +268,7 @@
                   <div class="toggle-card">
                     <input class="form-check-input" type="checkbox" role="switch" id="flexibleHourModelEnabled"
                       disabled>
-                    <label class="form-check-label" for="flexibleHourModelEnabled">Flexible Hour Model</label>
+                    <label class="form-check-label" for="flexibleHourModelEnabled"><i class="fa fa-people-arrows me-1 text-secondary"></i>Flexible Hour Model</label>
                   </div>
                 </div> -->
                 <div class="col-md-6 col-lg-4">
@@ -298,8 +276,7 @@
                     <div class="form-check form-switch m-0 p-0 d-flex align-items-center flex-nowrap gap-2 w-100">
                       <input class="form-check-input flex-shrink-0 m-0" type="checkbox" role="switch"
                         id="carryForwardEnabled" disabled>
-                      <label class="form-check-label mb-0 text-nowrap" for="carryForwardEnabled">Carry Forward
-                        Enabled</label>
+                      <label class="form-check-label mb-0 text-nowrap" for="carryForwardEnabled"><i class="fa fa-share me-1 text-secondary"></i>Carry Forward Enabled</label>
                     </div>
                   </div>
                 </div>
@@ -308,8 +285,7 @@
                     <div class="form-check form-switch m-0 p-0 d-flex align-items-center flex-nowrap gap-2 w-100">
                       <input class="form-check-input flex-shrink-0 m-0" type="checkbox" role="switch"
                         id="encashmentEnabled" disabled>
-                      <label class="form-check-label mb-0 text-nowrap" for="encashmentEnabled">Encashment
-                        Enabled</label>
+                      <label class="form-check-label mb-0 text-nowrap" for="encashmentEnabled"><i class="fa fa-money-bill-wave me-1 text-secondary"></i>Encashment Enabled</label>
                     </div>
                   </div>
                 </div>
@@ -317,19 +293,16 @@
             </div>
 
             <!-- ═══════ Payroll & Salary Cycle Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon financial">
-                  <i class="fa fa-money-check-alt"></i>
-                </div>
-                <div>
-                  <h6>Payroll & Salary Cycle</h6>
-                  <p>Configure the default salary processing timeline</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-money-check-alt me-2"></i>Payroll & Salary Cycle</h6>
+                  <p class="text-muted small mb-0">Configure the default salary processing timeline</p>
                 </div>
               </div>
-              <div class="row g-3">
+              <div class="row g-4">
                 <div class="col-md-4">
-                  <label class="form-label">Cycle Start Day</label>
+                  <label class="form-label"><i class="fa fa-calendar-check me-1 text-secondary"></i>Cycle Start Day</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="salaryCycleStartDay" class="form-control" min="1" max="31" required
                       disabled>
@@ -337,14 +310,14 @@
                   </div>
                 </div>
                 <!-- <div class="col-md-4">
-                  <label class="form-label">Cycle Duration</label>
+                  <label class="form-label"><i class="fa fa-stopwatch me-1 text-secondary"></i>Cycle Duration</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="cycleDuration" class="form-control" min="1" max="31" required disabled>
                     <span class="input-group-text text-muted">Days</span>
                   </div>
                 </div> -->
                 <div class="col-md-4">
-                  <label class="form-label">Payslip Offset</label>
+                  <label class="form-label"><i class="fa fa-file-invoice-dollar me-1 text-secondary"></i>Payslip Offset</label>
                   <div class="input-group flex-nowrap">
                     <input type="number" id="payslipGenerationOffsetDays" class="form-control" min="0" required
                       disabled>
@@ -355,14 +328,11 @@
             </div>
 
             <!-- ═══════ Additional Notes Section ═══════ -->
-            <div class="policy-section">
-              <div class="policy-section-header">
-                <div class="section-icon notes">
-                  <i class="fa fa-sticky-note"></i>
-                </div>
-                <div>
-                  <h6>Additional Notes</h6>
-                  <p>Any extra policy details or reminders</p>
+            <div class="policy-section mb-5">
+              <div class="policy-section-header border-bottom pb-3 mb-4">
+                <div class="w-100">
+                  <h6 class="d-flex align-items-center text-primary mb-1"><i class="fa fa-sticky-note me-2"></i>Additional Notes</h6>
+                  <p class="text-muted small mb-0">Any extra policy details or reminders</p>
                 </div>
               </div>
               <div class="row">
@@ -373,7 +343,7 @@
             </div>
 
             <!-- Action Bar -->
-            <div class="d-flex justify-content-between align-items-center mt-2">
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
               <!-- Last Updated -->
               <div class="text-muted" id="lastUpdatedInfo" style="font-size: 0.85rem; display: none;">
                 <i class="fa fa-clock me-1"></i> Last updated:

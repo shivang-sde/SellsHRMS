@@ -98,13 +98,15 @@
     function row(d) {
         return `
         <tr>
-           <td>${escape(d.departmentName || "-")}</td>
-           <td>${escape(d.roleName || "-")}</td>
-           <td>${escape(d.title)}</td>
-           <td>${escape(d.description || "")}</td>
-           <td>
-             <button class="btn btn-sm btn-primary" onclick="openDesigEdit(${d.id})">Edit</button>
-             <button class="btn btn-sm btn-danger" onclick="deleteDesignation(${d.id})">Delete</button>
+           <td class="px-3"><div class="text-wrap fw-semibold" style="min-width: 150px;">${escape(d.departmentName || "-")}</div></td>
+           <td><div class="text-wrap" style="min-width: 120px;">${escape(d.roleName || "-")}</div></td>
+           <td><div class="text-wrap" style="min-width: 150px;">${escape(d.title)}</div></td>
+           <td><div class="text-wrap text-break" style="min-width: 200px; max-width: 350px;">${escape(d.description || "")}</div></td>
+           <td class="px-3">
+             <div class="d-flex flex-nowrap gap-1">
+               <button class="btn btn-sm btn-primary" onclick="openDesigEdit(${d.id})">Edit</button>
+               <button class="btn btn-sm btn-danger" onclick="deleteDesignation(${d.id})">Delete</button>
+             </div>
            </td>
         </tr>`;
     }
