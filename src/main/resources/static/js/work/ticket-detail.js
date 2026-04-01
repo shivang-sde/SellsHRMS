@@ -24,7 +24,7 @@ async function loadTicketDetails() {
     console.log(res);
 
     $("#ticketTitle").text(ticketData.title);
-    $("#ticketDescription").text(ticketData.description || "-");
+    $("#ticketDescription").text(ticketData.description || "-").css("white-space", "pre-wrap");
     $("#ticketProject").text(ticketData.projectName || "-");
     $("#ticketStartDate").text(ticketData.startDate || "-");
     $("#ticketEndDate").text(ticketData.endDate || "-");
