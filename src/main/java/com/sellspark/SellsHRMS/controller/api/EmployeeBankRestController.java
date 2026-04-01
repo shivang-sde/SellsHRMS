@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employee/bank")
 @RequiredArgsConstructor
-@org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT')")
 public class EmployeeBankRestController {
 
     private final EmployeeBankService bankService;
@@ -24,7 +23,6 @@ public class EmployeeBankRestController {
     }
 
     @GetMapping("/{employeeId}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_SELF', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_VIEW_ALL')")
     public ResponseEntity<List<EmployeeBankResponse>> getByEmployee(@PathVariable Long employeeId) {
         return ResponseEntity.ok(bankService.getByEmployee(employeeId));
     }
