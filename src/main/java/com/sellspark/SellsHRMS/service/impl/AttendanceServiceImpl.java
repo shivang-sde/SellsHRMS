@@ -335,7 +335,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         AttendanceSummary summary = summaryRepo
                 .findByEmployeeIdAndAttendanceDate(employeeId, today)
-                .orElseThrow(() -> new ResourceNotFoundException("AttendanceSummary", "employeeId", employeeId));
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance record not found"));
 
         if (summary.getPunchRecord() != null) {
             return mapToResponse(summary.getPunchRecord(), summary, zoneId);
