@@ -45,7 +45,7 @@ public class Organisation {
     private String contactEmail;
     private String contactPhone;
 
-    @Column(name = "emp_prefix", length = 10)
+    @Column(name = "emp_prefix", length = 10, unique = true)
     private String empPrefix;
 
     @Builder.Default

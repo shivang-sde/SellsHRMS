@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -164,56 +165,76 @@ public class ProjectServiceImpl implements ProjectService {
     // ================================================================
     @Transactional
     public void addMembers(Long projectId, List<Long> empIds, Long organisationId, Long addedById) {
-
         Project project = findActiveProject(projectId, organisationId);
         if (!canEditProject(addedById, project)) {
-            throw new UnauthorizedActionException("You are not authorized to add members to this project.");
+            throw new UnauthorizedActionException("You are not authorized to add members.");
         }
 
-        Organisation org = project.getOrganisation();
-        List<Employee> employees = employeeRepo.findAllById(empIds);
+        for (Long empId : empIds) {
+            // Look for ANY existing record (active or inactive)
+            Optional<ProjectMember> existingMember = memberRepo.findByProjectIdAndEmployeeId(projectId, empId);
 
-        for (Employee emp : employees) {
+            if (existingMember.isPresent()) {
+                ProjectMember member = existingMember.get();
+                if (Boolean.TRUE.equals(member.getIsActive())) {
+                    continue; // Already active, skip
+                }
+                // REACTIVATE existing member
+                member.setIsActive(true);
+                member.setJoinedAt(LocalDateTime.now()); // Reset join date
+                member.setLeftAt(null); // Clear left date
+                memberRepo.save(member);
+            } else {
+                // CREATE new record
+                Employee emp = employeeRepo.findById(empId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + empId));
 
-            boolean alreadyExists = memberRepo.existsByProjectIdAndEmployeeIdAndIsActiveTrue(projectId, emp.getId());
-            if (alreadyExists)
-                continue; // skip duplicates
-
-            ProjectMember member = new ProjectMember();
-            member.setProject(project);
-            member.setEmployee(emp);
-            member.setOrganisation(org);
-            member.setJoinedAt(LocalDateTime.now());
-            member.setIsActive(true);
-            member.setAllocationPercentage(BigDecimal.valueOf(100)); // default 100%
-
-            // Optional: assign default project role (e.g., "MEMBER")
-            ProjectRole defaultRole = projectRoleRepo.findByNameIgnoreCase("MEMBER")
-                    .orElse(null);
-            member.setRole(defaultRole);
-
-            memberRepo.save(member);
+                ProjectMember member = ProjectMember.builder()
+                        .project(project)
+                        .employee(emp)
+                        .organisation(project.getOrganisation())
+                        .joinedAt(LocalDateTime.now())
+                        .isActive(true)
+                        .allocationPercentage(BigDecimal.valueOf(100))
+                        .role(projectRoleRepo.findByNameIgnoreCase("MEMBER").orElse(null))
+                        .build();
+                memberRepo.save(member);
+            }
         }
     }
 
     @Transactional
     public void removeMember(Long projectId, Long empId, Long orgId, Long actorId) {
         Project project = findActiveProject(projectId, orgId);
-        if (!canEditProject(actorId, project))
-            throw new UnauthorizedActionException("You are not authorized to remove members.");
 
-        // prevent removing core roles
-        if (empId.equals(project.getCreatedBy().getId()) ||
-                (project.getProjectManager() != null && empId.equals(project.getProjectManager().getId())) ||
-                (project.getProjectTeamLead() != null && empId.equals(project.getProjectTeamLead().getId()))) {
-            throw new InvalidOperationException("You cannot remove core project roles.");
+        boolean isCreator = actorId.equals(project.getCreatedBy().getId());
+        boolean isPM = project.getProjectManager() != null && actorId.equals(project.getProjectManager().getId());
+        boolean isTL = project.getProjectTeamLead() != null && actorId.equals(project.getProjectTeamLead().getId());
+
+        // Only Creator, PM, or TL can trigger removal
+        if (!isCreator && !isPM && !isTL)
+            throw new UnauthorizedActionException("Not authorized to remove members.");
+
+        // HIERARCHY RULES
+        if (empId.equals(project.getCreatedBy().getId())) {
+            throw new InvalidOperationException("Project Creator cannot be removed.");
+        }
+        // PM can only be removed by Creator
+        if (project.getProjectManager() != null && empId.equals(project.getProjectManager().getId()) && !isCreator) {
+            throw new InvalidOperationException("Only the Creator can remove the Project Manager.");
+        }
+        // TL can be removed by Creator or PM
+        if (project.getProjectTeamLead() != null && empId.equals(project.getProjectTeamLead().getId()) && !isCreator
+                && !isPM) {
+            throw new InvalidOperationException("Only the Creator or PM can remove the Team Lead.");
         }
 
-        ProjectMember member = memberRepo
-                .findByProjectIdAndEmployeeId(projectId, empId)
-                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        // Find and Deactivate
+        ProjectMember member = memberRepo.findByProjectIdAndEmployeeIdAndIsActiveTrue(projectId, empId)
+                .orElseThrow(() -> new ResourceNotFoundException("Active member not found"));
 
         member.setIsActive(false);
+        member.setLeftAt(LocalDateTime.now()); // Mark the exit time
         memberRepo.save(member);
     }
 

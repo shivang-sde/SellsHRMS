@@ -11,14 +11,14 @@ public class ProjectMapper {
 
     public static ProjectDTO toDTO(Project project, Long currentUserId) {
 
-        if (project == null) return null;
+        if (project == null)
+            return null;
 
         // long totalTasks = project.getTasks() != null ? project.getTasks().size() : 0;
         // long completedTasks = project.getTasks() != null
-        //         ? project.getTasks().stream()
-        //             .filter(t -> t.getStatus() == Task.TaskStatus.DONE).count()
-        //         : 0; 
-    
+        // ? project.getTasks().stream()
+        // .filter(t -> t.getStatus() == Task.TaskStatus.DONE).count()
+        // : 0;
 
         ProjectDTO dto = ProjectDTO.builder()
                 .id(project.getId())
@@ -35,26 +35,34 @@ public class ProjectMapper {
                 .departmentId(project.getDepartment() != null ? project.getDepartment().getId() : null)
                 .departmentName(project.getDepartment() != null ? project.getDepartment().getName() : null)
                 .projectManagerId(project.getProjectManager() != null ? project.getProjectManager().getId() : null)
-                .projectManagerName(project.getProjectManager() != null ? project.getProjectManager().getFirstName() + project.getProjectManager().getLastName() : null)
-                .projectManagerEmail(project.getProjectManager() != null ? project.getProjectManager().getEmail() : null)
+                .projectManagerName(project.getProjectManager() != null
+                        ? project.getProjectManager().getFirstName() + project.getProjectManager().getLastName()
+                        : null)
+                .projectManagerEmail(
+                        project.getProjectManager() != null ? project.getProjectManager().getEmail() : null)
                 .projectTeamLeadId(project.getProjectTeamLead() != null ? project.getProjectTeamLead().getId() : null)
-                .projectTeamLeadName(project.getProjectTeamLead() != null ? project.getProjectTeamLead().getFirstName() + project.getProjectTeamLead().getLastName() : null)
-                .projectTeamLeadEmail(project.getProjectTeamLead() != null ? project.getProjectTeamLead().getEmail() : null)
+                .projectTeamLeadName(project.getProjectTeamLead() != null
+                        ? project.getProjectTeamLead().getFirstName() + project.getProjectTeamLead().getLastName()
+                        : null)
+                .projectTeamLeadEmail(
+                        project.getProjectTeamLead() != null ? project.getProjectTeamLead().getEmail() : null)
                 .createdById(project.getCreatedBy() != null ? project.getCreatedBy().getId() : null)
-                .createdByName(project.getCreatedBy() != null ? project.getCreatedBy().getFirstName() + project.getCreatedBy().getLastName() : null)
+                .createdByName(project.getCreatedBy() != null
+                        ? project.getCreatedBy().getFirstName() + project.getCreatedBy().getLastName()
+                        : null)
                 .isActive(project.getIsActive())
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 // .progressPercentage(progress)
                 .members(toMemberDTOList(project.getProjectMembers()))
-        
+
                 .build();
 
         return dto;
     }
 
     public static Project toEntity(ProjectDTO dto, Organisation org, Department dept,
-                                   Employee manager, Employee lead, Employee creator) {
+            Employee manager, Employee lead, Employee creator) {
 
         return Project.builder()
                 .organisation(org)
@@ -76,7 +84,9 @@ public class ProjectMapper {
     }
 
     private static List<ProjectMemberDTO> toMemberDTOList(List<ProjectMember> members) {
-        if (members == null) return List.of();
-        return members.stream().map(ProjectMemberMapper::toDTO).collect(Collectors.toList());
+        if (members == null)
+            return List.of();
+        return members.stream().filter(m -> Boolean.TRUE.equals(m.getIsActive())).map(ProjectMemberMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

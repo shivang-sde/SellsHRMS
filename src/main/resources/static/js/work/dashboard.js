@@ -99,10 +99,6 @@ function renderAssignedTasks(tasks) {
                     <h6 class="mb-1">${task.title}</h6>
                     <div class="d-flex gap-2 align-items-center flex-wrap">
                         ${getStatusBadge(task.status)}
-                        ${getPriorityBadge(task.priority)}
-                        <small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>Due: ${formatDate(task.dueDate)}
-                        </small>
                     </div>
                 </div>
                 <i class="fas fa-chevron-right text-muted"></i>
@@ -142,9 +138,8 @@ function renderMyTickets(tickets) {
                     ${ticket.title}
                 </a>
             </td>
-            <td>${getPriorityBadge(ticket.priority)}</td>
             <td>${getStatusBadge(ticket.status)}</td>
-            <td>${formatDate(ticket.createdDate)}</td>
+            <td>${formatDate(ticket.startDate)}</td>
             <td>
                 <a href="${window.APP.CONTEXT_PATH}/work/tickets/${ticket.id}" 
                    class="btn btn-sm btn-outline-primary">
@@ -190,7 +185,6 @@ async function loadUpcomingReminders() {
                         <h6 class="mb-1">${task.title}</h6>
                         <div class="d-flex gap-2 align-items-center flex-wrap">
                             ${getStatusBadge(task.status)}
-                            ${getPriorityBadge(task.priority)}
                             <small class="text-muted">
                                 <i class="fas fa-clock me-1"></i>Due: ${formatDate(task.dueDate)}
                             </small>
@@ -309,7 +303,6 @@ function renderUpcomingReminders(reminders) {
           <h6 class="mb-1">${r.title}</h6>
           <div class="d-flex gap-2 align-items-center flex-wrap">
             ${getStatusBadge(r.status)}
-            ${getPriorityBadge(r.priority)}
             <small class="text-muted">
               <i class="fas fa-clock me-1"></i>Due: ${formatDateTime(r.dueAt)}
             </small>

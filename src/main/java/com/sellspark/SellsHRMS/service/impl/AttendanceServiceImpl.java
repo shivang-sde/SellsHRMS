@@ -491,6 +491,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Punch details
         if (punch != null) {
             response.setPunchId(punch.getId());
+            response.setPunchedFrom(punch.getPunchedFrom().name());
             response.setPunchSource(
                     punch.getPunchSource() != null && !"null".equals(punch.getPunchSource().name())
                             ? punch.getPunchSource().name()
@@ -498,6 +499,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         } else {
             response.setPunchId(0L);
             response.setPunchSource("SYSTEM");
+            response.setPunchedFrom("SYSTEM");
         }
 
         response.setSummaryId(summary.getId());

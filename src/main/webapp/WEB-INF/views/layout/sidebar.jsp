@@ -265,6 +265,7 @@
                     <li><a href="${pageContext.request.contextPath}/work/dashboard">Dashboard</a></li>
                     <li><a href="${pageContext.request.contextPath}/work/projects">Projects</a></li>
                     <li><a href="${pageContext.request.contextPath}/work/tasks">Tasks</a></li>
+                    <li><a href="${pageContext.request.contextPath}/work/tickets">Tickets</a></li>
                   </ul>
                 </app:ifModule>
               </sec:authorize>

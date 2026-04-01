@@ -305,8 +305,8 @@ $(document).ready(function () {
                     <td>${formatTime(record.punchIn)}</td>
                     <td>${record.punchOut ? formatTime(record.punchOut) : "--"}</td>
                     <td>${record.workHours ? record.workHours.toFixed(2) + "h" : "--"}</td>
-                    <td>${statusBadge}</td>
-                    <td><span class="badge bg-info">${record.punchSource}</span></td>
+                    <td>${statusBadge} </td>
+                    <td><span class="text-muted">${record.remarks},${record.punchSource}</span></td>
                 </tr>
             `;
     });

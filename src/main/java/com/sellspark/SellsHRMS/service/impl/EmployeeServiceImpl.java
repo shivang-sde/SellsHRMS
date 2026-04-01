@@ -53,8 +53,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final LeaveService leaveService;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
-    private final EmployeeCodeGenerator codeGenerator;
-
     @Override
     public EmployeeResponse create(EmployeeCreateRequest req) {
 
@@ -76,9 +74,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                     HttpStatus.FORBIDDEN);
         }
 
-        // Generate Employee Code
-        String empCode = codeGenerator.generateEmployeeCode(org.getId());
-
         Designation desig = desigRepo.findById(req.getDesignationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Designation", "id ", req.getDesignationId()));
 
@@ -86,6 +81,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new HRMSException(
                         "Role not found with Id " + desig.getRole().getId() + ". " + "Please create a role first",
                         "ROLE_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // Generate Employee Code
+        String prefix = org.getEmpPrefix() != null ? org.getEmpPrefix() : "ORG";
+        Integer nextSeq = (org.getEmpSequence() == null ? 1 : org.getEmpSequence() + 1);
+        String empCode = String.format("%s%03d", prefix.toUpperCase(), nextSeq);
 
         Employee emp = mapRequestToEntity(new Employee(), req);
         emp.setEmployeeCode(empCode); // setting up emp code;
@@ -98,6 +98,9 @@ public class EmployeeServiceImpl implements EmployeeService {
                 orgRole.getName(), // system role for employees in all org it is not org dependednt instead it is
                                    // plateform dependednt and fix.
                 req.getOrganisationId());
+
+        org.setEmpSequence(nextSeq);
+        orgRepo.save(org);
 
         String ly = leaveService.getCurrentLeaveYear(req.getOrganisationId());
         leaveService.initializeLeaveBalancesForEmployee(emp.getId(), emp.getOrganisation().getId(), ly);

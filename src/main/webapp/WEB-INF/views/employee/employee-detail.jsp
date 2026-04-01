@@ -251,10 +251,10 @@
                                         <strong>Shift:</strong>
                                         <p id="shift">--</p>
                                     </div>
-                                    <div class="col-md-6">
+                                    <!-- <div class="col-md-6">
                                         <strong>System Role:</strong>
                                         <p id="role">--</p>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>

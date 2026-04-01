@@ -25,6 +25,6 @@ public class EmployeeCodeGenerator {
         orgRepo.save(org); // updates latest sequence
 
         String prefix = org.getEmpPrefix() != null ? org.getEmpPrefix() : "ORG";
-        return String.format("%s%04d", prefix.toUpperCase(), nextSeq); // 4-digit padding
+        return String.format("%s%03d", prefix.toUpperCase(), nextSeq); // -digit padding
     }
 }

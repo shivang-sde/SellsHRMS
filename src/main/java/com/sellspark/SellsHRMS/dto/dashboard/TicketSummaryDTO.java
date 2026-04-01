@@ -12,6 +12,7 @@ public class TicketSummaryDTO {
     private Long id;
     private String title;
     private String status;
+    private LocalDate startDate;
     private LocalDate endDate;
     private String projectName;
     private String priority;

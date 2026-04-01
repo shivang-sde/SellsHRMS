@@ -70,6 +70,7 @@ public class DashboardProjectServiceImpl implements DashboardProjectService {
                                                 .status(t.getStatus() != null ? t.getStatus().name() : "UNKNOWN")
                                                 // .priority(t.getPriority() != null ? t.getPriority().name() :
                                                 // "MEDIUM") not priority variable exist in task entity
+                                                .startDate(t.getStartDate())
                                                 .endDate(t.getEndDate())
                                                 .projectName(t.getProject() != null ? t.getProject().getName()
                                                                 : "Independent")

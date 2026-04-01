@@ -90,8 +90,8 @@ const modalUtils = {
         return data;
     },
 
-    confirm(title, message, onConfirm) {
-        Swal.fire({
+    async confirm(title, message, onConfirm) { // Add async here
+        const result = await Swal.fire({ // Use await instead of .then()
             title: title,
             text: message,
             icon: 'warning',
@@ -100,11 +100,11 @@ const modalUtils = {
             cancelButtonColor: '#6b7280',
             confirmButtonText: 'Yes, proceed',
             cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed && onConfirm) {
-                onConfirm();
-            }
         });
+
+        if (result.isConfirmed && onConfirm) {
+            await onConfirm(); // Use await here to ensure the API call finishes
+        }
     }
 };
 

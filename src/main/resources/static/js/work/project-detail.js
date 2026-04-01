@@ -88,24 +88,40 @@ function renderMembers(members) {
     return;
   }
 
-  const isManagerOrLead =
-    String(employeeId) === String(projectData.createdById) ||
-    String(employeeId) === String(projectData.projectManagerId) ||
-    String(employeeId) === String(projectData.projectTeamLeadId);
+  // 1. Identify the role of the LOGGED-IN user
+  const isCreator = String(employeeId) === String(projectData.createdById);
+  const isPM = String(employeeId) === String(projectData.projectManagerId);
+  const isTL = String(employeeId) === String(projectData.projectTeamLeadId);
 
   const html = members
     .map(m => {
-      const isProtected =
-        m.employeeId === projectData.createdById ||
-        m.employeeId === projectData.projectManagerId ||
-        m.employeeId === projectData.projectTeamLeadId;
+
+      // 2. Identify the role of the MEMBER in this row
+      const targetId = String(m.employeeId);
+      const isTargetCreator = targetId === String(projectData.createdById);
+      const isTargetPM = targetId === String(projectData.projectManagerId);
+      const isTargetTL = targetId === String(projectData.projectTeamLeadId);
+
+      // 3. Permission Logic:
+      let canDelete = false;
+
+      if (isCreator) {
+        // Creator can remove anyone except themselves
+        canDelete = !isTargetCreator;
+      } else if (isPM) {
+        // PM can remove TL and regular members, but NOT Creator or themselves
+        canDelete = !isTargetCreator && !isTargetPM;
+      } else if (isTL) {
+        // TL can only remove regular members (not Creator, PM, or themselves)
+        canDelete = !isTargetCreator && !isTargetPM && !isTargetTL;
+      }
 
       return `
         <tr>
           <td class="px-3"><div class="fw-semibold text-wrap" style="min-width: 150px;">${escapeHtml(m.employeeName)}</div></td>
           <td><div class="text-wrap" style="min-width: 120px;">${escapeHtml(m.departmentName || '-')}</div></td>
-          <td class="text-end px-3">
-            ${isManagerOrLead && !isProtected
+         <td class="text-end px-3">
+            ${canDelete
           ? `<button class="btn btn-sm btn-outline-danger" onclick="removeMember(${m.employeeId})"><i class="fas fa-trash"></i></button>`
           : ''}
           </td>
@@ -114,7 +130,8 @@ function renderMembers(members) {
     .join('');
 
   tbody.html(html);
-  $('#addMemberBtn').toggle(isManagerOrLead).off('click').on('click', openAddMemberModal);
+  const isAnyLead = isCreator || isPM || isTL;
+  $('#addMemberBtn').toggle(isAnyLead).off('click').on('click', openAddMemberModal);
 }
 
 async function openAddMemberModal() {
@@ -165,17 +182,27 @@ async function saveMembers() {
 }
 
 async function removeMember(empId) {
-  modalUtils.confirm('Remove Member', 'Are you sure you want to remove this member?', async () => {
+
+
+  await modalUtils.confirm('Remove Member', 'Are you sure you want to remove this member?', async () => {
     try {
       loadingUtils.show();
-      await apiClient.delete(
-        `/projects/${projectId}/members/${empId}?organisationId=${organisationId}&employeeId=${employeeId}`
-      );
+
+      // Ensure global variables exist
+      if (!projectId || !organisationId || !employeeId) {
+        throw new Error(`Missing IDs: Project:${projectId}, Org:${organisationId}, Emp:${employeeId}`);
+      }
+
+      const url = `/projects/${projectId}/members/${empId}?organisationId=${organisationId}&employeeId=${employeeId}`;
+
+      const response = await apiClient.delete(url);
+
+
       showToast('success', 'Member removed successfully');
       await loadProjectDetails();
     } catch (err) {
       console.error('Error removing member:', err);
-      showToast('error', 'Failed to remove member');
+      showToast(err.message || 'Failed to remove member', 'error');
     } finally {
       loadingUtils.hide();
     }
@@ -201,18 +228,18 @@ function renderTickets(tickets) {
 
   const html = tickets
     .map(t => {
-      console.log("isManagerOrLead:", isManagerOrLead);
-      console.log("t.assigneeIds:", t.assigneeIds);
-      console.log("projectData.members:", projectData.members);
-      console.log("employeeId:", employeeId);
-      console.log("is employee a member?", projectData.members.some(
-        m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID)
-      ));
+      // console.log("isManagerOrLead:", isManagerOrLead);
+      // console.log("t.assigneeIds:", t.assigneeIds);
+      // console.log("projectData.members:", projectData.members);
+      // console.log("employeeId:", employeeId);
+      // console.log("is employee a member?", projectData.members.some(
+      //   m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID)
+      // ));
       const condition1 = !isManagerOrLead;
       const condition2 = !t.assigneeIds || t.assigneeIds.length === 0;
       const condition3 = projectData.members.some(
         m => String(m.employeeId || m.id) === String(window.APP.EMPLOYEE_ID));
-      console.log({ condition1, condition2, condition3 }); const canPick = condition1 && condition2 && condition3; console.log("canPick:", canPick);
+      // console.log({ condition1, condition2, condition3 }); const canPick = condition1 && condition2 && condition3; console.log("canPick:", canPick);
       return `
         <tr>
           <td class="px-3"><a href="${window.APP.CONTEXT_PATH}/work/tickets/${t.id}" class="fw-semibold text-wrap" style="min-width: 150px; display: inline-block;">${escapeHtml(t.title)}</a></td>
@@ -587,7 +614,15 @@ async function loadSubordinates() {
   try {
     const res = await employeeAPI.getSubordinates(employeeId, organisationId);
     allSubordinates = res || [];
-    const options = allSubordinates
+
+    // Filter only those who are in projectData.members
+    // Use employeeId from projectData.members
+    const memberIds = new Set((projectData.members || []).map(m => String(m.employeeId)));
+
+    // Compare against subordinate.id
+    const filteredSubordinates = allSubordinates.filter(e => memberIds.has(String(e.id)));
+
+    const options = filteredSubordinates
       .map(e => `<option value="${e.id}">${escapeHtml(e.fullName)} ${escapeHtml(e.employeeCode)} (${escapeHtml(e.department || 'N/A')})</option>`)
       .join('');
     $('#ticketAssigneesSelect').html(options);
@@ -596,6 +631,7 @@ async function loadSubordinates() {
     showToast('error', err.message || 'Failed to load subordinates');
   }
 }
+
 
 // ============================================================
 // HELPERS
