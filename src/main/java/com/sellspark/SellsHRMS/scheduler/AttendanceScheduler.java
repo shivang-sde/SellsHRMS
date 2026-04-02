@@ -114,7 +114,7 @@ public class AttendanceScheduler {
 
     // ================= RECONCILE =================
 
-    @Scheduled(cron = "0 50 23 * * ?")
+    @Scheduled(cron = "0 50 23 * * ?", zone = "Asia/Kolkata")
     @Transactional
     public void reconcileDailyAttendance() {
 
@@ -138,14 +138,14 @@ public class AttendanceScheduler {
                     continue;
                 }
 
-                // ✅ Skip fixed statuses
+                // Skip fixed statuses
                 if (summary.getStatus() == AttendanceSummary.AttendanceStatus.HOLIDAY ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.WEEK_OFF ||
                         summary.getStatus() == AttendanceSummary.AttendanceStatus.ON_LEAVE) {
                     continue;
                 }
 
-                // ✅ If no punch at all → remain ABSENT
+                // If no punch at all → remain ABSENT
                 if (summary.getPunchRecord() == null) {
                     summary.setRemarks("Absent - No punch");
                     summaryRepo.save(summary);
@@ -160,7 +160,7 @@ public class AttendanceScheduler {
                 // ================= AUTO PUNCH-OUT =================
 
                 PunchInOut punch = summary.getPunchRecord();
-
+                ZoneId zoneId = ZoneId.of(org.getTimeZone());
                 LocalTime autoTime = policy.getAutoPunchOutTime();
 
                 // Optional grace (0 if not configured)
@@ -168,7 +168,7 @@ public class AttendanceScheduler {
                 LocalTime finalAutoTime = autoTime.plusMinutes(graceMinutes);
 
                 Instant autoPunchOut = LocalDateTime.of(today, finalAutoTime)
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(zoneId)
                         .toInstant();
 
                 // Calculate hours (no validation, no fallback)
