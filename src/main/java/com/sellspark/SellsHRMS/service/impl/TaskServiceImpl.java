@@ -111,7 +111,7 @@ public class TaskServiceImpl implements TaskService {
                                 .reminderEnabled(dto.getReminderEnabled())
                                 .reminderAt(dto.getReminderAt())
                                 .isActive(true)
-                                .createdAt(LocalDateTime.now())
+                                .createdAt(dto.getCreatedAt())
                                 .build();
 
                 taskRepository.save(task);
@@ -187,8 +187,8 @@ public class TaskServiceImpl implements TaskService {
                         updated = true;
                 }
 
-                if (updated) {
-                        task.setUpdatedAt(LocalDateTime.now());
+                if (updated && dto.getUpdatedAt() != null) {
+                        task.setUpdatedAt(dto.getUpdatedAt());
                         taskRepository.save(task);
                 }
 

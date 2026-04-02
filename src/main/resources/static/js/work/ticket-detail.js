@@ -39,7 +39,7 @@ async function loadTicketDetails() {
     await loadTicketActivity(ticketId);
   } catch (err) {
     console.error(err);
-    showToast("Failed to load ticket details", "error");
+    showToast("error", "Failed to load ticket details");
   }
 }
 
@@ -117,7 +117,7 @@ async function editTask(id) {
     modalUtils.open("taskModal");
   } catch (err) {
     console.error(err);
-    showToast("Failed to load task", "error");
+    showToast("error", "Failed to load task");
   }
 }
 
@@ -140,6 +140,8 @@ async function saveTicketWorkUpdate() {
     priority: "MEDIUM",
     reporterId: ticketData.createdById, // ticket creator (manager/team lead)
     createdById: window.APP.EMPLOYEE_ID, // current logged-in employee
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   // 2️⃣ Prepare multipart form
@@ -177,7 +179,7 @@ async function saveTicketWorkUpdate() {
     if (!response.ok)
       throw new Error(result?.message || "Failed to save work update");
 
-    showToast("Work update saved successfully", "success");
+    showToast("success", "Work update saved successfully");
     modalUtils.close("taskModal");
 
     // Refresh ticket detail to show latest updates
@@ -189,7 +191,7 @@ async function saveTicketWorkUpdate() {
     addAttachmentRow();
   } catch (error) {
     console.error("Error saving work update:", error);
-    showToast(error.message || "Failed to save update", "error");
+    showToast("error", error.message || "Failed to save update");
   } finally {
     loadingUtils.hide();
   }
@@ -211,13 +213,14 @@ async function editTicketWorkUpdate(id) {
     $('#taskForm [name="description"]').val(t.description || "");
     $("#taskTicketId").val(t.ticketId);
 
+
     // Load existing attachments
     await loadExistingAttachments(t.attachments || []);
 
     modalUtils.open("taskModal");
   } catch (err) {
     console.error("Error loading task for edit:", err);
-    showToast("Failed to load work update", "error");
+    showToast("error", "Failed to load work update");
   } finally {
     loadingUtils.hide();
   }
@@ -324,10 +327,10 @@ async function deleteTask(id) {
   modalUtils.confirm("Delete Task", "Are you sure?", async () => {
     try {
       await taskAPI.delete(id);
-      showToast("Task deleted", "success");
+      showToast("success", "Task deleted");
       await loadTicketDetails();
     } catch (err) {
-      showToast("Failed to delete task", "error");
+      showToast("error", "Failed to delete task");
     }
   });
 }
