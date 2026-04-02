@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 500));
 
   paddingInput.addEventListener("input", () => {
-    prefixExample.textContent = prefixInput.value.toUpperCase() + String(1).padStart(paddingInput.value - 1, '0');
+    prefixExample.textContent = prefixInput.value.toUpperCase() + String(1).padStart(paddingInput.value, '0');
   });
 
   // --- Upload logic ---

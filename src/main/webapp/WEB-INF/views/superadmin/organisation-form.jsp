@@ -19,7 +19,11 @@
 
         <div class="col-md-6">
             <label for="padding" class="form-label">Padding <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" required name="padding" id="padding" placeholder="e.g. 3">
+            <select class="form-select" required name="padding" id="padding">
+                <option value="">Select Padding</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
             <small class="form-text text-muted">
                 Employee code seris will be like <strong id="prefixExample">SPARK001,
                     SELLS002, HRMS003</strong>

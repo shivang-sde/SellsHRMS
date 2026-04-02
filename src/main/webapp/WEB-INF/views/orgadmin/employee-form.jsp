@@ -43,8 +43,9 @@
                             <input type="date" class="form-control" id="dob" name="dob">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label" for="genderSelect">Gender</label>
-                            <select class="form-select" id="genderSelect" name="gender">
+                            <label class="form-label" for="genderSelect">Gender <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="genderSelect" name="gender" required>
                                 <option value="">Select</option>
                                 <option value="MALE">Male</option>
                                 <option value="FEMALE">Female</option>
@@ -72,8 +73,9 @@
                             <input type="text" class="form-control" id="nationality" name="nationality">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label" for="maritalStatus">Marital Status</label>
-                            <select class="form-select" id="maritalStatus" name="maritalStatus">
+                            <label class="form-label" for="maritalStatus">Marital Status <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="maritalStatus" name="maritalStatus" required>
                                 <option value="">Select</option>
                                 <option value="SINGLE">Single</option>
                                 <option value="MARRIED">Married</option>
@@ -107,7 +109,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label" for="aadharNumber">Aadhar Number</label>
-                            <input type="text" class="form-control" id="aadharNumber" name="aadharNumber">
+                            <input type="text" class="form-control" id="aadharNumber" name="aadharNumber" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="panNumber">PAN Number</label>
