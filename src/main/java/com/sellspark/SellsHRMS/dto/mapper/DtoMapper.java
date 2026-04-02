@@ -24,6 +24,7 @@ public class DtoMapper {
         org.setTimeZone(dto.getTimeZone());
         org.setLogoUrl(dto.getLogoUrl());
         org.setEmpPrefix(dto.getPrefix());
+        org.setPadding(dto.getPadding());
         org.setContactEmail(dto.getContactEmail());
         org.setContactPhone(dto.getContactPhone());
         org.setAddress(dto.getAddress());
@@ -48,7 +49,6 @@ public class DtoMapper {
         dto.setIsActive(org.getIsActive());
         dto.setValidity(org.getValidity());
         dto.setPrefix(org.getEmpPrefix());
-
         if (org.getOrgAdmin() != null) {
             dto.setAdminName(org.getOrgAdmin().getFullName());
             dto.setAdminEmail(org.getOrgAdmin().getEmail());

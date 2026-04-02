@@ -120,6 +120,11 @@ public class OrganisationServiceImpl implements OrganisationService {
     }
 
     @Override
+    public boolean existsByEmpPrefix(String empPrefix) {
+        return organisationRepo.existsByEmpPrefix(empPrefix);
+    }
+
+    @Override
     public OrganisationDTO updateOrganisation(Long id, OrganisationDTO dto) {
         Organisation org = organisationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Organisation not found"));
@@ -227,6 +232,7 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .domain(org.getDomain())
                 .timeZone(org.getTimeZone())
                 .prefix(org.getEmpPrefix())
+                .padding(org.getPadding())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())
                 .address(org.getAddress())
@@ -252,6 +258,7 @@ public class OrganisationServiceImpl implements OrganisationService {
                 .domain(org.getDomain())
                 .timeZone(org.getTimeZone())
                 .prefix(org.getEmpPrefix())
+                .padding(org.getPadding())
                 .contactEmail(org.getContactEmail())
                 .contactPhone(org.getContactPhone())
                 .address(org.getAddress())

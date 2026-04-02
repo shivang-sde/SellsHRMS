@@ -22,6 +22,8 @@ public interface OrganisationRepository extends JpaRepository<Organisation, Long
 
     List<Organisation> findAllByOrderByIdDesc();
 
+    boolean existsByEmpPrefix(String empPrefix);
+
     List<Organisation> findByIsActiveTrue();
 
     List<Organisation> findByValidityBeforeAndIsActiveTrue(LocalDate date);

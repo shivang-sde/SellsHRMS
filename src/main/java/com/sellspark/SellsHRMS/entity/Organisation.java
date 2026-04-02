@@ -49,6 +49,9 @@ public class Organisation {
     private String empPrefix;
 
     @Builder.Default
+    private Integer padding = 3;
+
+    @Builder.Default
     @Column(name = "emp_seq")
     private Integer empSequence = 0; // stores last used number
 

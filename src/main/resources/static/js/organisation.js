@@ -10,6 +10,25 @@ document.addEventListener("DOMContentLoaded", () => {
     disableAdminFields();
   }
 
+
+  // prefix and padding example showing how there prefix will look like with the padding they chhose by dafulit it wil be of 3 padding
+  const prefixInput = document.getElementById("prefix");
+  const paddingInput = document.getElementById("padding");
+  const prefixExample = document.getElementById("prefixExample");
+
+  prefixInput.addEventListener("input", debounce(async () => {
+    if (prefixInput.value.length > 0 && await prefixExist(prefixInput.value)) {
+      showToast("error", "Prefix already exists");
+      prefixInput.classList.add("is-invalid");
+    } else {
+      prefixInput.classList.remove("is-invalid");
+    }
+  }, 500));
+
+  paddingInput.addEventListener("input", () => {
+    prefixExample.textContent = prefixInput.value.toUpperCase() + String(1).padStart(paddingInput.value - 1, '0');
+  });
+
   // --- Upload logic ---
   document.getElementById("logoFile").addEventListener("change", async (e) => {
     const file = e.target.files[0];
@@ -55,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
       timeZone: val("orgTimeZone"),
       logoUrl: val("logoUrl"),
       prefix: val("prefix"),
+      padding: parseInt(val("padding") || 3),
       contactEmail: val("orgEmail"),
       contactPhone: val("orgPhone"),
       address: val("orgAddress"),
@@ -133,6 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("orgDomain").value = org.domain || "";
       document.getElementById("orgTimeZone").value = org.timeZone || "";
       document.getElementById("prefix").value = org.prefix || "";
+      document.getElementById("padding").value = org.padding || "";
       if (org.logoUrl) {
         const preview = document.getElementById("logoPreview");
         preview.src = org.logoUrl;
@@ -176,4 +197,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminHeader = document.querySelector("h5.mt-4");
     if (adminHeader) adminHeader.style.display = "none";
   }
+
+
+  async function prefixExist(prefix) {
+    const res = await fetch(`/api/organisation/prefix/${prefix}`);
+    const data = await res.json();
+    console.log(data);
+    return data;
+  }
+
+
 });

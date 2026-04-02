@@ -19,6 +19,7 @@ public class OrganisationDTO {
     private String domain;
     private String timeZone;
     private String prefix;
+    private Integer padding;
     private String contactEmail;
     private String contactPhone;
     private String address;

@@ -239,11 +239,20 @@ async function validateImage(
   });
 }
 
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  }
+}
+
 // ---------- Expose globally ----------
 window.showToast = showToast;
 window.showConfirmation = showConfirmation;
 window.showIntervention = showIntervention;
 window.validateImage = validateImage;
+window.debounce = debounce;
 
 // Allow modal to close on background click
 document.addEventListener("click", (e) => {

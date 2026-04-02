@@ -84,8 +84,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // Generate Employee Code
         String prefix = org.getEmpPrefix() != null ? org.getEmpPrefix() : "ORG";
+        Integer padding = org.getPadding() != null ? org.getPadding() : 3;
         Integer nextSeq = (org.getEmpSequence() == null ? 1 : org.getEmpSequence() + 1);
-        String empCode = String.format("%s%03d", prefix.toUpperCase(), nextSeq);
+        String empCode = String.format("%s%0" + padding + "d", prefix.toUpperCase(), nextSeq);
 
         Employee emp = mapRequestToEntity(new Employee(), req);
         emp.setEmployeeCode(empCode); // setting up emp code;

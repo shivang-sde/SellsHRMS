@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
-
-
 @RestController
 @RequestMapping("/api/organisation")
 @RequiredArgsConstructor
@@ -30,7 +27,6 @@ public class OrganisationRestController {
         return ResponseEntity.ok(saved);
     }
 
-
     // Get one
     @GetMapping("/{id}")
     public ResponseEntity<OrganisationDTO> get(@PathVariable Long id) {
@@ -38,16 +34,22 @@ public class OrganisationRestController {
         return ResponseEntity.ok(dto);
     }
 
-   // Delete
+    // Delete
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         organisationService.delete(id);
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/prefix/{empPrefix}")
+    public ResponseEntity<Boolean> checkEmpPrefix(@PathVariable String empPrefix) {
+        boolean exists = organisationService.existsByEmpPrefix(empPrefix);
+        return ResponseEntity.ok(exists);
+    }
 
     @PostMapping("/{orgId}/policy/create")
-    public ResponseEntity<OrganisationPolicyDTO> createOrganisationPolicy(@PathVariable Long orgId, @RequestBody OrganisationPolicyDTO dto) {
+    public ResponseEntity<OrganisationPolicyDTO> createOrganisationPolicy(@PathVariable Long orgId,
+            @RequestBody OrganisationPolicyDTO dto) {
         organisationPolicyService.createOrUpdatePolicy(orgId, dto);
         return ResponseEntity.ok(dto);
     }
@@ -57,13 +59,13 @@ public class OrganisationRestController {
         OrganisationPolicyDTO policy = organisationPolicyService.getOrganisationPolicyByOrgId(orgId);
         return ResponseEntity.ok(policy);
     }
-    
+
     @PutMapping("/{orgId}/policy/{policyId}/update")
-    public ResponseEntity<OrganisationPolicyDTO> updateOrganisationPolicy(@PathVariable Long orgId, @PathVariable Long policyId, @RequestBody OrganisationPolicyDTO dto) {
+    public ResponseEntity<OrganisationPolicyDTO> updateOrganisationPolicy(@PathVariable Long orgId,
+            @PathVariable Long policyId, @RequestBody OrganisationPolicyDTO dto) {
         organisationPolicyService.createOrUpdatePolicy(orgId, dto);
         return ResponseEntity.ok(dto);
     }
-    
 
     // List all (summary)
     @GetMapping
@@ -78,6 +80,5 @@ public class OrganisationRestController {
         List<OrgAdminSummaryDTO> admins = orgAdminService.getByOrganisationId(id);
         return ResponseEntity.ok(admins);
     }
-
 
 }

@@ -14,6 +14,8 @@ public interface OrganisationService {
 
     OrganisationDetailDTO getOrganisationDetailsById(Long id);
 
+    boolean existsByEmpPrefix(String empPrefix);
+
     // new
     OrganisationDTO getOrganisationById(Long id);
 

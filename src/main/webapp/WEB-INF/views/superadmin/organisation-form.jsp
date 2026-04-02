@@ -18,6 +18,15 @@
         </div>
 
         <div class="col-md-6">
+            <label for="padding" class="form-label">Padding <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" required name="padding" id="padding" placeholder="e.g. 3">
+            <small class="form-text text-muted">
+                Employee code seris will be like <strong id="prefixExample">SPARK001,
+                    SELLS002, HRMS003</strong>
+            </small>
+        </div>
+
+        <div class="col-md-6">
             <label for="orgDomain" class="form-label">
                 Domain <span class="text-danger">*</span>
             </label>
