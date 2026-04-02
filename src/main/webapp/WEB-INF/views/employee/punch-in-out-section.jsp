@@ -5,7 +5,7 @@
             <link rel="stylesheet" href="${pageContext.request.contextPath}/css/employee/punch-in-out-section.css">
 
             <div class="punch-section-wrapper">
-                <div class="row g-4 align-items-stretch punch-section-row">
+                <div class="row g-4 align-items-stretch  punch-section-row">
 
                     <%-- ────────────────────────────────────────────────────── LEFT / BOTTOM on mobile: Punch Card
                         ────────────────────────────────────────────────────── --%>
@@ -42,7 +42,8 @@
                                                     <label class="form-label small fw-bold text-muted mb-2">Working
                                                         From</label>
                                                     <div class="input-group bg-light rounded-pill p-1 shadow-sm mb-1">
-                                                        <span class="input-group-text border-0 bg-transparent text-primary">
+                                                        <span
+                                                            class="input-group-text border-0 bg-transparent text-primary">
                                                             <i class="fas fa-map-marker-alt"></i>
                                                         </span>
                                                         <select class="form-select border-0 bg-transparent fw-semibold"
@@ -90,10 +91,10 @@
                         <%-- ────────────────────────────────────────────────────── RIGHT / TOP on mobile: 2×2 Summary
                             Cards xs-sm → 2 per row (col-6) md+ → 4 per row (col-md-3)
                             ────────────────────────────────────────────────────── --%>
-                            <div class="col-12 col-lg-8 col-xl-9 order-1 order-lg-2">
+                            <div class="col-lg-8 col-xl-9 order-1 order-lg-2">
                                 <div class="row g-3">
 
-                                    <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="col-12 col-sm-6 ">
                                         <div class="card summary-card border-0 shadow-sm rounded-4 text-center h-100">
                                             <div class="card-body d-flex flex-column justify-content-center p-3">
                                                 <div
@@ -107,7 +108,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="col-12 col-sm-6 ">
                                         <div class="card summary-card border-0 shadow-sm rounded-4 text-center h-100">
                                             <div class="card-body d-flex flex-column justify-content-center p-3">
                                                 <div
@@ -122,7 +123,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="col-12 col-sm-6">
                                         <div class="card summary-card border-0 shadow-sm rounded-4 text-center h-100">
                                             <div class="card-body d-flex flex-column justify-content-center p-3">
                                                 <div
@@ -137,7 +138,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="col-12 col-sm-6">
                                         <div class="card summary-card border-0 shadow-sm rounded-4 text-center h-100">
                                             <div class="card-body d-flex flex-column justify-content-center p-3">
                                                 <div
