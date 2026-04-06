@@ -290,7 +290,7 @@ public class TicketServiceImpl implements TicketService {
         @Override
         public List<TicketDTO> getTicketsByProject(Long projectId, Long organisationId, Long employeeId) {
                 validateProjectMember(projectId, employeeId);
-                return ticketRepo.findByProjectId(projectId).stream()
+                return ticketRepo.findByProjectIdAndIsActiveTrue(projectId).stream()
                                 .map(this::mapToDTO).collect(Collectors.toList());
         }
 

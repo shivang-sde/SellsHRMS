@@ -255,6 +255,7 @@ function renderTickets(tickets) {
           <td>${formatDate(t.endDate)}</td>
           <td class="px-3">
             <div class="d-flex flex-nowrap gap-1">
+            <button class="btn btn-sm btn-outline-secondary" onclick="ticketStatusModal(${t.id})"><i class="fas fa-check"></i></button>
             ${isManagerOrLead
           ? `
                 <button class="btn btn-sm btn-outline-warning" onclick="editTicket(${t.id})"><i class="fas fa-edit"></i></button>
@@ -277,6 +278,13 @@ function openTicketModal() {
   $('#ticketForm')[0].reset();
   $('#ticketProjectId').val(projectId);
   modalUtils.open('ticketModal');
+}
+
+function ticketStatusModal(ticketId) {
+  editingTicketId = ticketId;
+  $('#ticketStatusModalTitle').text('Update Ticket Status');
+  $('#ticketStatusForm')[0].reset();
+  modalUtils.open('ticketStatusModal');
 }
 
 async function saveTicket() {
@@ -375,6 +383,22 @@ async function pickTicket(id) {
   } catch (err) {
     console.error('Error picking ticket:', err);
     showToast('error', 'Failed to pick this ticket');
+  }
+}
+
+async function saveTicketStatus() {
+  const status = $('#ticketStatusSelect').val();
+  try {
+    loadingUtils.show();
+    await ticketAPI.updateStatus(editingTicketId, status);
+    showToast('success', 'Ticket status updated successfully');
+    modalUtils.close('ticketStatusModal');
+    await loadProjectDetails();
+  } catch (err) {
+    console.error(err);
+    showToast('error', err.message || 'Failed to update ticket status');
+  } finally {
+    loadingUtils.hide();
   }
 }
 

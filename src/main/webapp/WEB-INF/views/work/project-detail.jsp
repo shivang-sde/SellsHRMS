@@ -220,6 +220,32 @@
         </div>
 
 
+        <!-- Ticket Status Change Modal -->
+        <div class="modal fade" id="ticketStatusModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form id="ticketStatusForm" class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Change Ticket Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Select Status</label>
+                  <select class="form-select" id="ticketStatusSelect" required>
+                    <option value="OPEN">Open</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveTicketStatus()">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
 
         <!-- ADD ATTACHMENT MODAL -->
