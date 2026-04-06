@@ -124,7 +124,7 @@
                     console.table(window.APP);
                 </script>
 
-                <!-- ✅ New: Global Permission Helper (add this below) -->
+                <!-- New: Global Permission Helper (add this below) -->
                 <script src="${pageContext.request.contextPath}/js/utils/permission-helper.js"></script>
 
 

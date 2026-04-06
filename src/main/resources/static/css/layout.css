@@ -57,7 +57,7 @@ body.hrms-app {
 */
 
 .hrms-wrapper {
-  display: flex;
+  /* display: flex; */
   height: 100vh;
   width: 100%;
   overflow: hidden;
@@ -106,13 +106,16 @@ body.hrms-app {
 .sidebar-nav::-webkit-scrollbar {
   width: 5px;
 }
+
 .sidebar-nav::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.3);
   border-radius: 10px;
 }
+
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
 }
@@ -225,6 +228,7 @@ body.hrms-app {
   font-size: 0.7rem;
   opacity: 0.6;
 }
+
 .toggle-link.open .toggle-icon {
   transform: rotate(45deg);
 }
@@ -306,7 +310,7 @@ body.hrms-app {
   background: var(--color-bg);
 }
 
-.hrms-sidebar.collapsed ~ .hrms-viewport {
+.hrms-sidebar.collapsed~.hrms-viewport {
   margin-left: var(--sidebar-collapsed-width);
 }
 
@@ -337,13 +341,16 @@ body.hrms-app {
 .hrms-main::-webkit-scrollbar {
   width: 8px;
 }
+
 .hrms-main::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .hrms-main::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.35);
   border-radius: 10px;
 }
+
 .hrms-main::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.55);
 }
@@ -380,6 +387,7 @@ body.hrms-app {
   border-color: #475569;
   transition: all 0.2s;
 }
+
 .sidebar-footer button:hover {
   background: var(--sidebar-hover);
   color: #fff;

@@ -142,6 +142,17 @@ List<Ticket> findDelayedTickets(@Param("organisationId") Long organisationId);
 """)
 List<Ticket> findAllVisibleToEmployee(@Param("organisationId") Long organisationId, @Param("employeeId") Long employeeId);
 
+    // Subordinate independent tickets: no project, created by OR assigned to any employee in the given set
+    @Query("""
+        SELECT DISTINCT t FROM Ticket t
+        LEFT JOIN t.assignees a
+        WHERE t.organisation.id = :orgId
+          AND t.project IS NULL
+          AND t.isActive = true
+          AND (t.createdBy.id IN :empIds OR a.id IN :empIds)
+        ORDER BY t.createdAt DESC
+        """)
+    List<Ticket> findIndependentTicketsByEmployeeIds(@Param("orgId") Long orgId, @Param("empIds") java.util.Set<Long> empIds);
 
 
 }

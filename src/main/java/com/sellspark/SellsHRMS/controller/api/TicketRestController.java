@@ -142,6 +142,18 @@ public class TicketRestController {
         return ResponseEntity.ok(ApiResponse.ok("Independent tickets fetched successfully", tickets));
     }
 
+    // ----------------------------------------------------------------
+    // SUBORDINATE INDEPENDENT TICKETS
+    // ----------------------------------------------------------------
+    @GetMapping("/subordinates")
+    public ResponseEntity<ApiResponse<List<TicketDTO>>> getSubordinateIndependentTickets(
+            @RequestParam Long organisationId,
+            @RequestParam Long managerId) {
+
+        List<TicketDTO> tickets = ticketService.getSubordinateIndependentTickets(organisationId, managerId);
+        return ResponseEntity.ok(ApiResponse.ok("Subordinate independent tickets fetched", tickets));
+    }
+
     @PutMapping("/{ticketId}/assign")
     public ResponseEntity<ApiResponse<TicketDTO>> assignTicket(
             @PathVariable Long ticketId,

@@ -17,6 +17,8 @@ public interface TaskService {
 
     List<TaskDTO> getSelfTasks(Long organisationId, Long employeeId);
 
+    List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId);
+
     List<TaskDTO> getTasksByProject(Long projectId, Long organisationId, Long employeeId);
     List<TaskAttachmentDTO> getAttachments(Long taskId, Long organisationId);
      TaskAttachmentDTO addAttachment(Long taskId, TaskAttachmentDTO attachmentDTO, Long employeeId);

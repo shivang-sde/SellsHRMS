@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -112,7 +113,10 @@ List<Task> findByOrganisationIdAndAssignee_IdOrReporter_Id(
     @Query("SELECT t FROM Task t WHERE t.organisation.id = :orgId AND LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) AND t.isActive = true")
     List<Task> searchTasks(@Param("orgId") Long orgId, @Param("keyword") String keyword);
 
-
-
+    // Subordinate tasks: find all active tasks created by, assigned to, or reported by any employee in the given set
+    @Query("SELECT DISTINCT t FROM Task t WHERE t.organisation.id = :orgId AND t.isActive = true " +
+           "AND (t.createdBy.id IN :empIds OR t.assignee.id IN :empIds OR t.reporter.id IN :empIds) " +
+           "ORDER BY t.createdAt DESC")
+    List<Task> findTasksByEmployeeIds(@Param("orgId") Long orgId, @Param("empIds") Set<Long> empIds);
 
 }

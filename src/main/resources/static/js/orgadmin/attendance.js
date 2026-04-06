@@ -190,7 +190,7 @@ $(document).ready(function () {
                     <td>
                       ${lateEarlyStr}
                     </td>
-                    <td><small class="text-muted text-wrap">${escapeHtml(record.remarks || '--')}}</small></td>
+                    <td><small class="text-muted text-wrap">${escapeHtml(record.remarks || '--')}</small></td>
                     <td>${actionBtn}</td>
                 </tr>
             `;

@@ -8,6 +8,7 @@ import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.TaskService;
+import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 import com.sellspark.SellsHRMS.service.files.FileUploadService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +49,7 @@ public class TaskServiceImpl implements TaskService {
         private final TicketActivityRepository ticketActivityRepository;
 
         private final FileUploadService fileUploadService;
+        private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
         // ---------------- CREATE TASK ----------------
         @Override
@@ -94,6 +99,8 @@ public class TaskServiceImpl implements TaskService {
                                 validateProjectMember(project.getId(), assignee.getId());
                 }
 
+                ZoneId zoneId = ZoneId.of(org.getTimeZone());
+
                 // 4️⃣ Build and save task
                 Task task = Task.builder()
                                 .title(dto.getTitle())
@@ -111,7 +118,7 @@ public class TaskServiceImpl implements TaskService {
                                 .reminderEnabled(dto.getReminderEnabled())
                                 .reminderAt(dto.getReminderAt())
                                 .isActive(true)
-                                .createdAt(dto.getCreatedAt())
+                                .createdAt(dto.getCreatedAt().atZone(zoneId).toLocalDateTime())
                                 .build();
 
                 taskRepository.save(task);
@@ -144,6 +151,8 @@ public class TaskServiceImpl implements TaskService {
 
                 Task task = taskRepository.findById(taskId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+                ZoneId zoneId = ZoneId.of(task.getOrganisation().getTimeZone());
 
                 // 🔒 Optional: Validate access for project tasks
                 if (task.getProject() != null) {
@@ -188,7 +197,7 @@ public class TaskServiceImpl implements TaskService {
                 }
 
                 if (updated && dto.getUpdatedAt() != null) {
-                        task.setUpdatedAt(dto.getUpdatedAt());
+                        task.setUpdatedAt(dto.getUpdatedAt().atZone(zoneId).toLocalDateTime());
                         taskRepository.save(task);
                 }
 
@@ -227,6 +236,19 @@ public class TaskServiceImpl implements TaskService {
         public List<TaskDTO> getSelfTasks(Long organisationId, Long employeeId) {
                 List<Task> tasks = taskRepository
                                 .findByOrganisation_IdAndCreatedBy_IdAndIsSelfTaskTrue(organisationId, employeeId);
+                return tasks.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId) {
+                Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
+                if (subordinateIds.isEmpty()) {
+                        return Collections.emptyList();
+                }
+                List<Task> tasks = taskRepository.findTasksByEmployeeIds(organisationId, subordinateIds);
                 return tasks.stream()
                                 .map(this::mapToDTO)
                                 .collect(Collectors.toList());
@@ -351,6 +373,7 @@ public class TaskServiceImpl implements TaskService {
 
                 Employee emp = empRepo.findById(employeeId)
                                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+                ZoneId zoneId = ZoneId.of(task.getOrganisation().getTimeZone());
 
                 TaskActivity activity = TaskActivity.builder()
                                 .task(task)
@@ -358,7 +381,7 @@ public class TaskServiceImpl implements TaskService {
                                 .activityType(type)
                                 .oldValue(oldValue)
                                 .newValue(newValue)
-                                .createdAt(LocalDateTime.now())
+                                .createdAt(LocalDateTime.now(zoneId))
                                 .build();
 
                 activityRepository.save(activity);

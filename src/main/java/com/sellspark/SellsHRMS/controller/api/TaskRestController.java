@@ -12,6 +12,7 @@ import com.sellspark.SellsHRMS.service.TaskService;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.TaskActivityRepository;
 import com.sellspark.SellsHRMS.repository.TaskRepository;
+import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +43,7 @@ public class TaskRestController {
     private final TaskActivityRepository taskActivityRepository;
     private final TaskRepository taskRepository;
     private final EmployeeRepository empRepo;
+    private final EmployeeHierarchyUtil employeeHierarchyUtil;
 
     // ---------------- CREATE TASK ----------------
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -105,6 +107,18 @@ public class TaskRestController {
 
         List<TaskDTO> tasks = taskService.getSelfTasks(organisationId, employeeId);
         return ResponseEntity.ok(ApiResponse.ok("Fetched self tasks", tasks));
+    }
+
+    // ----------------------------------------------------------------
+    // GET SUBORDINATE TASKS
+    // ----------------------------------------------------------------
+    @GetMapping("/subordinates")
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getSubordinateTasks(
+            @RequestParam Long organisationId,
+            @RequestParam Long managerId) {
+
+        List<TaskDTO> tasks = taskService.getSubordinateTasks(organisationId, managerId);
+        return ResponseEntity.ok(ApiResponse.ok("Fetched subordinate tasks", tasks));
     }
 
     // ----------------------------------------------------------------

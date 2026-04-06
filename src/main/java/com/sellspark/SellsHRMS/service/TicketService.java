@@ -32,6 +32,8 @@ public interface TicketService {
 
     List<TicketDTO> getIndependentTickets(Long organisationId, Long employeeId);
 
+    List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId);
+
     List<TicketDTO> searchTickets(Long organisationId, String keyword);
 
     // Lifecycle/Dashboard filters

@@ -89,6 +89,73 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SUBORDINATE TICKETS SECTION (shown if manager) -->
+    <!-- ============================================ -->
+    <div id="subordinateTicketsSection" class="mt-5 p-4" style="display: none;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h3 class="mb-1">
+            <i class="fas fa-users-cog text-warning me-2"></i>Team Tickets
+          </h3>
+          <p class="text-muted mb-0">Independent tickets created by or assigned to your subordinates</p>
+        </div>
+        <!-- Filter controls -->
+        <div class="d-flex gap-2 align-items-center">
+          <div class="input-group input-group-sm" style="width: 240px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="subTicketSearch" placeholder="Search tickets..."
+              oninput="filterSubordinateTickets()">
+          </div>
+          <select class="form-select form-select-sm" id="subTicketStatusFilter" style="width: 160px;"
+            onchange="filterSubordinateTickets()">
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <select class="form-select form-select-sm" id="subTicketEmployeeFilter" style="width: 180px;"
+            onchange="filterSubordinateTickets()">
+            <option value="">All Employees</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="subordinateTicketsTable">
+              <thead class="table-light text-uppercase small">
+                <tr>
+                  <th>Title</th>
+                  <th>Employee</th>
+                  <th>Status</th>
+                  <th>Assignees</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
 
     <!-- Ticket Modal -->
     <div class="modal fade" id="ticketModal" tabindex="-1">
@@ -205,6 +272,34 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-primary" onclick="saveTicket()">Save Ticket</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================== -->
+    <!-- SUBORDINATE TICKET DETAIL MODAL -->
+    <!-- =============================== -->
+    <div class="modal fade" id="subTicketDetailModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title">
+              <i class="fas fa-ticket-alt text-warning me-2"></i>
+              <span id="subTicketDetailTitle">Ticket Details</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="subTicketDetailBody">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <a href="#" id="subTicketDetailLink" class="btn btn-primary">
+              <i class="fas fa-external-link-alt me-1"></i>Open Full Page
+            </a>
           </div>
         </div>
       </div>

@@ -3,8 +3,13 @@ let allProjects = [];
 let allSubordinates = [];
 let editingTicketId = null;
 
+// Subordinate tickets state
+let subordinateTickets = [];
+let filteredSubordinateTickets = [];
+
 $(document).ready(async function () {
   await Promise.all([loadProjects(), loadTickets(), loadSubordinates()]);
+  loadSubordinateTickets();
 
   $("#statusFilter, #projectFilter").on("change", filterTickets);
   $("#searchInput").on("input", debounce(handleSearch, 400));
@@ -426,4 +431,385 @@ function debounce(func, wait) {
 
 function viewTicket(id) {
   window.location.href = `${window.APP.CONTEXT_PATH}/work/tickets/${id}`;
+}
+
+// ============================================================
+// SUBORDINATE TICKETS SECTION
+// ============================================================
+
+/**
+ * Load independent tickets from all subordinates of the current employee.
+ * Only tickets NOT under any project are shown.
+ */
+async function loadSubordinateTickets() {
+  try {
+    const res = await ticketAPI.getSubordinateTickets(window.APP.EMPLOYEE_ID);
+    const data = res?.data || res;
+    subordinateTickets = Array.isArray(data) ? data : [];
+
+    if (subordinateTickets.length > 0) {
+      $("#subordinateTicketsSection").show();
+      populateSubTicketEmployeeFilter(subordinateTickets);
+      filteredSubordinateTickets = [...subordinateTickets];
+      renderSubordinateTickets(filteredSubordinateTickets);
+    } else {
+      // Check if there are subordinates but no tickets
+      try {
+        const subCheck = await employeeAPI.getSubordinates(window.APP.EMPLOYEE_ID);
+        const subs = subCheck?.data || subCheck;
+        if (Array.isArray(subs) && subs.length > 0) {
+          $("#subordinateTicketsSection").show();
+          renderSubordinateTickets([]);
+        }
+      } catch {
+        // No subordinates — keep section hidden
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load subordinate tickets", error);
+  }
+}
+
+/**
+ * Populate the employee dropdown filter with unique employee names from the subordinate ticket list.
+ */
+function populateSubTicketEmployeeFilter(tickets) {
+  const select = $("#subTicketEmployeeFilter");
+  const seen = new Map();
+
+  tickets.forEach((t) => {
+    if (t.createdById && t.createdByName && !seen.has(t.createdById)) {
+      seen.set(t.createdById, t.createdByName);
+    }
+    // Also include assignees
+    if (t.assigneeIds && t.assigneeNames) {
+      t.assigneeIds.forEach((id, idx) => {
+        if (!seen.has(id) && t.assigneeNames[idx]) {
+          seen.set(id, t.assigneeNames[idx]);
+        }
+      });
+    }
+  });
+
+  select.find("option:not(:first)").remove();
+  seen.forEach((name, id) => {
+    select.append(`<option value="${id}">${name}</option>`);
+  });
+}
+
+/**
+ * Filter subordinate tickets based on search text, status, and employee dropdowns.
+ */
+function filterSubordinateTickets() {
+  const searchTerm = ($("#subTicketSearch").val() || "").toLowerCase().trim();
+  const statusFilter = $("#subTicketStatusFilter").val();
+  const employeeFilter = $("#subTicketEmployeeFilter").val();
+
+  filteredSubordinateTickets = subordinateTickets.filter((ticket) => {
+    // Search filter: matches title, description, or employee name
+    if (searchTerm) {
+      const matchesSearch =
+        (ticket.title || "").toLowerCase().includes(searchTerm) ||
+        (ticket.description || "").toLowerCase().includes(searchTerm) ||
+        (ticket.createdByName || "").toLowerCase().includes(searchTerm) ||
+        (ticket.assigneeNames || []).some(n => (n || "").toLowerCase().includes(searchTerm));
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter && ticket.status !== statusFilter) return false;
+
+    // Employee filter: match against createdBy or any assignee
+    if (employeeFilter) {
+      const empId = parseInt(employeeFilter);
+      const isCreator = ticket.createdById === empId;
+      const isAssignee = (ticket.assigneeIds || []).includes(empId);
+      if (!isCreator && !isAssignee) return false;
+    }
+
+    return true;
+  });
+
+  renderSubordinateTickets(filteredSubordinateTickets);
+}
+
+/**
+ * Render the subordinate tickets table.
+ */
+function renderSubordinateTickets(tickets) {
+  const tbody = $("#subordinateTicketsTable tbody");
+
+  if (!tickets || !tickets.length) {
+    tbody.html(`
+      <tr>
+        <td colspan="7" class="text-center text-muted py-5">
+          <i class="fas fa-ticket-alt fa-3x mb-3 opacity-50"></i>
+          <p class="mb-0">No subordinate tickets found</p>
+        </td>
+      </tr>
+    `);
+    return;
+  }
+
+  const html = tickets
+    .map((t) => {
+      // Employee who created the ticket
+      const employeeName = t.createdByName || "Unknown";
+
+      // Assignees list
+      const assigneesHtml = (t.assigneeNames && t.assigneeNames.length)
+        ? t.assigneeNames.map(n => `<span class="badge bg-light text-dark me-1">${escapeHtml(n)}</span>`).join("")
+        : '<span class="text-muted">Unassigned</span>';
+
+      return `
+        <tr>
+          <td>
+            <div class="fw-semibold">${escapeHtml(t.title)}</div>
+            ${t.description ? `<small class="text-muted text-truncate d-block" style="max-width:300px;">${escapeHtml(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</small>` : ''}
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-user-circle text-muted me-2"></i>
+              <span>${escapeHtml(employeeName)}</span>
+            </div>
+          </td>
+          <td>${getStatusBadge(t.status)}</td>
+          <td>${assigneesHtml}</td>
+          <td>${formatDate(t.startDate)}</td>
+          <td>${formatDate(t.endDate)}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-info" onclick="viewSubordinateTicketDetail(${t.id})"
+                    title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  tbody.html(html);
+}
+
+/**
+ * View a subordinate ticket's full details in a modal.
+ */
+async function viewSubordinateTicketDetail(ticketId) {
+  const modal = new bootstrap.Modal(document.getElementById("subTicketDetailModal"));
+  const body = $("#subTicketDetailBody");
+
+  // Show spinner
+  body.html(`
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+  `);
+  modal.show();
+
+  try {
+    const res = await ticketAPI.getById(ticketId);
+    const ticket = res?.data?.data || res?.data || res;
+
+    // Set modal title & link
+    $("#subTicketDetailTitle").text(ticket.title || "Ticket Details");
+    $("#subTicketDetailLink").attr("href", `${window.APP.CONTEXT_PATH}/work/tickets/${ticketId}`);
+
+    // Build detail HTML
+    const detailHtml = buildSubTicketDetailHtml(ticket);
+    body.html(detailHtml);
+
+    // Load attachments into the detail modal
+    try {
+      const attachRes = await ticketAPI.getAttachments(ticketId);
+      const attachments = attachRes?.data || attachRes || [];
+      renderSubTicketAttachments(attachments);
+    } catch {
+      $("#subTicketAttachmentsList").html('<p class="text-muted small">Could not load attachments.</p>');
+    }
+
+    // Load activity log
+    try {
+      const actRes = await ticketAPI.getActivities(ticketId);
+      const activities = actRes?.data || actRes || [];
+      renderSubTicketActivities(activities);
+    } catch {
+      $("#subTicketActivityLog").html('<p class="text-muted small">Could not load activity log.</p>');
+    }
+
+  } catch (error) {
+    console.error("Failed to load ticket details:", error);
+    body.html(`
+      <div class="text-center text-danger py-5">
+        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+        <p>Failed to load ticket details</p>
+      </div>
+    `);
+  }
+}
+
+/**
+ * Build the HTML for a subordinate ticket detail view inside the modal.
+ */
+function buildSubTicketDetailHtml(ticket) {
+  const assigneesHtml = (ticket.assigneeNames && ticket.assigneeNames.length)
+    ? ticket.assigneeNames.map(n => `<span class="badge bg-primary bg-opacity-25 text-primary me-1">${escapeHtml(n)}</span>`).join("")
+    : '<em class="text-muted">Unassigned</em>';
+
+  return `
+    <div class="row g-4">
+      <!-- Info Cards Row -->
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6 class="text-muted mb-2"><i class="fas fa-info-circle me-1"></i> Status</h6>
+          <div class="mb-2">${getStatusBadge(ticket.status)}</div>
+          <div class="small text-muted">
+            <span class="badge bg-secondary bg-opacity-25 text-secondary">Independent Ticket</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6 class="text-muted mb-2"><i class="fas fa-users me-1"></i> People</h6>
+          <div class="d-flex flex-column gap-1 small">
+            <div><strong>Created By:</strong> ${escapeHtml(ticket.createdByName || 'N/A')}</div>
+            <div><strong>Assignees:</strong> ${assigneesHtml}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-align-left me-1"></i> Description</h6>
+        <div class="border rounded p-3 bg-light" style="min-height: 60px;">
+          ${ticket.description ? escapeHtml(ticket.description) : '<em class="text-muted">No description provided</em>'}
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="col-md-4">
+        <div class="small">
+          <strong><i class="fas fa-calendar-plus me-1"></i> Start Date:</strong><br>
+          ${ticket.startDate ? formatDate(ticket.startDate) : '<span class="text-muted">—</span>'}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small">
+          <strong><i class="fas fa-calendar-check me-1"></i> End Date:</strong><br>
+          ${ticket.endDate ? formatDate(ticket.endDate) : '<span class="text-muted">—</span>'}
+        </div>
+      </div>
+      ${ticket.actualCompletionDate ? `
+        <div class="col-md-4">
+          <div class="small">
+            <strong><i class="fas fa-flag-checkered me-1"></i> Completed:</strong><br>
+            ${formatDate(ticket.actualCompletionDate)}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Attachments section -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-paperclip me-1"></i> Attachments</h6>
+        <div id="subTicketAttachmentsList">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-history me-1"></i> Activity Log</h6>
+        <div id="subTicketActivityLog" style="max-height: 200px; overflow-y: auto;">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render attachments inside the subordinate ticket detail modal.
+ */
+function renderSubTicketAttachments(attachments) {
+  const container = $("#subTicketAttachmentsList");
+
+  if (!attachments || !attachments.length) {
+    container.html('<p class="text-muted small mb-0">No attachments.</p>');
+    return;
+  }
+
+  const html = attachments
+    .map(
+      (a) => `
+      <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+        <i class="fas fa-file text-muted"></i>
+        <div class="flex-grow-1 small">
+          <a href="${window.APP.CONTEXT_PATH}${a.fileUrl}" target="_blank" class="text-decoration-none">
+            ${escapeHtml(a.fileName)}
+          </a>
+          ${a.description ? `<div class="text-muted">${escapeHtml(a.description)}</div>` : ''}
+        </div>
+        ${a.fileSizeKB ? `<span class="text-muted small">${Math.round(a.fileSizeKB)} KB</span>` : ''}
+      </div>
+    `,
+    )
+    .join("");
+
+  container.html(html);
+}
+
+/**
+ * Render activity log inside the subordinate ticket detail modal.
+ */
+function renderSubTicketActivities(activities) {
+  const container = $("#subTicketActivityLog");
+
+  if (!activities || !activities.length) {
+    container.html('<p class="text-muted small mb-0">No activity yet.</p>');
+    return;
+  }
+
+  const icons = {
+    TICKET_CREATED: "plus-circle",
+    TICKET_UPDATED: "edit",
+    STATUS_CHANGED: "exchange-alt",
+    ASSIGNEES_UPDATED: "user-plus",
+    ATTACHMENT_UPLOADED: "paperclip",
+    ATTACHMENT_REMOVED: "times-circle",
+    COMMENT: "comment",
+  };
+
+  const html = activities
+    .map(
+      (a) => `
+      <div class="d-flex gap-2 mb-2 small">
+        <div class="flex-shrink-0">
+          <i class="fas fa-${icons[a.activityType] || 'circle'} text-primary mt-1"></i>
+        </div>
+        <div class="flex-grow-1">
+          <strong>${escapeHtml(a.employeeName || 'System')}</strong>
+          <span class="text-muted ms-1">${escapeHtml(a.activityType || '').replace(/_/g, ' ')}</span>
+          ${a.description ? `<div class="text-muted">${escapeHtml(a.description)}</div>` : ''}
+          <div class="text-muted" style="font-size: 0.75rem;">${formatDateTime(a.createdAt)}</div>
+        </div>
+      </div>
+    `,
+    )
+    .join("");
+
+  container.html(html);
+}
+
+/**
+ * Utility: escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
 }

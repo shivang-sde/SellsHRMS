@@ -3,11 +3,16 @@ let editingTaskId = null;
 let removedAttachmentIds = [];
 let existingAttachments = [];
 
+// Subordinate tasks state
+let subordinateTasks = [];
+let filteredSubordinateTasks = [];
+
 // --------------------------------------------
 // INITIALIZE
 // --------------------------------------------
 $(document).ready(function () {
   loadSelfTasks();
+  loadSubordinateTasks();
 
   // Toggle Reminder field dynamically
   $("#taskStatusSelect").on("change", function () {
@@ -337,4 +342,389 @@ function addAttachmentRow() {
       </button>
     </div>
   `);
+}
+
+
+// ============================================================
+// SUBORDINATE TASKS SECTION
+// ============================================================
+
+/**
+ * Load tasks from all subordinates of the current employee.
+ * If there are no subordinates, the section stays hidden.
+ */
+async function loadSubordinateTasks() {
+  try {
+    const res = await taskAPI.getSubordinateTasks(window.APP.EMPLOYEE_ID);
+    const data = res?.data || res;
+    subordinateTasks = Array.isArray(data) ? data : [];
+
+    if (subordinateTasks.length > 0) {
+      $("#subordinateTasksSection").show();
+      populateEmployeeFilter(subordinateTasks);
+      filteredSubordinateTasks = [...subordinateTasks];
+      renderSubordinateTasks(filteredSubordinateTasks);
+    } else {
+      // Check if the API returned empty because there are truly no subordinates
+      // vs there are subordinates but no tasks — still show the section header
+      try {
+        const subCheck = await employeeAPI.getSubordinates(window.APP.EMPLOYEE_ID);
+        const subs = subCheck?.data || subCheck;
+        if (Array.isArray(subs) && subs.length > 0) {
+          // Has subordinates but no tasks yet
+          $("#subordinateTasksSection").show();
+          renderSubordinateTasks([]);
+        }
+      } catch {
+        // No subordinates — hide the section
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load subordinate tasks", error);
+  }
+}
+
+/**
+ * Populate the employee dropdown filter with unique employee names from the task list.
+ */
+function populateEmployeeFilter(tasks) {
+  const select = $("#subTaskEmployeeFilter");
+  const seen = new Map();
+
+  tasks.forEach((t) => {
+    // Collect unique employees who are createdBy, assignee, or reporter
+    if (t.createdById && t.createdByName && !seen.has(t.createdById)) {
+      seen.set(t.createdById, t.createdByName);
+    }
+    if (t.assigneeId && t.assigneeName && !seen.has(t.assigneeId)) {
+      seen.set(t.assigneeId, t.assigneeName);
+    }
+  });
+
+  // Keep existing "All Employees" option, add the rest
+  select.find("option:not(:first)").remove();
+  seen.forEach((name, id) => {
+    select.append(`<option value="${id}">${name}</option>`);
+  });
+}
+
+/**
+ * Filter subordinate tasks based on search text, status, and employee dropdowns.
+ */
+function filterSubordinateTasks() {
+  const searchTerm = ($("#subTaskSearch").val() || "").toLowerCase().trim();
+  const statusFilter = $("#subTaskStatusFilter").val();
+  const employeeFilter = $("#subTaskEmployeeFilter").val();
+
+  filteredSubordinateTasks = subordinateTasks.filter((task) => {
+    // Search filter: matches title, description, or employee name
+    if (searchTerm) {
+      const matchesSearch =
+        (task.title || "").toLowerCase().includes(searchTerm) ||
+        (task.description || "").toLowerCase().includes(searchTerm) ||
+        (task.createdByName || "").toLowerCase().includes(searchTerm) ||
+        (task.assigneeName || "").toLowerCase().includes(searchTerm) ||
+        (task.reporterName || "").toLowerCase().includes(searchTerm);
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter && task.status !== statusFilter) return false;
+
+    // Employee filter: match against createdBy, assignee, or reporter
+    if (employeeFilter) {
+      const empId = parseInt(employeeFilter);
+      if (task.createdById !== empId && task.assigneeId !== empId && task.reporterId !== empId) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  renderSubordinateTasks(filteredSubordinateTasks);
+}
+
+/**
+ * Render the subordinate tasks table.
+ */
+function renderSubordinateTasks(tasks) {
+  const tbody = $("#subordinateTasksTable tbody");
+
+  if (!tasks || !tasks.length) {
+    tbody.html(`
+      <tr>
+        <td colspan="7" class="text-center text-muted py-5">
+          <i class="fas fa-clipboard-list fa-3x mb-3 opacity-50"></i>
+          <p class="mb-0">No subordinate tasks found</p>
+        </td>
+      </tr>
+    `);
+    return;
+  }
+
+  const html = tasks
+    .map((task) => {
+      // Determine the employee name to show (who the task belongs to)
+      const employeeName = task.createdByName || task.assigneeName || task.reporterName || "Unknown";
+
+      // Task type indicator
+      const typeLabel = task.isSelfTask
+        ? '<span class="badge bg-secondary bg-opacity-25 text-secondary">Self Task</span>'
+        : task.projectName
+          ? `<span class="badge bg-primary bg-opacity-25 text-primary">${escapeHtml(task.projectName)}</span>`
+          : '<span class="badge bg-info bg-opacity-25 text-info">General</span>';
+
+      return `
+        <tr>
+          <td>
+            <div class="fw-semibold">${escapeHtml(task.title)}</div>
+            ${task.description ? `<small class="text-muted text-truncate d-block" style="max-width:300px;">${escapeHtml(task.description.substring(0, 80))}${task.description.length > 80 ? '...' : ''}</small>` : ''}
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-user-circle text-muted me-2"></i>
+              <span>${escapeHtml(employeeName)}</span>
+            </div>
+          </td>
+          <td>${getStatusBadge(task.status)}</td>
+          <td>${typeLabel}</td>
+          <td>${task.reminderAt ? formatDateTime(task.reminderAt) : '<span class="text-muted">-</span>'}</td>
+          <td>${formatDate(task.createdAt)}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-info" onclick="viewSubordinateTaskDetail(${task.id})"
+                    title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  tbody.html(html);
+}
+
+/**
+ * View a subordinate task's full details in a modal.
+ */
+async function viewSubordinateTaskDetail(taskId) {
+  const modal = new bootstrap.Modal(document.getElementById("subTaskDetailModal"));
+  const body = $("#subTaskDetailBody");
+
+  // Show spinner
+  body.html(`
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+  `);
+  modal.show();
+
+  try {
+    const res = await taskAPI.getById(taskId);
+    const task = res?.data?.data || res?.data || res;
+
+    // Set modal title & link
+    $("#subTaskDetailTitle").text(task.title || "Task Details");
+    $("#subTaskDetailLink").attr("href", `${window.APP.CONTEXT_PATH}/work/tasks/${taskId}`);
+
+    // Build detail HTML
+    const detailHtml = buildSubTaskDetailHtml(task);
+    body.html(detailHtml);
+
+    // Load attachments into the detail modal
+    try {
+      const attachRes = await taskAPI.getAttachments(taskId);
+      const attachments = attachRes?.data || attachRes || [];
+      renderSubTaskAttachments(attachments);
+    } catch {
+      $("#subTaskAttachmentsList").html('<p class="text-muted small">Could not load attachments.</p>');
+    }
+
+    // Load activity log
+    try {
+      const actRes = await taskAPI.getActivities(taskId);
+      const activities = actRes?.data || actRes || [];
+      renderSubTaskActivities(activities);
+    } catch {
+      $("#subTaskActivityLog").html('<p class="text-muted small">Could not load activity log.</p>');
+    }
+
+  } catch (error) {
+    console.error("Failed to load task details:", error);
+    body.html(`
+      <div class="text-center text-danger py-5">
+        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+        <p>Failed to load task details</p>
+      </div>
+    `);
+  }
+}
+
+/**
+ * Build the HTML for a subordinate task detail view inside the modal.
+ */
+function buildSubTaskDetailHtml(task) {
+  return `
+    <div class="row g-4">
+      <!-- Info Cards Row -->
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6 class="text-muted mb-2"><i class="fas fa-info-circle me-1"></i> Status & Type</h6>
+          <div class="mb-2">${getStatusBadge(task.status)}</div>
+          <div class="small text-muted">
+            ${task.isSelfTask ? '<span class="badge bg-secondary">Self Task</span>' : ''}
+            ${task.projectName ? `<span class="badge bg-primary">${escapeHtml(task.projectName)}</span>` : ''}
+            ${task.ticketTitle ? `<span class="badge bg-warning text-dark">Ticket: ${escapeHtml(task.ticketTitle)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <h6 class="text-muted mb-2"><i class="fas fa-users me-1"></i> People</h6>
+          <div class="d-flex flex-column gap-1 small">
+            <div><strong>Created By:</strong> ${escapeHtml(task.createdByName || 'N/A')}</div>
+            <div><strong>Reporter:</strong> ${escapeHtml(task.reporterName || 'N/A')}</div>
+            <div><strong>Assignee:</strong> ${escapeHtml(task.assigneeName || 'Unassigned')}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-align-left me-1"></i> Description</h6>
+        <div class="border rounded p-3 bg-light" style="min-height: 60px;">
+          ${task.description ? escapeHtml(task.description) : '<em class="text-muted">No description provided</em>'}
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="col-md-4">
+        <div class="small">
+          <strong><i class="fas fa-calendar-plus me-1"></i> Created:</strong><br>
+          ${formatDateTime(task.createdAt)}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small">
+          <strong><i class="fas fa-calendar-check me-1"></i> Updated:</strong><br>
+          ${task.updatedAt ? formatDateTime(task.updatedAt) : '<span class="text-muted">—</span>'}
+        </div>
+      </div>
+      ${task.reminderAt ? `
+        <div class="col-md-4">
+          <div class="small">
+            <strong><i class="fas fa-bell me-1"></i> Reminder:</strong><br>
+            ${formatDateTime(task.reminderAt)}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Attachments section -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-paperclip me-1"></i> Attachments</h6>
+        <div id="subTaskAttachmentsList">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="col-12">
+        <h6 class="text-muted mb-2"><i class="fas fa-history me-1"></i> Activity Log</h6>
+        <div id="subTaskActivityLog" style="max-height: 200px; overflow-y: auto;">
+          <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render attachments inside the subordinate task detail modal.
+ */
+function renderSubTaskAttachments(attachments) {
+  const container = $("#subTaskAttachmentsList");
+
+  if (!attachments || !attachments.length) {
+    container.html('<p class="text-muted small mb-0">No attachments.</p>');
+    return;
+  }
+
+  const html = attachments
+    .map(
+      (a) => `
+      <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+        <i class="fas fa-file text-muted"></i>
+        <div class="flex-grow-1 small">
+          <a href="${window.APP.CONTEXT_PATH}${a.fileUrl}" target="_blank" class="text-decoration-none">
+            ${escapeHtml(a.fileName)}
+          </a>
+          ${a.description ? `<div class="text-muted">${escapeHtml(a.description)}</div>` : ''}
+        </div>
+        ${a.fileSizeKB ? `<span class="text-muted small">${Math.round(a.fileSizeKB)} KB</span>` : ''}
+      </div>
+    `,
+    )
+    .join("");
+
+  container.html(html);
+}
+
+/**
+ * Render activity log inside the subordinate task detail modal.
+ */
+function renderSubTaskActivities(activities) {
+  const container = $("#subTaskActivityLog");
+
+  if (!activities || !activities.length) {
+    container.html('<p class="text-muted small mb-0">No activity yet.</p>');
+    return;
+  }
+
+  const icons = {
+    TASK_CREATED: "plus-circle",
+    TASK_UPDATED: "edit",
+    STATUS_CHANGED: "exchange-alt",
+    ATTACHMENT_UPLOADED: "paperclip",
+    ATTACHMENT_REMOVED: "times-circle",
+    REMINDER_SET: "bell",
+    REMINDER_TOGGLE: "bell-slash",
+    COMMENT: "comment",
+  };
+
+  const html = activities
+    .map(
+      (a) => `
+      <div class="d-flex gap-2 mb-2 small">
+        <div class="flex-shrink-0">
+          <i class="fas fa-${icons[a.activityType] || 'circle'} text-primary mt-1"></i>
+        </div>
+        <div class="flex-grow-1">
+          <strong>${escapeHtml(a.employeeName || 'System')}</strong>
+          <span class="text-muted ms-1">${escapeHtml(a.activityType || '').replace(/_/g, ' ')}</span>
+          ${a.oldValue && a.newValue ? `<span class="text-muted">: ${escapeHtml(a.oldValue)} → ${escapeHtml(a.newValue)}</span>` : ''}
+          ${!a.oldValue && a.newValue ? `<span class="text-muted">: ${escapeHtml(a.newValue)}</span>` : ''}
+          <div class="text-muted" style="font-size: 0.75rem;">${formatDateTime(a.createdAt)}</div>
+        </div>
+      </div>
+    `,
+    )
+    .join("");
+
+  container.html(html);
+}
+
+/**
+ * Utility: escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
 }

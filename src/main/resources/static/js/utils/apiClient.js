@@ -221,6 +221,11 @@ const taskAPI = {
       `/tasks/self?organisationId=${organisationId}&employeeId=${empId}`,
     );
   },
+  getSubordinateTasks(managerId) {
+    return apiClient.get(
+      `/tasks/subordinates?organisationId=${organisationId}&managerId=${managerId}`,
+    );
+  },
 
   create(task) {
     return apiClient.post(
@@ -312,6 +317,11 @@ const ticketAPI = {
   getIndependent() {
     return apiClient.get(
       `/tickets/independent?organisationId=${organisationId}&employeeId=${employeeId}`,
+    );
+  },
+  getSubordinateTickets(managerId) {
+    return apiClient.get(
+      `/tickets/subordinates?organisationId=${organisationId}&managerId=${managerId}`,
     );
   },
   search(keyword) {

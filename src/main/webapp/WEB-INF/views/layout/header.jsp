@@ -14,8 +14,7 @@
               <c:choose>
                 <c:when test="${not empty sessionScope.LOGO_URL}">
                   <div class="brand-logo-wrap" title="Company Logo">
-                    <img src="${sessionScope.LOGO_URL}" alt="Company Logo"
-                      onerror="this.src='${pageContext.request.contextPath}/img/logo-placeholder.png'">
+                    <img src="${sessionScope.LOGO_URL}" alt="Company Logo">
                   </div>
 
                 </c:when>

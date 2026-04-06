@@ -307,6 +307,19 @@ public class TicketServiceImpl implements TicketService {
         }
 
         @Override
+        @Transactional(readOnly = true)
+        public List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId) {
+                java.util.Set<Long> subordinateIds = hierarchyUtil.getAllSubordinateIds(managerId);
+                if (subordinateIds.isEmpty()) {
+                        return java.util.Collections.emptyList();
+                }
+                List<Ticket> tickets = ticketRepo.findIndependentTicketsByEmployeeIds(organisationId, subordinateIds);
+                return tickets.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
         public List<TicketDTO> searchTickets(Long organisationId, String keyword) {
                 return ticketRepo.searchByOrganisationAndKeyword(organisationId, keyword).stream()
                                 .map(this::mapToDTO).collect(Collectors.toList());
