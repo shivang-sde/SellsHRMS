@@ -7,10 +7,13 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 @Entity
 @Table(name = "tbl_tasks")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Task {
 
     @Id
@@ -26,7 +29,7 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-     // ✅ For personal/reminder tasks only
+    // ✅ For personal/reminder tasks only
     private LocalDateTime reminderAt;
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +45,6 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project; // nullable → supports independent tasks
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
     private Employee assignee;
@@ -55,7 +57,6 @@ public class Task {
     @JoinColumn(name = "organisation_id", nullable = false)
     private Organisation organisation;
 
-
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
     @Builder.Default
     private List<TaskAttachment> attachments = new ArrayList<>();
@@ -67,7 +68,6 @@ public class Task {
     @Column(name = "reminder_enabled")
     private Boolean reminderEnabled;
 
-
     @Builder.Default
     private Boolean isActive = true;
 
@@ -75,25 +75,29 @@ public class Task {
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
     private Employee createdBy;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        if (isActive == null) isActive = true;
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    public enum TaskPriority { LOW, MEDIUM, HIGH, URGENT }
-    public enum TaskStatus { BACKLOG, TO_DO, IN_PROGRESS, REVIEW, DONE, REMINDER }
-   
+
+    public enum TaskPriority {
+        LOW, MEDIUM, HIGH, URGENT
+    }
+
+    public enum TaskStatus {
+        BACKLOG, TO_DO, IN_PROGRESS, REVIEW, DONE, REMINDER
+    }
+
 }
-
-
- 

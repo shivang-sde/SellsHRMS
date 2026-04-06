@@ -140,8 +140,8 @@ async function saveTicketWorkUpdate() {
     priority: "MEDIUM",
     reporterId: ticketData.createdById, // ticket creator (manager/team lead)
     createdById: window.APP.EMPLOYEE_ID, // current logged-in employee
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: getLocalDateTime(),
+    updatedAt: getLocalDateTime(),
   };
 
   // 2️⃣ Prepare multipart form
@@ -401,4 +401,26 @@ async function loadTicketActivity(ticketId) {
       '<li class="list-group-item text-danger text-center">Failed to load activities</li>',
     );
   }
+}
+
+
+function formatDateTime(isoString) {
+  if (!isoString) return "-";
+  const date = new Date(isoString);
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+
+// local date time
+function getLocalDateTime() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now - offset).toISOString().slice(0, 19);
 }

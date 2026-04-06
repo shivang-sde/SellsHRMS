@@ -20,11 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -118,7 +116,7 @@ public class TaskServiceImpl implements TaskService {
                                 .reminderEnabled(dto.getReminderEnabled())
                                 .reminderAt(dto.getReminderAt())
                                 .isActive(true)
-                                .createdAt(dto.getCreatedAt().atZone(zoneId).toLocalDateTime())
+                                .createdAt(dto.getCreatedAt())
                                 .build();
 
                 taskRepository.save(task);
@@ -151,8 +149,6 @@ public class TaskServiceImpl implements TaskService {
 
                 Task task = taskRepository.findById(taskId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-                ZoneId zoneId = ZoneId.of(task.getOrganisation().getTimeZone());
 
                 // 🔒 Optional: Validate access for project tasks
                 if (task.getProject() != null) {
@@ -197,7 +193,7 @@ public class TaskServiceImpl implements TaskService {
                 }
 
                 if (updated && dto.getUpdatedAt() != null) {
-                        task.setUpdatedAt(dto.getUpdatedAt().atZone(zoneId).toLocalDateTime());
+                        task.setUpdatedAt(dto.getUpdatedAt());
                         taskRepository.save(task);
                 }
 
