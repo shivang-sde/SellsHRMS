@@ -313,7 +313,7 @@ $(document).ready(function () {
   function handleApplyLeave(e) {
     e.preventDefault();
 
-    if (checkPermission('LEAVE_APPLY')) {
+    if (!window.APP.hasPermission('LEAVE_APPLY')) {
       showToast('error', 'You do not have permission to apply for leave');
       return;
     }

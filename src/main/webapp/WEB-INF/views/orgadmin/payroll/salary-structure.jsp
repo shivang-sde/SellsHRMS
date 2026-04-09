@@ -112,8 +112,8 @@
                                     <label class="form-label">Payroll Frequency</label>
                                     <select class="form-select" id="structureFrequency">
                                         <option value="MONTHLY">Monthly</option>
-                                        <option value="BIWEEKLY">Bi-Weekly</option>
-                                        <option value="WEEKLY">Weekly</option>
+                                        <!-- <option value="BIWEEKLY">Bi-Weekly</option>
+                                        <option value="WEEKLY">Weekly</option> -->
                                     </select>
                                 </div>
 
