@@ -224,9 +224,9 @@ public class LeaveServiceImpl implements LeaveService {
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
                     .getPrincipal();
-            if ("ORG_ADMIN".equals(principal.getSystemRole()) || "SUPER_ADMIN".equals(principal.getSystemRole())) {
+            if ("SUPER_ADMIN".equals(principal.getSystemRole())) {
                 throw new InvalidOperationException(
-                        "ORG_ADMIN cannot approve or reject leaves. It requires an employee account.");
+                        "SUPER_ADMIN cannot approve or reject leaves. It requires an employee account.");
             }
         }
         log.info("Approving leave for leaveId: {}, approverId: {}, remarks: {}, orgId: {}", leaveId, approverId,
@@ -265,9 +265,9 @@ public class LeaveServiceImpl implements LeaveService {
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             com.sellspark.SellsHRMS.config.UserPrincipal principal = (com.sellspark.SellsHRMS.config.UserPrincipal) auth
                     .getPrincipal();
-            if ("ORG_ADMIN".equals(principal.getSystemRole()) || "SUPER_ADMIN".equals(principal.getSystemRole())) {
+            if ("SUPER_ADMIN".equals(principal.getSystemRole())) {
                 throw new InvalidOperationException(
-                        "ORG_ADMIN cannot approve or reject leaves. It requires an employee account.");
+                        "SUPER_ADMIN cannot approve or reject leaves. It requires an employee account.");
             }
         }
         Leave leave = leaveRepository.findById(leaveId)
