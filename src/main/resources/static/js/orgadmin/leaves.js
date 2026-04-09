@@ -3,9 +3,10 @@ $(document).ready(function () {
 
   const orgId = window.APP?.ORG_ID || $('#globalOrgId').val();
   const empId = window.APP?.EMPLOYEE_ID || $('#globalEmpId').val();
+  const userId = window.APP?.USER_ID || $('#globalUserId').val();
 
-  console.log("Organisation ID:", orgId);
-  console.log("Employee ID:", empId);
+  // console.log("Organisation ID:", orgId);
+  // console.log("Employee ID:", empId);
 
   let allLeaves = [];
   let pendingLeaves = [];
@@ -344,10 +345,10 @@ $(document).ready(function () {
   window.openApproveModal = function (leaveId) {
 
 
-    if (!empId) {
-      showToast('error', 'approver needs employee ID to approve leave, contact admin or support');
-      return;
-    }
+    // if (!empId) {
+    //   showToast('error', 'approver needs employee ID to approve leave, contact admin or support');
+    //   return;
+    // }
     const leave = pendingLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
@@ -375,7 +376,7 @@ $(document).ready(function () {
       url: `/api/leaves/${leaveId}/approve`,
       method: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ remarks: remarks, approverId: empId, orgId: orgId }),
+      data: JSON.stringify({ remarks: remarks, approverId: userId, orgId: orgId }),
       success: function (response) {
         if (response.success) {
           showToast('success', response.message);
@@ -399,10 +400,10 @@ $(document).ready(function () {
   // Reject leave
   window.openRejectModal = function (leaveId) {
 
-    if (!empId) {
-      showToast('error', 'approver needs employee ID to reject leave, contact admin or support');
-      return;
-    }
+    // if (!empId) {
+    //   showToast('error', 'approver needs employee ID to reject leave, contact admin or support');
+    //   return;
+    // }
     const leave = pendingLeaves.find(l => l.id === leaveId);
     if (!leave) return;
 
@@ -436,7 +437,7 @@ $(document).ready(function () {
       url: `/api/leaves/${leaveId}/reject`,
       method: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ remarks: remarks, approverId: empId, orgId: orgId }),
+      data: JSON.stringify({ remarks: remarks, approverId: userId, orgId: orgId }),
       success: function (response) {
         if (response.success) {
           showToast('success', response.message);

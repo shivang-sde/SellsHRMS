@@ -34,6 +34,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveTypeRepository leaveTypeRepository;
     private final HolidayRepository holidayRepository;
     private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
     private final OrganisationRepository organisationRepository;
     private final OrganisationPolicyRepository organisationPolicyRepository;
     private final EmployeeLeaveBalanceRepository balanceRepository;
@@ -235,7 +236,7 @@ public class LeaveServiceImpl implements LeaveService {
         if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
             throw new InvalidOperationException("Only pending leaves can be approved.");
 
-        Employee approver = employeeRepository.findById(approverId)
+        User approver = userRepository.findById(approverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
 
         leave.setLeaveStatus(Leave.LeaveStatus.APPROVE);
@@ -274,8 +275,8 @@ public class LeaveServiceImpl implements LeaveService {
         if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
             throw new InvalidOperationException("Only pending leaves can be rejected.");
 
-        Employee approver = employeeRepository.findById(approverId)
-                .orElseThrow(() -> new EmployeeNotFoundException(approverId));
+        User approver = userRepository.findById(approverId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", approverId));
 
         leave.setLeaveStatus(Leave.LeaveStatus.REJECTED);
         leave.setApprovedBy(approver);
@@ -761,6 +762,16 @@ public class LeaveServiceImpl implements LeaveService {
 
     private LeaveResponseDTO toResponseDTO(Leave leave) {
 
+        String approverName = Optional.ofNullable(leave.getApprovedBy())
+                .map(approvedby -> approvedby.getEmployee())
+                .map(emp -> emp.getFirstName() + " " + emp.getLastName())
+                .orElseGet(() -> {
+                    if (leave.getApprovedBy() != null) {
+                        return leave.getApprovedBy().getSystemRole().toString();
+                    }
+                    return leave.getApprovedBy().getEmail();
+                });
+
         return LeaveResponseDTO.builder()
                 .id(leave.getId())
                 .employeeId(leave.getEmployee().getId())
@@ -778,9 +789,7 @@ public class LeaveServiceImpl implements LeaveService {
                 .appliedOn(leave.getAppliedOn())
                 .approvedOn(leave.getApprovedOn() != null ? leave.getApprovedOn() : null)
                 .approverById(leave.getApprovedBy() != null ? leave.getApprovedBy().getId() : null)
-                .approverName(leave.getApprovedBy() != null
-                        ? leave.getApprovedBy().getFirstName() + " " + leave.getApprovedBy().getLastName()
-                        : null)
+                .approverName(approverName)
                 .approverRemarks(leave.getApproverRemarks())
                 .leaveYear(leave.getLeaveYear())
                 .build();

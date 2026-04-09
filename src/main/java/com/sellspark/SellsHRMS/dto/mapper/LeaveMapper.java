@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.Year;
+import java.util.Optional;
 
 @Component
 public class LeaveMapper {
@@ -15,7 +16,8 @@ public class LeaveMapper {
      * Convert LeaveRequestDTO → Leave Entity
      */
     public Leave toEntity(LeaveRequestDTO dto, Employee employee, LeaveType leaveType, Organisation organisation) {
-        if (dto == null) return null;
+        if (dto == null)
+            return null;
 
         Leave.DayBreakdown startBreakdown = parseDayBreakdown(dto.getStartDayBreakdown(), dto.getIsHalfDay());
         Leave.DayBreakdown endBreakdown = parseDayBreakdown(dto.getEndDayBreakdown(), dto.getIsHalfDay());
@@ -41,7 +43,18 @@ public class LeaveMapper {
      * Convert Leave → LeaveResponseDTO
      */
     public LeaveResponseDTO toDTO(Leave leave) {
-        if (leave == null) return null;
+        if (leave == null)
+            return null;
+
+        String approverName = Optional.ofNullable(leave.getApprovedBy())
+                .map(approvedby -> approvedby.getEmployee())
+                .map(emp -> emp.getFirstName() + " " + emp.getLastName())
+                .orElseGet(() -> {
+                    if (leave.getApprovedBy() != null) {
+                        return leave.getApprovedBy().getSystemRole().toString();
+                    }
+                    return leave.getApprovedBy().getEmail();
+                });
 
         return LeaveResponseDTO.builder()
                 .id(leave.getId())
@@ -59,9 +72,7 @@ public class LeaveMapper {
                 .leaveDays(leave.getLeaveDays())
                 .leaveYear(leave.getLeaveYear())
                 .status(leave.getLeaveStatus() != null ? leave.getLeaveStatus().name() : null)
-                .approverName(leave.getApprovedBy() != null
-                        ? leave.getApprovedBy().getFirstName() + " " + leave.getApprovedBy().getLastName()
-                        : null)
+                .approverName(approverName)
                 .approverById(leave.getApprovedBy() != null ? leave.getApprovedBy().getId() : null)
                 .approverRemarks(leave.getApproverRemarks())
                 .appliedOn(leave.getAppliedOn())
@@ -73,11 +84,15 @@ public class LeaveMapper {
      * Update an existing Leave entity from a DTO
      */
     public void updateEntity(Leave leave, LeaveRequestDTO dto) {
-        if (leave == null || dto == null) return;
+        if (leave == null || dto == null)
+            return;
 
-        if (dto.getStartDate() != null) leave.setStartDate(dto.getStartDate());
-        if (dto.getEndDate() != null) leave.setEndDate(dto.getEndDate());
-        if (dto.getReason() != null) leave.setReason(dto.getReason());
+        if (dto.getStartDate() != null)
+            leave.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null)
+            leave.setEndDate(dto.getEndDate());
+        if (dto.getReason() != null)
+            leave.setReason(dto.getReason());
 
         if (dto.getStartDayBreakdown() != null)
             leave.setStartDayBreakdown(parseDayBreakdown(dto.getStartDayBreakdown(), dto.getIsHalfDay()));
@@ -93,11 +108,14 @@ public class LeaveMapper {
 
     private Leave.DayBreakdown parseDayBreakdown(String breakdown, Boolean isHalfDay) {
         if (isHalfDay != null && isHalfDay) {
-            if ("FIRST_HALF".equalsIgnoreCase(breakdown)) return Leave.DayBreakdown.FIRST_HALF;
-            if ("SECOND_HALF".equalsIgnoreCase(breakdown)) return Leave.DayBreakdown.SECOND_HALF;
+            if ("FIRST_HALF".equalsIgnoreCase(breakdown))
+                return Leave.DayBreakdown.FIRST_HALF;
+            if ("SECOND_HALF".equalsIgnoreCase(breakdown))
+                return Leave.DayBreakdown.SECOND_HALF;
             return Leave.DayBreakdown.FULL_DAY;
         }
-        if (breakdown == null) return Leave.DayBreakdown.FULL_DAY;
+        if (breakdown == null)
+            return Leave.DayBreakdown.FULL_DAY;
         try {
             return Leave.DayBreakdown.valueOf(breakdown.toUpperCase());
         } catch (IllegalArgumentException ex) {
@@ -106,7 +124,8 @@ public class LeaveMapper {
     }
 
     private Double calculateLeaveDays(LeaveRequestDTO dto) {
-        if (dto.getStartDate() == null || dto.getEndDate() == null) return 0.0;
+        if (dto.getStartDate() == null || dto.getEndDate() == null)
+            return 0.0;
 
         long totalDays = dto.getEndDate().toEpochDay() - dto.getStartDate().toEpochDay() + 1;
         boolean isHalfDay = dto.getIsHalfDay() != null && dto.getIsHalfDay();
@@ -120,6 +139,4 @@ public class LeaveMapper {
         return (double) totalDays;
     }
 
-
-    
 }

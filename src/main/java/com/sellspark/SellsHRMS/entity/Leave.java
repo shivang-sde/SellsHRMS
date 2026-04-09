@@ -60,7 +60,7 @@ public class Leave {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
-    private Employee approvedBy;
+    private User approvedBy;
 
     @Enumerated(EnumType.STRING)
     private LeaveStatus leaveStatus;
