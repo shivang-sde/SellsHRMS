@@ -763,13 +763,13 @@ public class LeaveServiceImpl implements LeaveService {
     private LeaveResponseDTO toResponseDTO(Leave leave) {
 
         String approverName = Optional.ofNullable(leave.getApprovedBy())
-                .map(approvedby -> approvedby.getEmployee())
+                .map(approvedby -> approvedby.getEmployee() != null ? approvedby.getEmployee() : null)
                 .map(emp -> emp.getFirstName() + " " + emp.getLastName())
                 .orElseGet(() -> {
                     if (leave.getApprovedBy() != null) {
                         return leave.getApprovedBy().getSystemRole().toString();
                     }
-                    return leave.getApprovedBy().getEmail();
+                    return "";
                 });
 
         return LeaveResponseDTO.builder()
@@ -789,7 +789,7 @@ public class LeaveServiceImpl implements LeaveService {
                 .appliedOn(leave.getAppliedOn())
                 .approvedOn(leave.getApprovedOn() != null ? leave.getApprovedOn() : null)
                 .approverById(leave.getApprovedBy() != null ? leave.getApprovedBy().getId() : null)
-                .approverName(approverName)
+                .approverName(leave.getApprovedBy() != null ? approverName : null)
                 .approverRemarks(leave.getApproverRemarks())
                 .leaveYear(leave.getLeaveYear())
                 .build();
