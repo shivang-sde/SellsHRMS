@@ -221,10 +221,11 @@ const taskAPI = {
       `/tasks/self?organisationId=${organisationId}&employeeId=${empId}`,
     );
   },
-  getSubordinateTasks(managerId) {
-    return apiClient.get(
-      `/tasks/subordinates?organisationId=${organisationId}&managerId=${managerId}`,
-    );
+  getSubordinateTasks(managerId, startDate = '', endDate = '') {
+    let url = `/tasks/subordinates?organisationId=${organisationId}&managerId=${managerId}`;
+    if (startDate) url += `&startDate=${startDate}`;
+    if (endDate) url += `&endDate=${endDate}`;
+    return apiClient.get(url);
   },
 
   create(task) {
@@ -319,10 +320,11 @@ const ticketAPI = {
       `/tickets/independent?organisationId=${organisationId}&employeeId=${employeeId}`,
     );
   },
-  getSubordinateTickets(managerId) {
-    return apiClient.get(
-      `/tickets/subordinates?organisationId=${organisationId}&managerId=${managerId}`,
-    );
+  getSubordinateTickets(managerId, startDate = '', endDate = '') {
+    let url = `/tickets/subordinates?organisationId=${organisationId}&managerId=${managerId}`;
+    if (startDate) url += `&startDate=${startDate}`;
+    if (endDate) url += `&endDate=${endDate}`;
+    return apiClient.get(url);
   },
   search(keyword) {
     return apiClient.get(

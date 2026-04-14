@@ -54,6 +54,9 @@
           </div>
           <!-- Filter controls -->
           <div class="d-flex gap-2 align-items-center">
+            <input type="date" class="form-control form-control-sm" id="subTaskDateFilter" style="width: 140px;" title="From date" onchange="loadSubordinateTasks()">
+            <span class="text-muted small align-self-center">to</span>
+            <input type="date" class="form-control form-control-sm" id="subTaskDateFilterEnd" style="width: 140px;" title="To date" onchange="loadSubordinateTasks()">
             <div class="input-group input-group-sm" style="width: 240px;">
               <span class="input-group-text"><i class="fas fa-search"></i></span>
               <input type="text" class="form-control" id="subTaskSearch" placeholder="Search tasks..."

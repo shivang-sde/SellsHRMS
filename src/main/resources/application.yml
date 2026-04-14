@@ -11,6 +11,13 @@ app:
       max-size: ${ASYNC_MAX_SIZE:10}
       queue-capacity: ${ASYNC_QUEUE_CAPACITY:50}
 
+# Sandbox API Configuration (https://developer.sandbox.co.in)
+sandbox:
+  api:
+    key: ${SANDBOX_API_KEY:}
+    secret: ${SANDBOX_API_SECRET:}
+    url: ${SANDBOX_API_URL:https://api.sandbox.co.in}
+
 spring:
   application:
     name: SellsHRMS

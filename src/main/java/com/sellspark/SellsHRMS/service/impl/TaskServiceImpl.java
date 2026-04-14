@@ -239,12 +239,27 @@ public class TaskServiceImpl implements TaskService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId) {
+        public List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId, String startDate, String endDate) {
                 Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
                 if (subordinateIds.isEmpty()) {
                         return Collections.emptyList();
                 }
-                List<Task> tasks = taskRepository.findTasksByEmployeeIds(organisationId, subordinateIds);
+
+                java.time.LocalDateTime start = java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+                java.time.LocalDateTime end = java.time.LocalDateTime.of(2100, 1, 1, 0, 0);
+
+                if (startDate != null && !startDate.trim().isEmpty()) {
+                    try {
+                        start = java.time.LocalDate.parse(startDate).atStartOfDay();
+                    } catch (Exception e) {}
+                }
+                if (endDate != null && !endDate.trim().isEmpty()) {
+                    try {
+                        end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
+                    } catch (Exception e) {}
+                }
+
+                List<Task> tasks = taskRepository.findTasksByEmployeeIds(organisationId, subordinateIds, start, end);
                 return tasks.stream()
                                 .map(this::mapToDTO)
                                 .collect(Collectors.toList());

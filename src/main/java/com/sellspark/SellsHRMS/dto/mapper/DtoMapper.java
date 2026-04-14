@@ -66,6 +66,18 @@ public class DtoMapper {
         dto.setTimeZone(org.getTimeZone());
         dto.setPrefix(org.getEmpPrefix());
         dto.setLogoUrl(org.getLogoUrl());
+        dto.setPan(org.getPan());
+        dto.setTan(org.getTan());
+        dto.setGst(org.getGst());
+        dto.setAadhar(org.getAadhar());
+        dto.setPanUrl(org.getPanUrl());
+        dto.setTanUrl(org.getTanUrl());
+        dto.setGstUrl(org.getGstUrl());
+        dto.setAadharUrl(org.getAadharUrl());
+        dto.setIsPanVerified(org.isPanVerified());
+        dto.setIsTanVerified(org.isTanVerified());
+        dto.setIsGstVerified(org.isGstVerified());
+        dto.setIsAadharVerified(org.isAadharVerified());
         dto.setIsActive(org.getIsActive());
         dto.setContactEmail(org.getContactEmail());
         dto.setContactPhone(org.getContactPhone());

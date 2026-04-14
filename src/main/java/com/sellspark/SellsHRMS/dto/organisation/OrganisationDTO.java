@@ -25,8 +25,20 @@ public class OrganisationDTO {
     private String address;
     private String country;
     private String logoUrl;
+    private String aadhar;
     private String pan;
     private String tan;
+    private String gst;
+
+    private String aadharUrl;
+    private String panUrl;
+    private String tanUrl;
+    private String gstUrl;
+
+    private boolean isPanVerified;
+    private boolean isTanVerified;
+    private boolean isGstVerified;
+    private boolean isAadharVerified;
     private Integer maxEmployees;
     private Boolean isActive;
     private LocalDate validity;

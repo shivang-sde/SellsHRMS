@@ -24,10 +24,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tbody.innerHTML = "";
       data.forEach((org, i) => {
+
         // Determine status badge color
         const statusBadge = org.isActive
           ? `<span class="badge rounded-pill bg-soft-success text-success px-3">Active</span>`
           : `<span class="badge rounded-pill bg-soft-danger text-danger px-3">Inactive</span>`;
+
+        const buildDoc = (name, val, url, isVerified) => {
+          let valHtml = val ? val : '<span class="text-muted text-decoration-underline" style="font-style: italic;">Not Provided</span>';
+          let linkHtml = url ? `<a href="${url}" target="_blank" class="ms-1 text-primary text-decoration-none" style="font-size: 0.9rem;" title="Download Document"><i class="fas fa-cloud-download-alt"></i></a>` : '';
+          let iconHtml = isVerified ? `<i class="fas fa-check-circle text-success ms-1" title="Verified"></i>` : `<i class="fas fa-times-circle text-danger ms-1" title="Not Verified"></i>`;
+          return `<div class="x-small mb-1"><span class="fw-bold text-secondary" style="display:inline-block; width: 50px;">${name}:</span> ${valHtml} ${linkHtml} ${iconHtml}</div>`;
+        };
+
+        const docsHtml = `
+            ${buildDoc('PAN', org.pan, org.panUrl, org.isPanVerified || org.panVerified)}
+            ${buildDoc('Aadhaar', org.aadhar, org.aadharUrl, org.isAadharVerified || org.aadharVerified)}
+            ${buildDoc('GST', org.gst, org.gstUrl, org.isGstVerified || org.gstVerified)}
+            ${buildDoc('TAN', org.tan, org.tanUrl, org.isTanVerified || org.tanVerified)}
+        `;
+
+        const verificationBadgesHtml = `
+            <div class="mt-2 d-flex flex-wrap gap-1">
+                <span class="badge ${org.isPanVerified || org.panVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="PAN Verification">PAN</span>
+                <span class="badge ${org.isAadharVerified || org.aadharVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="Aadhaar Verification">UIDAI</span>
+                <span class="badge ${org.isGstVerified || org.gstVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="GST Verification">GST</span>
+                <span class="badge ${org.isTanVerified || org.tanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="TAN Verification">TAN</span>
+            </div>
+        `;
 
         const row = `
         <tr>
@@ -37,9 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="text-muted x-small">${org.domain}</div>
             </td>
             <td>
-                <div class="small fw-medium">${org.adminEmail ?? "N/A"}</div>
+                ${docsHtml}
             </td>
-            <td>${statusBadge}</td>
+            <td>
+                <div class="mb-1">${statusBadge}</div>
+                ${verificationBadgesHtml}
+            </td>
             <td>
                 <div class="small fw-bold text-dark">${org.maxEmployees} Employees</div>
                 <div class="progress mt-1" style="height: 4px; width: 80px;">

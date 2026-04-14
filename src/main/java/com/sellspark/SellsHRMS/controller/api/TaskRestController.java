@@ -115,9 +115,11 @@ public class TaskRestController {
     @GetMapping("/subordinates")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getSubordinateTasks(
             @RequestParam Long organisationId,
-            @RequestParam Long managerId) {
+            @RequestParam Long managerId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        List<TaskDTO> tasks = taskService.getSubordinateTasks(organisationId, managerId);
+        List<TaskDTO> tasks = taskService.getSubordinateTasks(organisationId, managerId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.ok("Fetched subordinate tasks", tasks));
     }
 

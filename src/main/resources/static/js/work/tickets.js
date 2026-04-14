@@ -443,13 +443,22 @@ function viewTicket(id) {
  */
 async function loadSubordinateTickets() {
   try {
-    const res = await ticketAPI.getSubordinateTickets(window.APP.EMPLOYEE_ID);
+    if (!$("#subTicketDateFilter").val()) {
+      $("#subTicketDateFilter").val(new Date().toISOString().split('T')[0]);
+    }
+    if (!$("#subTicketDateFilterEnd").val()) {
+      $("#subTicketDateFilterEnd").val(new Date().toISOString().split('T')[0]);
+    }
+    const startDate = $("#subTicketDateFilter").val();
+    const endDate = $("#subTicketDateFilterEnd").val();
+
+    const res = await ticketAPI.getSubordinateTickets(window.APP.EMPLOYEE_ID, startDate, endDate);
     const data = res?.data || res;
     subordinateTickets = Array.isArray(data) ? data : [];
 
     if (subordinateTickets.length > 0) {
       $("#subordinateTicketsSection").show();
-      populateSubTicketEmployeeFilter(subordinateTickets);
+      await populateSubTicketEmployeeFilter();
       filteredSubordinateTickets = [...subordinateTickets];
       renderSubordinateTickets(filteredSubordinateTickets);
     } else {
@@ -473,28 +482,20 @@ async function loadSubordinateTickets() {
 /**
  * Populate the employee dropdown filter with unique employee names from the subordinate ticket list.
  */
-function populateSubTicketEmployeeFilter(tickets) {
+async function populateSubTicketEmployeeFilter() {
   const select = $("#subTicketEmployeeFilter");
-  const seen = new Map();
-
-  tickets.forEach((t) => {
-    if (t.createdById && t.createdByName && !seen.has(t.createdById)) {
-      seen.set(t.createdById, t.createdByName);
-    }
-    // Also include assignees
-    if (t.assigneeIds && t.assigneeNames) {
-      t.assigneeIds.forEach((id, idx) => {
-        if (!seen.has(id) && t.assigneeNames[idx]) {
-          seen.set(id, t.assigneeNames[idx]);
-        }
-      });
-    }
-  });
-
   select.find("option:not(:first)").remove();
-  seen.forEach((name, id) => {
-    select.append(`<option value="${id}">${name}</option>`);
-  });
+
+  try {
+    const res = await employeeAPI.getSubordinates(window.APP.EMPLOYEE_ID);
+    const subordinates = res?.data || res || [];
+
+    subordinates.forEach((emp) => {
+      select.append(`<option value="${emp.id}">${emp.fullName}</option>`);
+    });
+  } catch (err) {
+    console.error("Failed to populate employee filter", err);
+  }
 }
 
 /**

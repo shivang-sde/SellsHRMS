@@ -32,7 +32,7 @@ public interface TicketService {
 
     List<TicketDTO> getIndependentTickets(Long organisationId, Long employeeId);
 
-    List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId);
+    List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId, String startDate, String endDate);
 
     List<TicketDTO> searchTickets(Long organisationId, String keyword);
 

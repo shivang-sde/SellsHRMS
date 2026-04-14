@@ -148,9 +148,11 @@ public class TicketRestController {
     @GetMapping("/subordinates")
     public ResponseEntity<ApiResponse<List<TicketDTO>>> getSubordinateIndependentTickets(
             @RequestParam Long organisationId,
-            @RequestParam Long managerId) {
+            @RequestParam Long managerId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        List<TicketDTO> tickets = ticketService.getSubordinateIndependentTickets(organisationId, managerId);
+        List<TicketDTO> tickets = ticketService.getSubordinateIndependentTickets(organisationId, managerId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.ok("Subordinate independent tickets fetched", tickets));
     }
 

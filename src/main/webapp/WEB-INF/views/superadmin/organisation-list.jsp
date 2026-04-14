@@ -35,8 +35,8 @@
               <tr class="text-muted small fw-bold">
                 <th class="ps-4">ID</th>
                 <th>ORGANISATION</th>
-                <th>ADMIN CONTACT</th>
-                <th>STATUS</th>
+                <th>Doccuments</th>
+                <th>STATUS & Verification</th>
                 <th>CAPACITY</th>
                 <th>VALIDITY</th>
                 <th class="text-end pe-4">ACTIONS</th>

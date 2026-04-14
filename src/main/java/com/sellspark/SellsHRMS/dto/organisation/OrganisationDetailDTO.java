@@ -27,6 +27,20 @@ public class OrganisationDetailDTO {
 
     private String address;
     private String country;
+    private String aadhar;
+    private String pan;
+    private String tan;
+    private String gst;
+
+    private String aadharUrl;
+    private String panUrl;
+    private String tanUrl;
+    private String gstUrl;
+
+    private Boolean isPanVerified;
+    private Boolean isTanVerified;
+    private Boolean isGstVerified;
+    private Boolean isAadharVerified;
 
     private Long totalEmployees;
     private Long totalDepartments;

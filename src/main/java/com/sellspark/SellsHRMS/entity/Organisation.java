@@ -18,6 +18,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -64,8 +65,40 @@ public class Organisation {
     // @OneToMany(mappedBy = "organisation")
     // private List<WorkLocation> workLocations;
 
+    private String aadhar;
     private String pan;
     private String tan;
+    private String gst;
+
+    private String aadharUrl;
+    private String panUrl;
+    private String tanUrl;
+    private String gstUrl;
+
+    private boolean isPanVerified;
+    private boolean isTanVerified;
+    private boolean isGstVerified;
+    private boolean isAadharVerified;
+
+    // Aadhaar photo extracted from Sandbox API response
+    private String aadhaarPhotoUrl;
+
+    // Sandbox API transaction IDs for audit trail
+    @Column(name = "pan_txn_id")
+    private String panTransactionId;
+
+    @Column(name = "aadhaar_txn_id")
+    private String aadhaarTransactionId;
+
+    @Column(name = "gst_txn_id")
+    private String gstTransactionId;
+
+    // Resumable verification email token
+    @Column(name = "verification_token")
+    private String verificationToken;
+
+    @Column(name = "verification_token_expiry")
+    private LocalDateTime verificationTokenExpiry;
 
     private LocalDate validity;
     private Integer maxEmployees;
@@ -102,6 +135,20 @@ public class Organisation {
 
     public enum SubscriptionStatus {
         ACTIVE, EXPIRED, SUSPENDED
+    }
+
+    /**
+     * Returns the count of verified documents (PAN, Aadhaar, GST, TAN).
+     * Used by OrganisationAccessFilter to gate login access.
+     */
+    @Transient
+    public int getVerifiedDocumentCount() {
+        int count = 0;
+        if (isPanVerified) count++;
+        if (isAadharVerified) count++;
+        if (isGstVerified) count++;
+        if (isTanVerified) count++;
+        return count;
     }
 
 }

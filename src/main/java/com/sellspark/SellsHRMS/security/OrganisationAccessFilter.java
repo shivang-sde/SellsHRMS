@@ -28,6 +28,10 @@ import java.util.List;
  * Ensures that Org Admins or Employees can perform actions only
  * if their organisation is active and has a valid license.
  * Super Admin bypasses these checks.
+ *
+ * Also enforces document verification gate:
+ * Users from organisations with fewer than 2 verified documents
+ * are redirected to the verification page.
  */
 @Slf4j
 @Component
@@ -66,7 +70,9 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/actuator/info",
             "/api/test/",
             "/WEB-INF/views",
-            "/actuator/metrics/**");
+            "/actuator/metrics/**",
+            "/verify/",
+            "/api/verify/");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -171,6 +177,35 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
                     String.format("Your organisation license expired on %s. Please contact support to renew.",
                             org.getValidity()),
                     "ORG_LICENSE_EXPIRED");
+            return;
+        }
+
+        // ❌ Document verification gate: redirect if fewer than 2 documents verified
+        String requestPath = request.getRequestURI();
+        if (org.getVerifiedDocumentCount() < 2
+                && !requestPath.startsWith("/verify/")
+                && !requestPath.startsWith("/api/verify/")
+                && !requestPath.startsWith("/api/files/")
+                && !requestPath.startsWith("/logout")) {
+
+            log.warn("{}[DOC_VERIFICATION_REQUIRED]{} Org '{}' has only {} verified docs. Redirecting user {}.",
+                    YELLOW, RESET, org.getName(), org.getVerifiedDocumentCount(), user.getEmail());
+
+            boolean isAjax = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+            boolean isApi = requestPath.startsWith("/api/");
+
+            if (isAjax || isApi) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(
+                        "{\"errorCode\":\"DOC_VERIFICATION_REQUIRED\",\"message\":\"Document verification is required before accessing the application.\",\"redirectUrl\":\"/verify/documents\"}");
+            } else if (user.getSystemRole() == User.SystemRole.ORG_ADMIN) {
+                response.sendRedirect(request.getContextPath() + "/verify/documents");
+            } else {
+                handleOrgError(request, response,
+                        "Document verification is required before accessing the application.",
+                        "DOC_VERIFICATION_REQUIRED");
+            }
             return;
         }
 

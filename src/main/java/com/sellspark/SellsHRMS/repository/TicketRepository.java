@@ -144,9 +144,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
                        AND t.project IS NULL
                        AND t.isActive = true
                        AND (t.createdBy.id IN :empIds OR a.id IN :empIds)
+                       AND t.createdAt >= :startDate AND t.createdAt < :endDate
                      ORDER BY t.createdAt DESC
                      """)
        List<Ticket> findIndependentTicketsByEmployeeIds(@Param("orgId") Long orgId,
-                     @Param("empIds") java.util.Set<Long> empIds);
+                     @Param("empIds") java.util.Set<Long> empIds,
+                     @Param("startDate") java.time.LocalDateTime startDate,
+                     @Param("endDate") java.time.LocalDateTime endDate);
 
 }

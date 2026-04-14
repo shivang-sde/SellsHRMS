@@ -308,12 +308,27 @@ public class TicketServiceImpl implements TicketService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId) {
+        public List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId, String startDate, String endDate) {
                 java.util.Set<Long> subordinateIds = hierarchyUtil.getAllSubordinateIds(managerId);
                 if (subordinateIds.isEmpty()) {
                         return java.util.Collections.emptyList();
                 }
-                List<Ticket> tickets = ticketRepo.findIndependentTicketsByEmployeeIds(organisationId, subordinateIds);
+
+                java.time.LocalDateTime start = java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+                java.time.LocalDateTime end = java.time.LocalDateTime.of(2100, 1, 1, 0, 0);
+
+                if (startDate != null && !startDate.trim().isEmpty()) {
+                    try {
+                        start = java.time.LocalDate.parse(startDate).atStartOfDay();
+                    } catch (Exception e) {}
+                }
+                if (endDate != null && !endDate.trim().isEmpty()) {
+                    try {
+                        end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
+                    } catch (Exception e) {}
+                }
+
+                List<Ticket> tickets = ticketRepo.findIndependentTicketsByEmployeeIds(organisationId, subordinateIds, start, end);
                 return tickets.stream()
                                 .map(this::mapToDTO)
                                 .collect(Collectors.toList());

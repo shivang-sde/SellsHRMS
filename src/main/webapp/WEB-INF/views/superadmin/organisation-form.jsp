@@ -1,5 +1,6 @@
 <div class="container mt-4">
-    <h3>Create Organisation + Admin</h3>
+    <h3>Organisation Onboarding</h3>
+    <p>Please fill the form as per government documents these details will be used for verification</p>
 
     <form id="createOrgForm" class="row g-3">
 
