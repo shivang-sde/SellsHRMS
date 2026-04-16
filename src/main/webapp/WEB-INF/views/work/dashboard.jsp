@@ -70,7 +70,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted mb-1">Completed Today</p>
+                                <p class="text-muted mb-1">Completed Tasks</p>
                                 <h3 class="mb-0" id="completedTodayCount">0</h3>
                             </div>
                             <div class="bg-success bg-opacity-10 p-3 rounded">

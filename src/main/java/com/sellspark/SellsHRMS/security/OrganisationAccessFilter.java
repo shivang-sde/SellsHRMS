@@ -72,7 +72,10 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/WEB-INF/views",
             "/actuator/metrics/**",
             "/verify/",
-            "/api/verify/");
+            "/api/verify/",
+            "/public/",
+            "/api/public/",
+            "/terms-and-conditions");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

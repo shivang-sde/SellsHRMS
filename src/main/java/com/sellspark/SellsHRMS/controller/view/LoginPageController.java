@@ -53,6 +53,18 @@ public class LoginPageController {
         return "auth/register";
     }
 
+    // PUBLIC SELF-SERVICE ONBOARDING PAGE
+    @GetMapping("/public/onboard")
+    public String onboardPage() {
+        return "auth/onboard";
+    }
+
+    // TERMS AND CONDITIONS PAGE
+    @GetMapping("/terms-and-conditions")
+    public String termsPage() {
+        return "auth/terms";
+    }
+
     @GetMapping("/logout")
     public String logoutPage(HttpSession session) {
         if (session != null) {

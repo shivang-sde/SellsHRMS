@@ -15,6 +15,15 @@ $(document).ready(function () {
     loadVerificationStatus();
 
     // ═══════════════════════════════════════════════════════
+    //  CONSENT CHECKBOX LOGIC
+    // ═══════════════════════════════════════════════════════
+
+    $('.consent-checkbox').on('change', function () {
+        var targetBtn = $(this).data('target');
+        $(targetBtn).prop('disabled', !$(this).is(':checked'));
+    });
+
+    // ═══════════════════════════════════════════════════════
     //  LOAD STATUS
     // ═══════════════════════════════════════════════════════
 
@@ -64,6 +73,7 @@ $(document).ready(function () {
 
     function lockStep(name, badgeSel, formSel, btnSel) {
         $(badgeSel).show();
+        $(formSel).find('.consent-checkbox').prop('checked', true);
         $(formSel).find('input').prop('disabled', true);
         $(btnSel).prop('disabled', true).find('.btn-text').html('<i class="fas fa-check me-1"></i> Verified');
     }
@@ -379,7 +389,16 @@ $(document).ready(function () {
 
     function setLoading(sel, on) {
         var $b = $(sel);
-        $b.prop('disabled', on);
+        if (on) {
+            $b.prop('disabled', true);
+        } else {
+            var $chk = $('.consent-checkbox[data-target="' + sel + '"]');
+            if ($chk.length > 0) {
+                $b.prop('disabled', !$chk.is(':checked'));
+            } else {
+                $b.prop('disabled', false);
+            }
+        }
         $b.find('.btn-text').toggle(!on);
         $b.find('.btn-loader').toggle(on);
     }

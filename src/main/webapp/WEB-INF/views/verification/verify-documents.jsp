@@ -102,7 +102,18 @@
                                 <small class="text-muted">PDF, JPG, PNG (max 5MB)</small>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary" id="panSubmitBtn">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input consent-checkbox" type="checkbox" id="panConsent"
+                                        data-target="#panSubmitBtn" required>
+                                    <label class="form-check-label text-muted" for="panConsent"
+                                        style="font-size: 0.85rem;">
+                                        I have read and agree to the <a href="/terms-and-conditions"
+                                            target="_blank">Terms and Condition</a> and consent to use my PAN details
+                                        for
+                                        verification.
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="panSubmitBtn" disabled>
                                     <span class="btn-text"><i class="fas fa-check me-1"></i> Verify PAN</span>
                                     <span class="btn-loader" style="display:none;"><i
                                             class="fas fa-spinner fa-spin me-1"></i> Verifying...</span>
@@ -141,7 +152,17 @@
                                 <small class="text-muted">PDF, JPG, PNG (max 5MB)</small>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary" id="aadhaarOtpBtn">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input consent-checkbox" type="checkbox" id="aadhaarConsent"
+                                        data-target="#aadhaarOtpBtn" required>
+                                    <label class="form-check-label text-muted" for="aadhaarConsent"
+                                        style="font-size: 0.85rem;">
+                                        I have read and agree to the <a href="/terms-and-conditions"
+                                            target="_blank">Terms and Condition</a> and consent to use my Aadhaar
+                                        details for verification.
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="aadhaarOtpBtn" disabled>
                                     <span class="btn-text"><i class="fas fa-paper-plane me-1"></i> Send OTP</span>
                                     <span class="btn-loader" style="display:none;"><i
                                             class="fas fa-spinner fa-spin me-1"></i> Sending...</span>
@@ -207,7 +228,17 @@
                                 <small class="text-muted">PDF, JPG, PNG (max 5MB)</small>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary" id="gstSubmitBtn">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input consent-checkbox" type="checkbox" id="gstConsent"
+                                        data-target="#gstSubmitBtn" required>
+                                    <label class="form-check-label text-muted" for="gstConsent"
+                                        style="font-size: 0.85rem;">
+                                        I have read and agree to the <a href="/terms-and-conditions"
+                                            target="_blank">Terms and Conditions</a> and consent to use my GST details
+                                        for verification.
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="gstSubmitBtn" disabled>
                                     <span class="btn-text"><i class="fas fa-check me-1"></i> Verify GSTIN</span>
                                     <span class="btn-loader" style="display:none;"><i
                                             class="fas fa-spinner fa-spin me-1"></i> Verifying...</span>
@@ -248,7 +279,17 @@
                                 <small class="text-muted">PDF, JPG, PNG (max 5MB)</small>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary" id="tanSubmitBtn">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input consent-checkbox" type="checkbox" id="tanConsent"
+                                        data-target="#tanSubmitBtn" required>
+                                    <label class="form-check-label text-muted" for="tanConsent"
+                                        style="font-size: 0.85rem;">
+                                        I have read and agree to the <a href="/terms-and-conditions"
+                                            target="_blank">Terms and Conditions</a> and consent to use my TAN details
+                                        for verification.
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="tanSubmitBtn" disabled>
                                     <span class="btn-text"><i class="fas fa-upload me-1"></i> Upload for Review</span>
                                     <span class="btn-loader" style="display:none;"><i
                                             class="fas fa-spinner fa-spin me-1"></i> Uploading...</span>

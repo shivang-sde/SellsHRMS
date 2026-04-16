@@ -69,7 +69,9 @@ public class SecurityConfig {
                                                                 "/api/auth/login", "/api/auth/logout",
                                                                 "/api/auth/register-superadmin",
                                                                 "/actuator/health", "/actuator/info",
-                                                                "/verify/resume")
+                                                                "/verify/resume",
+                                                                "/public/onboard", "/api/public/**",
+                                                                "/terms-and-conditions")
                                                 .permitAll()
 
                                                 // 🔓 Static resources
