@@ -45,12 +45,12 @@
                 <ul class="sub-menu">
                   <li>
                     <a href="${pageContext.request.contextPath}/org/dashboard">
-                      <i class="fa fa-tachometer-alt"></i> Dashboard
+                      <i class="fa fa-tachometer-alt"></i> Home
                     </a>
                   </li>
                   <li>
                     <a href="${pageContext.request.contextPath}/org/attendance-analytics-dashboard">
-                      <i class="fa fa-user-check"></i> Attendance & Absenteeism
+                      <i class="fa fa-user-check"></i> Attendance
                     </a>
                   </li>
                 </ul>
@@ -58,15 +58,22 @@
                 <!-- Departments -->
                 <app:ifModule code="ORG_STRUCTURE">
                   <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-sitemap"></i> Departments <i class="fa fa-plus toggle-icon"></i>
+                    <i class="fa fa-sitemap"></i> Organisation <i class="fa fa-plus toggle-icon"></i>
                   </a>
                   <ul class="sub-menu">
+                    <li><a href="${pageContext.request.contextPath}/org/roles">Roles</a></li>
                     <li><a href="${pageContext.request.contextPath}/org/departments">Departments</a></li>
                     <li><a href="${pageContext.request.contextPath}/org/designations">Designations</a></li>
+                    <app:ifModule code="ORG_POLICY">
+                      <li>
+                        <a class="nav-link"
+                          href="${pageContext.request.contextPath}/org/organisation-policy">Settings</a>
+                      </li>
+                    </app:ifModule>
                   </ul>
                 </app:ifModule>
 
-                <!-- Roles & Permissions -->
+                <!-- Roles & Permissions
                 <app:ifModule code="ROLE_PERMISSION">
                   <a class="nav-link toggle-link" href="#">
                     <i class="fa fa-shield-alt"></i> Roles & Permissions <i class="fa fa-plus toggle-icon"></i>
@@ -75,7 +82,7 @@
                     <li><a href="${pageContext.request.contextPath}/org/roles">All Roles</a></li>
                     <li><a href="${pageContext.request.contextPath}/org/create-role">Create Role</a></li>
                   </ul>
-                </app:ifModule>
+                </app:ifModule> -->
 
                 <!-- Employees -->
                 <app:ifModule code="EMPLOYEE">
@@ -89,7 +96,7 @@
                         <li><a href="${pageContext.request.contextPath}/org/create-employee">Add Employee</a></li>
                       </sec:authorize>
                       <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
-                        <li><a href="${pageContext.request.contextPath}/org/employees">All Employees</a></li>
+                        <li><a href="${pageContext.request.contextPath}/org/employees">Employees</a></li>
                       </sec:authorize>
                     </ul>
                   </sec:authorize>
@@ -121,17 +128,12 @@
 
 
 
-                <!-- Organisation Policy -->
-                <app:ifModule code="ORG_POLICY">
-                  <a class="nav-link" href="${pageContext.request.contextPath}/org/organisation-policy">
-                    <i class="fa fa-file-contract"></i> Organisation Policy
-                  </a>
-                </app:ifModule>
+
 
                 <!-- Payroll -->
                 <app:ifModule code="PAYROLL">
                   <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-wallet"></i> <span class="nav-text">Payroll Management</span>
+                    <i class="fa fa-wallet"></i> <span class="nav-text">Payroll</span>
                     <i class="fa fa-plus toggle-icon"></i>
                   </a>
                   <ul class="sub-menu">
