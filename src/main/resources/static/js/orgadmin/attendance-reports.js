@@ -166,7 +166,7 @@ $(document).ready(function () {
     data.forEach((record) => {
       const date = record.punchIn
         ? new Date(record.punchIn).toLocaleDateString()
-        : new Date().toLocaleDateString();
+        : new Date(record.attendanceDate).toLocaleDateString();
 
       const lateEarly = [];
       if (record.isLate)
