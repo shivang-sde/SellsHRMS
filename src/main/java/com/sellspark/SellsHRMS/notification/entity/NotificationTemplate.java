@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "tbl_notification_templates", uniqueConstraints = @UniqueConstraint(columnNames = { "org_id",
+@Table(name = "tbl_notification_templates", uniqueConstraints = @UniqueConstraint(columnNames = {
         "event_code",
         "target_role" }))
 @Data
