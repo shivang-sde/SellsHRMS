@@ -48,7 +48,9 @@ spring:
         baseline-version: 1
         table: flyway_schema_history
         dialect: "mysql"
-        placeholders-replacement: false
+        placeholder-replacement: false
+        placeholder-prefix: "@{"
+        placeholder-suffix: "}"
 
     # JPA / Hibernate settings
     jpa:
