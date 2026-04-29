@@ -27,7 +27,7 @@ public class AttendanceScheduler {
 
     // ================= PRE-MARK =================
 
-    @Scheduled(cron = "0 29 1 * * ?", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 48 1 * * *", zone = "Asia/Kolkata")
     @Transactional
     public void preMarkDailyAttendance() {
 
