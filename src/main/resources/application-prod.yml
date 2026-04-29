@@ -48,6 +48,7 @@ spring:
         baseline-version: 1
         table: flyway_schema_history
         dialect: "mysql"
+        placeholders-replacement: false
 
     # JPA / Hibernate settings
     jpa:
