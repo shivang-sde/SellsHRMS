@@ -26,6 +26,17 @@
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/permissions">
                   <i class="fa fa-key"></i> <span>Permission</span>
                 </a>
+                <a class="nav-link toggle-link" href="#">
+                  <i class="fa fa-bell"></i> <span>Notification</span>
+                </a>
+                <ul class="sub-menu">
+                  <li><a href="${pageContext.request.contextPath}/superadmin/notifications/templates">
+                      <i class="fa fa-file-text"></i> <span>Notification Template</span>
+                    </a></li>
+                  <li><a href="${pageContext.request.contextPath}/superadmin/notifications/events">
+                      <i class="fa fa-bell"></i> <span>Notification Event</span>
+                    </a></li>
+                </ul>
               </sec:authorize>
 
               <!-- ================= ACCOUNTANT ================= -->
@@ -70,6 +81,11 @@
                           href="${pageContext.request.contextPath}/org/organisation-policy">Settings</a>
                       </li>
                     </app:ifModule>
+                    <li><a href="${pageContext.request.contextPath}/org/notifications/smtp-settings">SMTP
+                        Settings</a>
+                    </li>
+                    <li><a href="${pageContext.request.contextPath}/org/notifications/preferences">Notification
+                        Preferences</a></li>
                   </ul>
                 </app:ifModule>
 

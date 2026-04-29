@@ -104,9 +104,11 @@
         </div>
         <!-- Filter controls -->
         <div class="d-flex gap-2 align-items-center">
-          <input type="date" class="form-control form-control-sm" id="subTicketDateFilter" style="width: 140px;" title="From date" onchange="loadSubordinateTickets()">
+          <input type="date" class="form-control form-control-sm" id="subTicketDateFilter" style="width: 140px;"
+            title="From date" onchange="loadSubordinateTickets()">
           <span class="text-muted small align-self-center">to</span>
-          <input type="date" class="form-control form-control-sm" id="subTicketDateFilterEnd" style="width: 140px;" title="To date" onchange="loadSubordinateTickets()">
+          <input type="date" class="form-control form-control-sm" id="subTicketDateFilterEnd" style="width: 140px;"
+            title="To date" onchange="loadSubordinateTickets()">
           <div class="input-group input-group-sm" style="width: 240px;">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" class="form-control" id="subTicketSearch" placeholder="Search tickets..."
@@ -214,7 +216,6 @@
                     <div class="col-md-6">
                       <label class="form-label">Project (optional)</label>
                       <select class="form-select" name="projectId">
-                        <option value="">Independent Ticket</option>
                       </select>
                     </div>
 
@@ -233,9 +234,9 @@
                     </div>
 
                     <div class="col-12">
-                      <label class="form-label">Assign To (Multiple)</label>
+                      <label class="form-label">Assignees</label>
                       <select class="form-select" id="ticketAssigneesSelect" name="assigneeIds" multiple></select>
-                      <small class="text-muted">Only your subordinates can be assigned.</small>
+                      <small class="text-muted">Only team members can be assigned.</small>
                     </div>
                   </div>
                 </form>

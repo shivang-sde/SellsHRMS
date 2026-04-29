@@ -119,7 +119,7 @@ $(document).ready(function () {
     </button>
   `;
 
-      if (window.APP.hasPermission("LEAVE_APPROVE")) {
+      if (window.APP.hasPermission("LEAVE_APPROVE") || window.APP.ROLE == "ORG_ADMIN") {
         actionButtons = `
       <button  class="btn btn-sm btn-success action-btn" onclick="openApproveModal(${leave.id})">
         <i class="fa fa-check"></i> Approve

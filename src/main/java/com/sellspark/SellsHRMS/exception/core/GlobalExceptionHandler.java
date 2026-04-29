@@ -2,12 +2,13 @@ package com.sellspark.SellsHRMS.exception.core;
 
 import com.sellspark.SellsHRMS.dto.error.ErrorResponse;
 import com.sellspark.SellsHRMS.exception.PasswordValidationException;
+import com.sellspark.SellsHRMS.notification.exception.InvalidSMTPConfigException;
+import com.sellspark.SellsHRMS.notification.exception.NotificationDisabledException;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Global exception handler for all REST controllers
@@ -70,6 +72,27 @@ public class GlobalExceptionHandler {
                 errorResponse.setTraceId(traceId);
 
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(InvalidSMTPConfigException.class)
+        public ResponseEntity<Map<String, String>> handleInvalidSmtp(
+                        InvalidSMTPConfigException ex) {
+
+                log.warn("Invalid SMTP configuration: {}", ex.getMessage());
+                return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Configuration Error",
+                                                "message",
+                                                "Unable to connect to email server. Please verify your SMTP settings."));
+        }
+
+        @ExceptionHandler(NotificationDisabledException.class)
+        public ResponseEntity<Map<String, String>> handleNotificationDisabled(
+                        NotificationDisabledException ex) {
+
+                log.debug("Notification disabled: {}", ex.getMessage());
+                return ResponseEntity.ok()
+                                .body(Map.of("status", "skipped",
+                                                "message", "Notification is disabled for this configuration"));
         }
 
         /**

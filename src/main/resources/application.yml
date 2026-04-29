@@ -18,6 +18,18 @@ sandbox:
     secret: ${SANDBOX_API_SECRET:}
     url: ${SANDBOX_API_URL:https://api.sandbox.co.in}
 
+notification:
+  encryption:
+    key: ${NOTIFICATION_ENCRYPTION_KEY:change-this-in-production-32-chars-se  !}
+
+  system:
+    smtp-host: ${SYSTEM_SMTP_HOST:smtp.sendgrid.net}
+    smtp-port: ${SYSTEM_SMTP_PORT:587}
+    username: ${SYSTEM_SMTP_USERNAME}
+    password: ${SYSTEM_SMTP_PASSWORD}
+    from-email: ${SYSTEM_FROM_EMAIL:noreply@sellspark.com}
+    from-name: ${SYSTEM_FROM_NAME:Sellspark HRMS}
+
 spring:
   application:
     name: SellsHRMS
@@ -27,6 +39,22 @@ spring:
       pool:
         size: 5
       thread-name-prefix: attendance-scheduler-
+
+  thymeleaf:
+    enabled: false
+
+  mail:
+    # Default mail sender (can be overridden per request)
+    host: ${SYSTEM_SMTP_HOST}
+    port: ${SYSTEM_SMTP_PORT}
+    username: ${SYSTEM_SMTP_USERNAME}
+    password: ${SYSTEM_SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   devtools:
     add-properties: false
@@ -55,13 +83,20 @@ spring:
     password: ${DB_PASSWORD:hrmspassword}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    table: flyway_schema_history
+    dialect: "mysql"
+
   jpa:
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: false
 
   mvc:
@@ -89,8 +124,13 @@ server:
     include-message: always
 
 logging:
+  structured:
+    format:
+      console: json
   level:
     "[org.springframework]": INFO
+    "[org.hibernate]": INFO
+    "[org.hibernate.orm.jdbc.bind]": INFO
     "[com.sellspark.SellsHRMS]": DEBUG
     "[com.sellspark.SellsHRMS.controller.api]": DEBUG
     "[org.springframework.security.web.FilterChainProxy]": INFO

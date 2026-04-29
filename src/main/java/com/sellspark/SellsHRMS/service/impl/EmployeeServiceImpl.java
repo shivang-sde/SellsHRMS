@@ -13,6 +13,9 @@ import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.core.HRMSException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
+import com.sellspark.SellsHRMS.notification.enums.TargetRole;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
 
 import com.sellspark.SellsHRMS.service.EmployeeService;
@@ -34,6 +37,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -52,6 +56,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final RoleRepository roleRepo;
     private final LeaveService leaveService;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
+
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     public EmployeeResponse create(EmployeeCreateRequest req) {
@@ -103,6 +109,20 @@ public class EmployeeServiceImpl implements EmployeeService {
         org.setEmpSequence(nextSeq);
         orgRepo.save(org);
 
+        notificationEventPublisher.publish(
+                NotificationEventData.builder()
+                        .orgId(orgId)
+                        .eventCode("EMPLOYEE_CREATED")
+                        .targetRole(TargetRole.EMPLOYEE)
+                        .recipientEmail(emp.getEmail())
+                        .recipientName(emp.getFullName())
+                        .templateVariables(Map.of(
+                                "employeeName", emp.getFullName(),
+                                "employeeEmail", emp.getEmail(),
+                                "employeePassword", req.getPassword(),
+                                "employeeCode", emp.getEmployeeCode()))
+                        .build());
+
         String ly = leaveService.getCurrentLeaveYear(req.getOrganisationId());
         leaveService.initializeLeaveBalancesForEmployee(emp.getId(), emp.getOrganisation().getId(), ly);
 
@@ -124,6 +144,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 || newStatus == EmployeeStatus.TERMINATED
                 || newStatus == EmployeeStatus.EXIT) {
             userService.deactivateUser(user.getId());
+
         } else if (newStatus == EmployeeStatus.ACTIVE) {
             userService.activateUser(user.getId());
 

@@ -1,0 +1,2 @@
+-- Empty file: tells Flyway "everything before this is already applied"
+-- Flyway will create flyway_schema_history and mark V1 as applied

@@ -64,7 +64,7 @@ public class LeaveRestController {
                                 "data", response));
         }
 
-        @PreAuthorize("hasAnyAuthority('LEAVE_EDIT')")
+        @PreAuthorize("hasAnyAuthority('LEAVE_EDIT', 'ORG_ADMIN')")
         @PatchMapping("/{id}/update")
         public ResponseEntity<?> updateLeave(
                         @PathVariable Long id,
@@ -161,7 +161,7 @@ public class LeaveRestController {
                 return ResponseEntity.ok(Map.of("success", true, "data", leave));
         }
 
-        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT')")
+        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT', 'ORG_ADMIN')")
         @PostMapping("/{id}/approve")
         public ResponseEntity<?> approveLeave(
                         @PathVariable Long id,
@@ -183,7 +183,7 @@ public class LeaveRestController {
                                 "data", response));
         }
 
-        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT')")
+        @PreAuthorize("hasAnyAuthority('LEAVE_APPROVE', 'LEAVE_EDIT', 'ORG_ADMIN')")
         @PostMapping("/{id}/reject")
         public ResponseEntity<?> rejectLeave(
                         @PathVariable Long id,

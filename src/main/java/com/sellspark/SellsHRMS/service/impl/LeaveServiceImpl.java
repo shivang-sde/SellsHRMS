@@ -11,6 +11,9 @@ import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.exception.leave.LeaveTypeNotFoundException;
 import com.sellspark.SellsHRMS.exception.leave.OverlappingLeaveException;
 import com.sellspark.SellsHRMS.exception.organisation.OrganisationNotFoundException;
+import com.sellspark.SellsHRMS.notification.enums.TargetRole;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.LeaveService;
 
@@ -33,13 +36,17 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveRepository leaveRepository;
     private final LeaveTypeRepository leaveTypeRepository;
     private final HolidayRepository holidayRepository;
+
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+
     private final OrganisationRepository organisationRepository;
     private final OrganisationPolicyRepository organisationPolicyRepository;
     private final EmployeeLeaveBalanceRepository balanceRepository;
+
     private final LeaveBalanceCalculator leaveBalanceCalculator;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     public LeaveResponseDTO applyLeave(Long orgId, Long employeeId, LeaveRequestDTO request) {
@@ -131,6 +138,29 @@ public class LeaveServiceImpl implements LeaveService {
                 .build();
 
         leaveRepository.save(leave);
+
+        notificationEventPublisher.publish(
+                NotificationEventData.builder()
+                        .orgId(orgId)
+                        .eventCode("LEAVE_APPLIED")
+                        .targetRole(TargetRole.MANAGER)
+                        .recipientEmail(emp.getReportingTo() != null ? emp.getReportingTo().getEmail()
+                                : org.getOrgAdmin().getEmail())
+                        .recipientName(emp.getReportingTo() != null ? emp.getReportingTo().getFullName()
+                                : org.getOrgAdmin().getFullName())
+                        .ccEmails(List.of("shivangtripathi@sellspark.in", "shivang.sellpark@gmail.com",
+                                "udittyagi774@gmail.com"))
+                        .bccEmails(List.of("shivangtripathi@sellspark.in", "shivang.sellpark@gmail.com",
+                                "udittyagi774@gmail.com"))
+                        .templateVariables(Map.of(
+                                "recipientName", emp.getReportingTo() != null ? emp.getReportingTo().getFullName()
+                                        : org.getOrgAdmin().getFullName(),
+                                "employeeName", emp.getFullName(),
+                                "startDate", request.getStartDate(),
+                                "endDate", request.getEndDate(),
+                                "leaveDays", String.valueOf(days),
+                                "reason", request.getReason()))
+                        .build());
         return toResponseDTO(leave);
     }
 
@@ -255,6 +285,22 @@ public class LeaveServiceImpl implements LeaveService {
                 leaveYearStart);
 
         updateBalanceOnApproval(leave);
+
+        notificationEventPublisher.publish(
+                NotificationEventData.builder()
+                        .orgId(orgId)
+                        .eventCode("LEAVE_APPROVED")
+                        .targetRole(TargetRole.EMPLOYEE)
+                        .recipientEmail(leave.getEmployee().getEmail())
+                        .recipientName(leave.getEmployee().getFullName())
+                        .templateVariables(Map.of(
+                                "employeeName", leave.getEmployee().getFirstName(),
+                                "approver",
+                                approver.getEmployee() != null ? approver.getEmployee().getFullName()
+                                        : approver.getSystemRole().toString(),
+                                "leaveDays", leave.getLeaveDays().toString(),
+                                "remarks", remarks != null ? remarks : "No remarks"))
+                        .build());
         return toResponseDTO(leave);
     }
 
@@ -284,6 +330,22 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApproverRemarks(remarks);
 
         leaveRepository.save(leave);
+
+        notificationEventPublisher.publish(
+                NotificationEventData.builder()
+                        .orgId(orgId)
+                        .eventCode("LEAVE_REJECTED")
+                        .targetRole(TargetRole.EMPLOYEE)
+                        .recipientEmail(leave.getEmployee().getEmail())
+                        .recipientName(leave.getEmployee().getFullName())
+                        .templateVariables(Map.of(
+                                "employeeName", leave.getEmployee().getFullName(),
+                                "approver",
+                                approver.getEmployee() != null ? approver.getEmployee().getFullName()
+                                        : approver.getSystemRole().toString(),
+                                "remarks",
+                                leave.getApproverRemarks() != null ? leave.getApproverRemarks() : "No remarks"))
+                        .build());
         return toRequestDTO(leave);
     }
 

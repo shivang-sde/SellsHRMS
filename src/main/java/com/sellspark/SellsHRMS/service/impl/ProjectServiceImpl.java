@@ -7,10 +7,15 @@ import com.sellspark.SellsHRMS.exception.InvalidOperationException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.UnauthorizedActionException;
 import com.sellspark.SellsHRMS.mapper.ProjectMapper;
+import com.sellspark.SellsHRMS.notification.enums.TargetRole;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.ProjectService;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.jmx.export.notification.NotificationPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,6 +42,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository memberRepo;
     private final ProjectRoleRepository projectRoleRepo;
     private final TaskRepository taskRepo;
+
+    private final NotificationEventPublisher notificationEventPublisher;
 
     // --------------------------------------------------------------------
     // 🟢 CREATE PROJECT
@@ -97,6 +105,20 @@ public class ProjectServiceImpl implements ProjectService {
             mpm.setOrganisation(org);
             mpm.setIsActive(true);
             memberRepo.save(mpm);
+
+            notificationEventPublisher.publish(
+                    NotificationEventData.builder()
+                            .orgId(organisationId)
+                            .eventCode("PROJECT_MEMBER_ADDED")
+                            .targetRole(TargetRole.EMPLOYEE)
+                            .recipientEmail(manager.getEmail())
+                            .recipientName(manager.getFullName())
+                            .templateVariables(Map.of(
+                                    "recipientName", manager.getFullName(),
+                                    "projectName", project.getName(),
+                                    "projectRole", "Manager",
+                                    "addedBy", creator.getFullName()))
+                            .build());
         }
 
         // Add team lead if different from creator
@@ -107,6 +129,20 @@ public class ProjectServiceImpl implements ProjectService {
             tmpm.setOrganisation(org);
             tmpm.setIsActive(true);
             memberRepo.save(tmpm);
+
+            notificationEventPublisher.publish(
+                    NotificationEventData.builder()
+                            .orgId(organisationId)
+                            .eventCode("PROJECT_MEMBER_ADDED")
+                            .targetRole(TargetRole.EMPLOYEE)
+                            .recipientEmail(teamLead.getEmail())
+                            .recipientName(teamLead.getFullName())
+                            .templateVariables(Map.of(
+                                    "recipientName", teamLead.getFullName(),
+                                    "projectName", project.getName(),
+                                    "projectRole", "Team Lead",
+                                    "addedBy", creator.getFullName()))
+                            .build());
         }
 
         return ProjectMapper.toDTO(saved, createdByEmpId);
@@ -156,10 +192,6 @@ public class ProjectServiceImpl implements ProjectService {
         return ProjectMapper.toDTO(project, employeeId);
     }
 
-    public void addProjectMember(Long projectId, Long empId) {
-
-    }
-
     // ================================================================
     // 🟢 ADD MEMBERS TO PROJECT
     // ================================================================
@@ -170,24 +202,34 @@ public class ProjectServiceImpl implements ProjectService {
             throw new UnauthorizedActionException("You are not authorized to add members.");
         }
 
-        for (Long empId : empIds) {
-            // Look for ANY existing record (active or inactive)
-            Optional<ProjectMember> existingMember = memberRepo.findByProjectIdAndEmployeeId(projectId, empId);
+        Employee addedBy = employeeRepo.findById(addedById)
+                .orElseThrow(() -> new ResourceNotFoundException("Added By Employee not found."));
 
-            if (existingMember.isPresent()) {
-                ProjectMember member = existingMember.get();
+        for (Long empId : empIds) {
+
+            Optional<ProjectMember> existing = memberRepo.findByProjectIdAndEmployeeId(projectId, empId);
+
+            Employee emp = employeeRepo.findById(empId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+
+            boolean shouldNotify = false;
+
+            if (existing.isPresent()) {
+
+                ProjectMember member = existing.get();
+
                 if (Boolean.TRUE.equals(member.getIsActive())) {
-                    continue; // Already active, skip
+                    continue; // already active -> no notification
                 }
-                // REACTIVATE existing member
+
                 member.setIsActive(true);
-                member.setJoinedAt(LocalDateTime.now()); // Reset join date
-                member.setLeftAt(null); // Clear left date
+                member.setJoinedAt(LocalDateTime.now());
+                member.setLeftAt(null);
+
                 memberRepo.save(member);
+
+                shouldNotify = true;
             } else {
-                // CREATE new record
-                Employee emp = employeeRepo.findById(empId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + empId));
 
                 ProjectMember member = ProjectMember.builder()
                         .project(project)
@@ -198,7 +240,27 @@ public class ProjectServiceImpl implements ProjectService {
                         .allocationPercentage(BigDecimal.valueOf(100))
                         .role(projectRoleRepo.findByNameIgnoreCase("MEMBER").orElse(null))
                         .build();
+
                 memberRepo.save(member);
+
+                shouldNotify = true;
+            }
+
+            if (shouldNotify) {
+
+                notificationEventPublisher.publish(
+                        NotificationEventData.builder()
+                                .orgId(organisationId)
+                                .eventCode("PROJECT_MEMBER_ADDED")
+                                .targetRole(TargetRole.EMPLOYEE)
+                                .recipientEmail(emp.getEmail())
+                                .recipientName(emp.getFullName())
+                                .templateVariables(Map.of(
+                                        "recipientName", emp.getFullName(),
+                                        "projectName", project.getName(),
+                                        "projectRole", "Member",
+                                        "addedBy", addedBy.getFullName()))
+                                .build());
             }
         }
     }

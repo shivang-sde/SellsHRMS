@@ -54,9 +54,11 @@
           </div>
           <!-- Filter controls -->
           <div class="d-flex gap-2 align-items-center">
-            <input type="date" class="form-control form-control-sm" id="subTaskDateFilter" style="width: 140px;" title="From date" onchange="loadSubordinateTasks()">
+            <input type="date" class="form-control form-control-sm" id="subTaskDateFilter" style="width: 140px;"
+              title="From date" onchange="loadSubordinateTasks()">
             <span class="text-muted small align-self-center">to</span>
-            <input type="date" class="form-control form-control-sm" id="subTaskDateFilterEnd" style="width: 140px;" title="To date" onchange="loadSubordinateTasks()">
+            <input type="date" class="form-control form-control-sm" id="subTaskDateFilterEnd" style="width: 140px;"
+              title="To date" onchange="loadSubordinateTasks()">
             <div class="input-group input-group-sm" style="width: 240px;">
               <span class="input-group-text"><i class="fas fa-search"></i></span>
               <input type="text" class="form-control" id="subTaskSearch" placeholder="Search tasks..."
@@ -139,12 +141,10 @@
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Status</label>
+                  <label class="form-label">Set As</label>
                   <select class="form-select" name="status" id="taskStatusSelect">
                     <option value="TO_DO">To Do</option>
                     <option value="REMINDER">Reminder</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="REVIEW">Review</option>
                     <option value="DONE">Done</option>
                   </select>
                 </div>

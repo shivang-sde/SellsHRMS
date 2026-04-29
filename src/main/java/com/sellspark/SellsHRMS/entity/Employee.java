@@ -203,4 +203,12 @@ public class Employee {
         return bankAccounts.get(0);
     }
 
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+
+    public String getFullNameWithCode() {
+        return firstName + " " + lastName + " (" + employeeCode + ")";
+    }
+
 }

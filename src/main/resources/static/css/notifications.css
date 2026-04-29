@@ -1,0 +1,111 @@
+/* notifications.css - Add to your CSS folder */
+
+/* Toggle Switch Styling */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.5em;
+    margin-left: 0;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Table Styling */
+#preferencesTable th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--bs-secondary);
+}
+
+#preferencesTable code {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+}
+
+/* Badge Styling */
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.7em;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+/* Password Toggle */
+.input-group .btn-outline-secondary {
+    border-left: none;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-border-color);
+    padding: 1rem 1.5rem;
+}
+
+/* Responsive Table */
+@media (max-width: 992px) {
+    #preferencesTable {
+        font-size: 0.875rem;
+    }
+
+    #preferencesTable th,
+    #preferencesTable td {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Animation for toggle changes */
+.preference-toggle {
+    transition: all 0.2s ease;
+}
+
+.preference-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Config Summary Card */
+#configSummary td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px dashed var(--bs-border-color);
+}
+
+#configSummary td:last-child {
+    font-weight: 500;
+}

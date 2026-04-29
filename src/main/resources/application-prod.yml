@@ -11,6 +11,22 @@ spring:
         livereload:
             enabled: false
 
+    thymeleaf:
+        enabled: false
+
+    mail:
+        # Default mail sender (can be overridden per request)
+        host: ${SYSTEM_SMTP_HOST}
+        port: ${SYSTEM_SMTP_PORT}
+        username: ${SYSTEM_SMTP_USERNAME}
+        password: ${SYSTEM_SMTP_PASSWORD}
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    starttls:
+                        enable: true
+
     # Database configuration
     datasource:
         url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true&requireSSL=true&verifyServerCertificate=false&serverTimezone=UTC
@@ -24,6 +40,14 @@ spring:
             idle-timeout: 600000
             max-lifetime: 1800000
             leak-detection-threshold: 60000
+
+    flyway:
+        enabled: true
+        locations: classpath:db/migration
+        baseline-on-migrate: true
+        baseline-version: 1
+        table: flyway_schema_history
+        dialect: "mysql"
 
     # JPA / Hibernate settings
     jpa:
@@ -93,6 +117,18 @@ sandbox:
         key: ${SANDBOX_API_KEY:}
         secret: ${SANDBOX_API_SECRET:}
         url: ${SANDBOX_API_URL:https://api.sandbox.co.in}
+
+notification:
+    encryption:
+        key: ${NOTIFICATION_ENCRYPTION_KEY:change-this-in-production-32-chars-se  !}
+
+    system:
+        smtp-host: ${SYSTEM_SMTP_HOST:smtp.sendgrid.net}
+        smtp-port: ${SYSTEM_SMTP_PORT:587}
+        username: ${SYSTEM_SMTP_USERNAME}
+        password: ${SYSTEM_SMTP_PASSWORD}
+        from-email: ${SYSTEM_FROM_EMAIL:noreply@sellspark.com}
+        from-name: ${SYSTEM_FROM_NAME:Sellspark HRMS}
 
 # Server configuration
 server:

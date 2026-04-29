@@ -38,8 +38,6 @@ public class EventRestController {
         return employeeService.findUpcomingWorkAnniversaries(orgId, today, weekEnd);
     }
 
-
-
     @PostMapping
     public ResponseEntity<?> createEvent(@RequestBody EventRequestDTO request, HttpSession session) {
         Long orgId = (Long) session.getAttribute("ORG_ID");
@@ -47,8 +45,7 @@ public class EventRestController {
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Event created successfully",
-                "data", response
-        ));
+                "data", response));
     }
 
     @GetMapping
@@ -57,8 +54,7 @@ public class EventRestController {
         var events = eventService.getAllEvents(orgId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", events
-        ));
+                "data", events));
     }
 
     @GetMapping("/upcoming")
@@ -67,8 +63,7 @@ public class EventRestController {
         var events = eventService.getUpcomingEvents(orgId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", events
-        ));
+                "data", events));
     }
 
     @GetMapping("/type/{type}")
@@ -77,8 +72,7 @@ public class EventRestController {
         var events = eventService.getEventsByType(orgId, type);
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", events
-        ));
+                "data", events));
     }
 
     @GetMapping("/{eventId}")
@@ -87,8 +81,7 @@ public class EventRestController {
         EventResponseDTO event = eventService.getEventById(eventId, orgId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", event
-        ));
+                "data", event));
     }
 
     @PatchMapping("/{eventId}")
@@ -101,8 +94,7 @@ public class EventRestController {
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Event updated successfully",
-                "data", response
-        ));
+                "data", response));
     }
 
     @DeleteMapping("/{eventId}")
@@ -111,7 +103,6 @@ public class EventRestController {
         eventService.deleteEvent(eventId, orgId);
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "Event deleted successfully"
-        ));
+                "message", "Event deleted successfully"));
     }
 }

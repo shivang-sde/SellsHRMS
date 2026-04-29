@@ -2,8 +2,15 @@ package com.sellspark.SellsHRMS.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.sellspark.SellsHRMS.utils.AssignmentUtil;
+import com.sellspark.SellsHRMS.utils.AssignmentUtil.AssignmentDiff;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -26,6 +33,9 @@ import com.sellspark.SellsHRMS.entity.TicketAttachment;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.UnauthorizedActionException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.notification.enums.TargetRole;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.ProjectMemberRepository;
@@ -55,6 +65,8 @@ public class TicketServiceImpl implements TicketService {
 
         private final FileUploadService fileUploadService;
 
+        private final NotificationEventPublisher notificationEventPublisher;
+
         // ---------------- CREATE ----------------
         @Override
         public TicketDTO createTicket(TicketDTO dto, Long organisationId, Long createdById) {
@@ -82,14 +94,58 @@ public class TicketServiceImpl implements TicketService {
                                 .isActive(true)
                                 .build();
 
+                List<Employee> newAssignees = new ArrayList<>();
                 // Assign employees
-                if (dto.getAssigneeIds() != null && !dto.getAssigneeIds().isEmpty()) {
-                        List<Employee> assignees = empRepo.findAllById(dto.getAssigneeIds());
-                        ticket.setAssignees(assignees);
-                        ticket.setStatus(TicketStatus.ASSIGNED);
+                if (dto.getAssigneeIds() != null) {
+
+                        AssignmentDiff diff = AssignmentUtil.compare(ticket.getAssignees(), dto.getAssigneeIds());
+
+                        newAssignees = empRepo.findAllById(dto.getAssigneeIds());
+
+                        ticket.setAssignees(newAssignees);
+
+                        // log only if real change happened
+                        if (!diff.addedIds().isEmpty() ||
+                                        !diff.removedIds().isEmpty()) {
+
+                                for (Long assigneeId : diff.addedIds()) {
+                                        Employee assignee = empRepo.findById(assigneeId)
+                                                        .orElseThrow(() -> new RuntimeException("Employee not found"));
+                                        logActivity(
+                                                        ticket,
+                                                        assignee,
+                                                        TicketActivity.ActivityType.ASSIGNEES_UPDATED,
+                                                        "Assigned to " + assignee.getFirstName());
+                                }
+                        }
+
+                        // notify ONLY newly added users
+                        notifyNewAssignees(ticket, creator, newAssignees, diff);
                 }
 
                 Ticket saved = ticketRepo.save(ticket);
+
+                if (!newAssignees.isEmpty()) {
+                        for (Employee assignee : newAssignees) {
+
+                                notificationEventPublisher.publish(
+                                                NotificationEventData.builder()
+                                                                .orgId(ticket.getOrganisation().getId())
+                                                                .eventCode("TICKET_ASSIGNED")
+                                                                .targetRole(TargetRole.EMPLOYEE)
+                                                                .recipientEmail(assignee.getEmail())
+                                                                .recipientName(assignee.getFullName())
+                                                                .templateVariables(Map.of(
+                                                                                "recipientName", assignee.getFullName(),
+                                                                                "ticketTitle", ticket.getTitle(),
+                                                                                "assignedBy", creator.getFullName(),
+                                                                                "dueDate", ticket.getEndDate() != null
+                                                                                                ? ticket.getEndDate()
+                                                                                                                .toString()
+                                                                                                : "-"))
+                                                                .build());
+                        }
+                }
 
                 // Log activity
                 logActivity(saved, creator, TicketActivity.ActivityType.TICKET_CREATED,
@@ -99,43 +155,75 @@ public class TicketServiceImpl implements TicketService {
         }
 
         // ---------------- UPDATE ----------------
+        // ---------------- UPDATE ----------------
         @Override
         public TicketDTO updateTicket(Long ticketId, TicketDTO dto, Long organisationId, Long employeeId) {
+
                 Ticket ticket = ticketRepo.findById(ticketId)
                                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
-                Employee employee = empRepo.findById(employeeId)
+
+                Employee actor = empRepo.findById(employeeId)
                                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
 
-                // Permission check (either creator or project member)
                 validateTicketAccess(ticket, employeeId);
 
                 if (dto.getTitle() != null)
                         ticket.setTitle(dto.getTitle());
+
                 if (dto.getDescription() != null)
                         ticket.setDescription(dto.getDescription());
-                if (dto.getStatus() != null) {
-                        Ticket.TicketStatus old = ticket.getStatus();
-                        ticket.setStatus(Ticket.TicketStatus.valueOf(dto.getStatus()));
-                        logActivity(ticket, employee, TicketActivity.ActivityType.STATUS_CHANGED,
-                                        "Status changed from " + old + " to " + ticket.getStatus());
-                }
 
                 if (dto.getStartDate() != null)
                         ticket.setStartDate(dto.getStartDate());
+
                 if (dto.getEndDate() != null)
                         ticket.setEndDate(dto.getEndDate());
+
                 if (dto.getActualCompletionDate() != null)
                         ticket.setActualCompletionDate(dto.getActualCompletionDate());
 
+                // status change handled separately
+                if (dto.getStatus() != null) {
+                        TicketStatus oldStatus = ticket.getStatus();
+                        TicketStatus newStatus = TicketStatus.valueOf(dto.getStatus().toUpperCase());
+
+                        if (oldStatus != newStatus) {
+                                ticket.setStatus(newStatus);
+
+                                logActivity(
+                                                ticket,
+                                                actor,
+                                                TicketActivity.ActivityType.STATUS_CHANGED,
+                                                "Status changed from " + oldStatus + " to " + newStatus);
+                        }
+                }
+
+                // assignee update
                 if (dto.getAssigneeIds() != null) {
-                        List<Employee> newAssignees = empRepo.findAllById(dto.getAssigneeIds());
-                        ticket.setAssignees(newAssignees);
-                        logActivity(ticket, employee, TicketActivity.ActivityType.ASSIGNEES_UPDATED,
-                                        "Assigned to " + newAssignees.stream().map(Employee::getFirstName)
-                                                        .collect(Collectors.joining(", ")));
+
+                        AssignmentDiff diff = AssignmentUtil.compare(ticket.getAssignees(), dto.getAssigneeIds());
+
+                        List<Employee> assignees = empRepo.findAllById(dto.getAssigneeIds());
+
+                        ticket.setAssignees(assignees);
+
+                        if (!diff.addedIds().isEmpty() || !diff.removedIds().isEmpty()) {
+
+                                logActivity(
+                                                ticket,
+                                                actor,
+                                                TicketActivity.ActivityType.ASSIGNEES_UPDATED,
+                                                buildAssignmentMessage(diff, assignees));
+                        }
+
+                        // notify only newly added assignees
+                        if (!diff.addedIds().isEmpty()) {
+                                notifyAssignedUsers(ticket, actor, assignees, diff);
+                        }
                 }
 
                 ticketRepo.save(ticket);
+
                 return mapToDTO(ticket);
         }
 
@@ -187,6 +275,7 @@ public class TicketServiceImpl implements TicketService {
                                 .orElseThrow(() -> new EmployeeNotFoundException(managerId));
 
                 List<Employee> assignees = empRepo.findAllById(assigneeIds);
+                AssignmentDiff diff = AssignmentUtil.compare(ticket.getAssignees(), assigneeIds);
                 ticket.setAssignees(assignees);
                 ticket.setStatus(Ticket.TicketStatus.ASSIGNED);
                 ticket.setAssignedAt(LocalDate.now());
@@ -199,53 +288,66 @@ public class TicketServiceImpl implements TicketService {
                 logActivity(ticket, manager, TicketActivity.ActivityType.ASSIGNEES_UPDATED,
                                 "Assigned to: " + assigneeNames);
 
+                if (!diff.addedIds().isEmpty()) {
+                        notifyNewAssignees(ticket, manager, assignees, diff);
+                }
+
                 return mapToDTO(ticket);
         }
 
+        // ---------------- STATUS UPDATE ----------------
         @Override
         public TicketDTO updateTicketStatus(Long ticketId, String status, Long employeeId) {
+
                 Ticket ticket = ticketRepo.findById(ticketId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
-                Employee emp = empRepo.findById(employeeId)
+                Employee actor = empRepo.findById(employeeId)
                                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
 
                 validateTicketAccess(ticket, employeeId);
 
-                Ticket.TicketStatus oldStatus = ticket.getStatus();
-                Ticket.TicketStatus newStatus = Ticket.TicketStatus.valueOf(status.toUpperCase());
+                TicketStatus oldStatus = ticket.getStatus();
+                TicketStatus newStatus = TicketStatus.valueOf(status.toUpperCase());
 
-                // Lifecycle timestamps
-                if (newStatus == TicketStatus.IN_PROGRESS && ticket.getActualStartDate() == null) {
-                        ticket.setActualStartDate(LocalDate.now());
-                } else if (newStatus == TicketStatus.COMPLETED && ticket.getActualCompletionDate() == null) {
-                        ticket.setActualCompletionDate(LocalDate.now());
+                if (oldStatus == newStatus) {
+                        return mapToDTO(ticket);
                 }
 
                 ticket.setStatus(newStatus);
 
-                // Automatically track lifecycle timestamps
                 switch (newStatus) {
                         case ASSIGNED -> {
                                 if (ticket.getAssignedAt() == null)
                                         ticket.setAssignedAt(LocalDate.now());
                         }
+
                         case IN_PROGRESS -> {
                                 if (ticket.getActualStartDate() == null)
                                         ticket.setActualStartDate(LocalDate.now());
                         }
+
                         case COMPLETED -> {
                                 if (ticket.getActualCompletionDate() == null)
                                         ticket.setActualCompletionDate(LocalDate.now());
                         }
+
                         default -> {
                         }
                 }
 
                 ticketRepo.save(ticket);
 
-                logActivity(ticket, emp, TicketActivity.ActivityType.STATUS_CHANGED,
+                logActivity(
+                                ticket,
+                                actor,
+                                TicketActivity.ActivityType.STATUS_CHANGED,
                                 "Status changed from " + oldStatus + " to " + newStatus);
+
+                // notify if reopened
+                if (isReopened(oldStatus, newStatus)) {
+                        notifyReopenedUsers(ticket, actor);
+                }
 
                 return mapToDTO(ticket);
         }
@@ -308,7 +410,8 @@ public class TicketServiceImpl implements TicketService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId, String startDate, String endDate) {
+        public List<TicketDTO> getSubordinateIndependentTickets(Long organisationId, Long managerId, String startDate,
+                        String endDate) {
                 java.util.Set<Long> subordinateIds = hierarchyUtil.getAllSubordinateIds(managerId);
                 if (subordinateIds.isEmpty()) {
                         return java.util.Collections.emptyList();
@@ -318,17 +421,20 @@ public class TicketServiceImpl implements TicketService {
                 java.time.LocalDateTime end = java.time.LocalDateTime.of(2100, 1, 1, 0, 0);
 
                 if (startDate != null && !startDate.trim().isEmpty()) {
-                    try {
-                        start = java.time.LocalDate.parse(startDate).atStartOfDay();
-                    } catch (Exception e) {}
+                        try {
+                                start = java.time.LocalDate.parse(startDate).atStartOfDay();
+                        } catch (Exception e) {
+                        }
                 }
                 if (endDate != null && !endDate.trim().isEmpty()) {
-                    try {
-                        end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
-                    } catch (Exception e) {}
+                        try {
+                                end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
+                        } catch (Exception e) {
+                        }
                 }
 
-                List<Ticket> tickets = ticketRepo.findIndependentTicketsByEmployeeIds(organisationId, subordinateIds, start, end);
+                List<Ticket> tickets = ticketRepo.findIndependentTicketsByEmployeeIds(organisationId, subordinateIds,
+                                start, end);
                 return tickets.stream()
                                 .map(this::mapToDTO)
                                 .collect(Collectors.toList());
@@ -568,4 +674,132 @@ public class TicketServiceImpl implements TicketService {
                                 .uploadedAt(attachment.getUploadedAt())
                                 .build();
         }
+
+        private void notifyNewAssignees(
+                        Ticket ticket,
+                        Employee actor,
+                        List<Employee> users,
+                        AssignmentDiff diff) {
+
+                for (Employee emp : users) {
+
+                        if (!diff.addedIds().contains(emp.getId())) {
+                                continue;
+                        }
+
+                        notificationEventPublisher.publish(
+                                        NotificationEventData.builder()
+                                                        .orgId(ticket.getOrganisation().getId())
+                                                        .eventCode("TICKET_ASSIGNED")
+                                                        .targetRole(TargetRole.EMPLOYEE)
+                                                        .recipientEmail(emp.getEmail())
+                                                        .recipientName(emp.getFullName())
+                                                        .templateVariables(Map.of(
+                                                                        "recipientName", emp.getFullName(),
+                                                                        "ticketTitle", ticket.getTitle(),
+                                                                        "assignedBy", actor.getFullName(),
+                                                                        "dueDate", ticket.getEndDate() != null
+                                                                                        ? ticket.getEndDate().toString()
+                                                                                        : "-"))
+                                                        .build());
+                }
+        }
+
+        private void notifyReopenedUsers(
+                        Ticket ticket,
+                        Employee actor) {
+
+                for (Employee emp : ticket.getAssignees()) {
+
+                        notificationEventPublisher.publish(
+                                        NotificationEventData.builder()
+                                                        .orgId(ticket.getOrganisation().getId())
+                                                        .eventCode("TICKET_REOPENED")
+                                                        .targetRole(TargetRole.EMPLOYEE)
+                                                        .recipientEmail(emp.getEmail())
+                                                        .recipientName(emp.getFullName())
+                                                        .templateVariables(Map.of(
+                                                                        "recipientName", emp.getFullName(),
+                                                                        "ticketTitle", ticket.getTitle(),
+                                                                        "reopenedBy", actor.getFullName()))
+                                                        .build());
+                }
+        }
+
+        private boolean isReopened(TicketStatus oldStatus, TicketStatus newStatus) {
+
+                boolean oldClosed = oldStatus == TicketStatus.COMPLETED ||
+                                oldStatus.name().equalsIgnoreCase("CLOSED");
+
+                boolean newOpen = newStatus == TicketStatus.OPEN ||
+                                newStatus == TicketStatus.ASSIGNED ||
+                                newStatus == TicketStatus.IN_PROGRESS;
+
+                return oldClosed && newOpen;
+        }
+
+        private void notifyAssignedUsers(
+                        Ticket ticket,
+                        Employee actor,
+                        List<Employee> assignees,
+                        AssignmentDiff diff) {
+
+                for (Employee emp : assignees) {
+
+                        if (!diff.addedIds().contains(emp.getId()))
+                                continue;
+
+                        notificationEventPublisher.publish(
+                                        NotificationEventData.builder()
+                                                        .orgId(ticket.getOrganisation().getId())
+                                                        .eventCode("TICKET_ASSIGNED")
+                                                        .targetRole(TargetRole.EMPLOYEE)
+                                                        .recipientEmail(emp.getEmail())
+                                                        .recipientName(emp.getFullName())
+                                                        .templateVariables(Map.of(
+                                                                        "recipientName", emp.getFullName(),
+                                                                        "ticketTitle", ticket.getTitle(),
+                                                                        "assignedBy", actor.getFullName(),
+                                                                        "dueDate", ticket.getEndDate() != null
+                                                                                        ? ticket.getEndDate().toString()
+                                                                                        : "-"))
+                                                        .build());
+                }
+        }
+
+        private String buildAssignmentMessage(
+                        AssignmentDiff diff,
+                        List<Employee> allEmployees) {
+
+                List<String> parts = new ArrayList<>();
+
+                String addedNames = allEmployees.stream()
+                                .filter(e -> diff.addedIds().contains(e.getId()))
+                                .map(Employee::getFullName)
+                                .collect(Collectors.joining(", "));
+
+                if (!addedNames.isBlank()) {
+                        parts.add("Added: " + addedNames);
+                }
+
+                String removedNames = getEmployeeNamesByIds(diff.removedIds());
+
+                if (!removedNames.isBlank()) {
+                        parts.add("Removed: " + removedNames);
+                }
+
+                return String.join(" | ", parts);
+        }
+
+        private String getEmployeeNamesByIds(Set<Long> ids) {
+
+                if (ids == null || ids.isEmpty()) {
+                        return "";
+                }
+
+                return empRepo.findAllById(ids).stream()
+                                .map(Employee::getFullName)
+                                .collect(Collectors.joining(", "));
+        }
+
 }

@@ -7,6 +7,9 @@ import com.sellspark.SellsHRMS.exception.InvalidOperationException;
 import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeInactiveException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
+import com.sellspark.SellsHRMS.notification.enums.TargetRole;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
+import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -41,12 +45,15 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private final PunchInOutRepository punchRepo;
     private final AttendanceSummaryRepository summaryRepo;
+
     private final EmployeeRepository employeeRepo;
+    private final EmployeeHierarchyUtil employeeHierarchyUtil;
     private final LeaveRepository leaveRepo;
     private final HolidayRepository holidayRepo;
     private final OrganisationPolicyRepository policyRepo;
     private final DeviceRepository deviceRepo;
-    private final EmployeeHierarchyUtil employeeHierarchyUtil;
+
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     public PunchRecordResponse punchIn(PunchInRequest request) {
@@ -298,6 +305,19 @@ public class AttendanceServiceImpl implements AttendanceService {
             summary.setRemarks(request.getRemarks());
         }
         summaryRepo.save(summary);
+
+        notificationEventPublisher.publish(
+                NotificationEventData.builder()
+                        .orgId(summary.getOrganisation().getId())
+                        .eventCode("ATTENDANCE_REGULARIZED")
+                        .targetRole(TargetRole.EMPLOYEE)
+                        .recipientEmail(summary.getEmployee().getEmail())
+                        .recipientName(summary.getEmployee().getFullName())
+                        .templateVariables(Map.of(
+                                "employeeName", summary.getEmployee().getFullName(),
+                                "date", summary.getAttendanceDate().toString(),
+                                "workHours", summary.getWorkHours().toString()))
+                        .build());
 
         return mapToResponse(punch, summary, zoneId);
     }

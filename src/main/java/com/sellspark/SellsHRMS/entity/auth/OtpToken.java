@@ -1,8 +1,7 @@
 package com.sellspark.SellsHRMS.entity.auth;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +9,8 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "tbl_otp_token")
+@NoArgsConstructor
+@AllArgsConstructor
 public class OtpToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

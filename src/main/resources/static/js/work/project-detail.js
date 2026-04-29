@@ -255,7 +255,7 @@ function renderTickets(tickets) {
           <td>${formatDate(t.endDate)}</td>
           <td class="px-3">
             <div class="d-flex flex-nowrap gap-1">
-            <button class="btn btn-sm btn-outline-secondary" onclick="ticketStatusModal(${t.id})"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="ticketStatusModal(${t.id})"><i class="fas fa-tasks"></i></button>
             ${isManagerOrLead
           ? `
                 <button class="btn btn-sm btn-outline-warning" onclick="editTicket(${t.id})"><i class="fas fa-edit"></i></button>
