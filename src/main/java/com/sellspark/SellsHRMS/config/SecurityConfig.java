@@ -68,6 +68,7 @@ public class SecurityConfig {
                                                                 "/error/**", "/error", "/favicon.ico",
                                                                 "/api/auth/login", "/api/auth/logout",
                                                                 "/api/auth/register-superadmin",
+                                                                "/api/device/punch",
                                                                 "/actuator/health", "/actuator/info",
                                                                 "/verify/resume",
                                                                 "/public/onboard", "/api/public/**",

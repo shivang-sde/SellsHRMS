@@ -53,6 +53,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
 
     private static final List<String> EXCLUDED_PATHS = List.of(
             "/api/auth/",
+            "/api/device/",
             "/api/superadmin",
             "/superadmin",
             "/login",
