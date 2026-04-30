@@ -50,16 +50,34 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public List<DeviceDTO> getDevicesByOrganisation(Long organisationId) {
-        return deviceRepository.findByOrganisationId(organisationId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public DeviceDTO updateDeviceStatus(Long deviceId, Device.Status status) {
+        Device device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Device", "id", deviceId));
+
+        device.setStatus(status);
+        Device updatedDevice = deviceRepository.save(device);
+
+        return mapToDTO(updatedDevice);
     }
 
     @Override
     public Device getDeviceByApiKey(String apiKey) {
-        return deviceRepository.findByApiKey(apiKey)
+        Device device = deviceRepository.findByApiKey(apiKey)
                 .orElseThrow(() -> new InvalidOperationException("Invalid API Key"));
+
+        // Check if device is active
+        if (device.getStatus() != Device.Status.ACTIVE) {
+            throw new InvalidOperationException("Device is not active. Please contact administrator.");
+        }
+
+        return device;
+    }
+
+    @Override
+    public List<DeviceDTO> getDevicesByOrganisation(Long organisationId) {
+        return deviceRepository.findByOrganisationId(organisationId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     private DeviceDTO mapToDTO(Device device) {

@@ -18,13 +18,15 @@
                             <tr>
                                 <th>Device Name</th>
                                 <th>Device Code</th>
+                                <th>API Key</th>
                                 <th>Status</th>
                                 <th>Created At</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="deviceTableBody">
                             <tr>
-                                <td colspan="4" class="text-center text-muted">Loading devices...</td>
+                                <td colspan="6" class="text-center text-muted">Loading devices...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -43,14 +45,22 @@
                     <div class="modal-body">
                         <form id="addDeviceForm">
                             <div class="mb-3">
-                                <label class="form-label">Device Name</label>
-                                <input type="text" class="form-control" name="name" required
-                                    placeholder="e.g. Front Desk Kiosk">
+                                <label class="form-label">Device Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="name" id="deviceName" required
+                                    placeholder="e.g. Front Desk Kiosk" onkeyup="generateDeviceCode()">
+                                <small class="text-muted">Device code will be auto-generated based on name</small>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Device Code (Unique)</label>
-                                <input type="text" class="form-control" name="deviceCode" required
-                                    placeholder="e.g. KIOSK-01">
+                                <label class="form-label">Device Code</label>
+                                <input type="text" class="form-control" name="deviceCode" id="deviceCode"
+                                    placeholder="Auto-generated" readonly>
+                                <small class="text-muted">Auto-generated unique code (can be customized)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Custom Device Code (Optional)</label>
+                                <input type="text" class="form-control" id="customDeviceCode"
+                                    placeholder="Leave empty for auto-generated">
+                                <small class="text-muted">Enter a custom unique code if needed</small>
                             </div>
                         </form>
 
@@ -61,12 +71,17 @@
                             </div>
                             <p class="mb-1 fw-bold">API Key (Copy this now, it won't be shown again)</p>
                             <div class="input-group">
-                                <input type="text" id="generatedApiKey" class="form-control text-center font-monospace"
-                                    readonly>
-                                <button class="btn btn-outline-secondary" onclick="copyApiKey()">
+                                <input type="password" id="generatedApiKey"
+                                    class="form-control text-center font-monospace" readonly>
+                                <button class="btn btn-outline-secondary" type="button"
+                                    onclick="toggleApiKeyVisibility()">
+                                    <i id="toggleApiKeyIcon" class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyApiKeyFromModal()">
                                     <i class="fas fa-copy"></i>
                                 </button>
                             </div>
+                            <small class="text-muted">Click the eye icon to show/hide the API key</small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -77,3 +92,26 @@
                 </div>
             </div>
         </div>
+
+
+
+        <style>
+            .api-key-preview {
+                font-family: monospace;
+                letter-spacing: 1px;
+            }
+
+            .btn-sm i {
+                margin-right: 4px;
+            }
+
+            #deviceCode,
+            #customDeviceCode {
+                font-family: monospace;
+                font-size: 14px;
+            }
+
+            .table td {
+                vertical-align: middle;
+            }
+        </style>

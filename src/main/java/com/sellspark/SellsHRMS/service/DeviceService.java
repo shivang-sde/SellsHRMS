@@ -10,4 +10,6 @@ public interface DeviceService {
     List<DeviceDTO> getDevicesByOrganisation(Long organisationId);
 
     Device getDeviceByApiKey(String apiKey);
+
+    DeviceDTO updateDeviceStatus(Long deviceId, Device.Status status);
 }

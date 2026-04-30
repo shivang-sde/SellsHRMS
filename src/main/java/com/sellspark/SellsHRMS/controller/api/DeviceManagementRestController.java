@@ -27,4 +27,10 @@ public class DeviceManagementRestController {
             @RequestParam String deviceCode) {
         return ResponseEntity.ok(deviceService.createDevice(orgId, name, deviceCode));
     }
+
+    @PutMapping("/{deviceId}/status")
+    public ResponseEntity<DeviceDTO> updateDeviceStatus(@PathVariable Long deviceId,
+            @RequestParam String status) {
+        return ResponseEntity.ok(deviceService.updateDeviceStatus(deviceId, Device.Status.valueOf(status)));
+    }
 }
