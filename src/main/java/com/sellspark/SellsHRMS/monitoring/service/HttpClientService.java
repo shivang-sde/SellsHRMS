@@ -37,16 +37,22 @@ public class HttpClientService {
 
         try {
             RestClient restClient = createRestClient(url);
-
-            // FIXED: Make the request with the actual URL
             ClientHttpResponse response = makeRequest(restClient, url);
 
             long responseTime = System.currentTimeMillis() - startTime;
-            HttpStatusCode statusCode = response.getStatusCode();
-            boolean isUp = statusCode.is2xxSuccessful();
+            int statusCodeValue = response.getStatusCode().value();
+
+            // FIXED: Match Node.js logic - 2xx AND 3xx are considered UP
+            // Node.js original: response.status >= 200 && response.status < 400
+            boolean isUp = statusCodeValue >= 200 && statusCodeValue < 400;
+
+            // Consume and close response body to release resources
+            if (response.getBody() != null) {
+                response.getBody().close();
+            }
 
             return HttpCheckResult.success(
-                    statusCode.value(),
+                    statusCodeValue,
                     (int) responseTime,
                     isUp);
 
