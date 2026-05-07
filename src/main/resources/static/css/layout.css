@@ -1,432 +1,238 @@
 /* ================================================
-   HRMS Anchor Layout — Modern Enterprise Design
-   Sidebar = full-height anchor column
-   Viewport = header + scrollable content + footer
+   HRMS Design System — Zinc & Slate (shadcn/ui style)
    ================================================ */
 
 :root {
-  --header-height: 60px;
-  --footer-height: 40px;
-  --sidebar-width: 256px;
-  --sidebar-collapsed-width: 72px;
-  --transition-speed: 0.28s;
+  /* Monochrome Zinc Palette (shadcn style) */
+  --primary: #18181b; /* Zinc 900 */
+  --primary-hover: #27272a; /* Zinc 800 */
+  --primary-foreground: #ffffff;
+  
+  /* Zinc Gray Scale */
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
 
-  /* Palette */
-  --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text: #1e293b;
+  /* Semantic Mappings */
+  --background: #ffffff;
+  --foreground: var(--zinc-900);
+  --card: #ffffff;
+  --card-foreground: var(--zinc-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--zinc-900);
+  --muted: var(--zinc-100);
+  --muted-foreground: var(--zinc-500);
+  --accent: var(--zinc-100);
+  --accent-foreground: var(--zinc-900);
+  --border: var(--zinc-200);
+  --input: var(--zinc-200);
+  --ring: var(--zinc-950);
+  
+  --radius: 0.75rem; 
 
-  --sidebar-bg: #1e293b;
-  --sidebar-hover: #334155;
-  --sidebar-active: #0284c7;
-  --sidebar-color: #e2e8f0;
+  /* Layout Constants */
+  --header-height: 64px;
+  --sidebar-width: 280px;
+  --transition-timing: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ============= Global Reset ============= */
+/* ============= Global Reset & Typography ============= */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-html,
 body.hrms-app {
   margin: 0;
   padding: 0;
-  height: 100%;
-  font-family: 'Inter', sans-serif;
-  background: var(--color-bg);
-  color: var(--color-text);
-  overflow: hidden;
+  height: 100vh;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  overflow-y: hidden; /* Fixed height layout */
 }
 
-/* ============= Anchor Layout Grid ============= */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
 
-/*
-   .hrms-wrapper  ┌──────────────────────────────────────────┐
-                   │ .hrms-sidebar  │  .hrms-viewport         │
-                   │ (anchor, 100vh)│ ┌─────────────────────┐ │
-                   │                │ │ .hrms-header        │ │
-                   │                │ ├─────────────────────┤ │
-                   │                │ │ .hrms-main (scroll) │ │
-                   │                │ ├─────────────────────┤ │
-                   │                │ │ .hrms-footer        │ │
-                   │                │ └─────────────────────┘ │
-                   └──────────────────────────────────────────┘
-*/
+/* ============= Human-Coded Focus & Form Styling ============= */
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--zinc-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid var(--zinc-200);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  background-color: var(--background);
+  transition: all var(--transition-timing);
+}
+
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--zinc-900);
+  box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08);
+  background-color: var(--background);
+}
+
+/* ============= shadcn-like Tables ============= */
+
+.table-responsive {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+}
+
+.table {
+  margin-bottom: 0;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--zinc-500);
+  background: var(--zinc-50);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.table tbody td {
+  padding: 1rem 1.25rem;
+  font-size: 0.9375rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--zinc-700);
+  vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--muted);
+}
+
+/* ============= Clean Buttons ============= */
+
+.btn {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius);
+  transition: all var(--transition-timing);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.15);
+}
+
+.btn-outline-secondary,
+.btn-ghost {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--zinc-700);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--zinc-50);
+  border-color: var(--zinc-300);
+  color: var(--zinc-900);
+}
+
+/* ============= Layout Structure ============= */
 
 .hrms-wrapper {
-  /* display: flex; */
+  display: flex;
   height: 100vh;
   width: 100%;
-  overflow: hidden;
 }
 
-/* ============= Sidebar (Anchor Column) ============= */
-.hrms-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: var(--sidebar-width);
-  background: var(--sidebar-bg);
-  color: var(--sidebar-color);
-  display: flex;
-  flex-direction: column;
-  z-index: 1040;
-  transition: width var(--transition-speed) ease;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.hrms-sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
-}
-
-.sidebar-inner {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Sidebar nav scroll */
-.sidebar-nav {
-  flex: 1;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-gutter: stable;
-}
-
-/* Custom scrollbar for sidebar */
-.sidebar-nav::-webkit-scrollbar {
-  width: 5px;
-}
-
-.sidebar-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-
-/* ============= Nav Links ============= */
-.nav-link {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 18px;
-  color: var(--sidebar-color);
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 400;
-  border-radius: 0;
-  transition: background var(--transition-speed), color var(--transition-speed);
-  position: relative;
-}
-
-.nav-link:hover {
-  background: var(--sidebar-hover);
-  color: #fff;
-}
-
-.nav-link.active {
-  background: var(--sidebar-active);
-  color: #fff;
-}
-
-.nav-link i.fa:first-child {
-  margin-right: 10px;
-  width: 20px;
-  text-align: center;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.nav-text {
-  font-size: 0.875rem;
-}
-
-/* ============= Submenu with Track Line ============= */
-.sub-menu {
-  list-style: none;
-  margin: 0;
-  padding-left: 28px;
-  position: relative;
-  max-height: 0;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.35);
-  transition: max-height var(--transition-speed) ease;
-}
-
-/* Vertical track line */
-.sub-menu::before {
-  content: '';
-  position: absolute;
-  left: 26px;
-  top: 4px;
-  bottom: 4px;
-  width: 1px;
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 1px;
-}
-
-.sub-menu.open {
-  max-height: 999px;
-}
-
-.sub-menu li {
-  position: relative;
-}
-
-.sub-menu li a {
-  display: block;
-  padding: 7px 14px 7px 18px;
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 0.825rem;
-  font-weight: 400;
-  transition: color var(--transition-speed), background var(--transition-speed);
-  border-radius: 4px;
-  margin: 1px 8px 1px 0;
-}
-
-.sub-menu li a:hover {
-  background: rgba(51, 65, 85, 0.5);
-  color: #e2e8f0;
-}
-
-/* Active submenu item */
-.sub-menu a.active {
-  background: rgba(14, 165, 233, 0.12);
-  color: #38bdf8;
-}
-
-/* Sub-header labels */
-.sub-menu .sub-header {
-  padding: 6px 14px 2px 18px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  pointer-events: none;
-}
-
-/* ============= Toggle Icon ============= */
-.toggle-icon {
-  transition: transform var(--transition-speed);
-  font-size: 0.7rem;
-  opacity: 0.6;
-}
-
-.toggle-link.open .toggle-icon {
-  transform: rotate(45deg);
-}
-
-/* ============= Collapsed Mode ============= */
-.hrms-sidebar.collapsed .nav-text,
-.hrms-sidebar.collapsed .toggle-icon,
-.hrms-sidebar.collapsed .sub-menu {
-  display: none !important;
-}
-
-/* Hide ALL text in collapsed nav-links (bare text, <span>, etc.) */
-.hrms-sidebar.collapsed .nav-link {
-  font-size: 0;
-  justify-content: center;
-  padding: 12px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-/* Also hide plain <span> elements without .nav-text class */
-.hrms-sidebar.collapsed .nav-link span {
-  display: none !important;
-}
-
-/* Restore icon visibility — icons use their own font-size */
-.hrms-sidebar.collapsed .nav-link i,
-.hrms-sidebar.collapsed .nav-link i.fa:first-child {
-  font-size: 1.15rem;
-  margin: 0;
-}
-
-/* ============= Hover-expand on Collapsed ============= */
-.hrms-sidebar.collapsed:hover {
-  width: var(--sidebar-width);
-  overflow-y: auto;
-}
-
-/* Restore all text visibility on hover */
-.hrms-sidebar.collapsed:hover .nav-link {
-  font-size: 0.875rem;
-  justify-content: space-between;
-  padding: 10px 18px;
-}
-
-.hrms-sidebar.collapsed:hover .nav-link span {
-  display: inline !important;
-}
-
-.hrms-sidebar.collapsed:hover .nav-text,
-.hrms-sidebar.collapsed:hover .toggle-icon {
-  display: inline !important;
-}
-
-.hrms-sidebar.collapsed:hover .sub-menu {
-  display: block !important;
-}
-
-.hrms-sidebar.collapsed:hover .nav-link i.fa:first-child {
-  margin-right: 10px;
-  font-size: 0.95rem;
-}
-
-/* Tooltip spacing fix */
-.tooltip {
-  font-size: 0.85rem;
-  padding: 6px 10px;
-}
-
-/* ============= Viewport Container ============= */
 .hrms-viewport {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  height: 100vh;
   margin-left: var(--sidebar-width);
-  transition: margin-left var(--transition-speed) ease;
-  overflow: hidden;
-  background: var(--color-bg);
+  width: calc(100% - var(--sidebar-width)); /* Explicit width to prevent overflow */
+  transition: all var(--transition-timing);
 }
 
-.hrms-sidebar.collapsed~.hrms-viewport {
-  margin-left: var(--sidebar-collapsed-width);
+.hrms-viewport.collapsed {
+  margin-left: 70px;
+  width: calc(100% - 70px);
 }
 
-/* ============= Header (inside viewport) ============= */
-.hrms-header {
-  flex-shrink: 0;
-  height: var(--header-height);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0;
-  z-index: 10;
-  position: relative;
-}
-
-/* ============= Main Content (scrollable) ============= */
 .hrms-main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--color-bg);
-  position: relative;
-}
-
-/* Smooth scrollbar for content */
-.hrms-main::-webkit-scrollbar {
-  width: 8px;
-}
-
-.hrms-main::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.hrms-main::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
-  border-radius: 10px;
-}
-
-.hrms-main::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.55);
+  background-color: var(--zinc-50);
 }
 
 .hrms-content {
-  padding-bottom: 20px;
-  min-height: calc(100% - 20px);
+  flex: 1;
+  padding: 2.5rem;
 }
 
-/* ============= Footer (inside viewport) ============= */
 .hrms-footer {
-  flex-shrink: 0;
-  height: var(--footer-height);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: #94a3b8;
-  z-index: 10;
-  position: relative;
+  background-color: var(--background);
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
 }
 
-/* ============= Sidebar Footer ============= */
-.sidebar-footer {
-  padding: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  text-align: center;
-}
-
-.sidebar-footer button {
-  color: #94a3b8;
-  border-color: #475569;
-  transition: all 0.2s;
-}
-
-.sidebar-footer button:hover {
-  background: var(--sidebar-hover);
-  color: #fff;
-}
-
-/* ============= Mobile ============= */
 @media (max-width: 992px) {
-  .hrms-sidebar {
-    left: calc(-1 * var(--sidebar-width));
-    width: var(--sidebar-width);
-    transition: left var(--transition-speed) ease;
-    z-index: 1050;
-  }
-
-  .hrms-sidebar.mobile-open {
-    left: 0;
-  }
-
-  .hrms-viewport {
+  .hrms-viewport, 
+  .hrms-viewport.collapsed {
     margin-left: 0 !important;
+    width: 100% !important;
   }
 
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(2px);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-speed), visibility var(--transition-speed);
-    z-index: 1045;
+  .hrms-content {
+    padding: 1rem; /* Standard mobile padding (16px) */
   }
 
-  .sidebar-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  body.sidebar-active {
-    overflow: hidden;
+  /* Enterprise touch: hide some decorations on mobile to save space */
+  .hrms-main {
+    background-color: var(--background); /* Pure white on mobile for cleaner look */
   }
 }

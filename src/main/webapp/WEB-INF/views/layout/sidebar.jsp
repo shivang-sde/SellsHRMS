@@ -3,215 +3,204 @@
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
       <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-        <aside id="hrmsSidebar" class="hrms-sidebar" aria-label="Sidebar">
-          <div class="sidebar-inner d-flex flex-column">
-
-            <!-- Navigation -->
-            <nav class="nav flex-column nav-pills sidebar-nav mt-2">
+        <aside id="hrmsSidebar" class="hrms-sidebar">
+          <div class="sidebar-header">
+            <c:choose>
+              <c:when test="${not empty sessionScope.LOGO_URL}">
+                <img src="${sessionScope.LOGO_URL}" alt="Logo" class="sidebar-logo">
+              </c:when>
+              <c:otherwise>
+                <div class="sidebar-brand">
+                  <span class="brand-text">Sells<span class="text-slate-400">HRMS</span></span>
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+          <div class="sidebar-inner">
+            <nav class="sidebar-nav">
 
               <!-- ================= SUPER ADMIN ================= -->
               <sec:authorize access="hasAuthority('SUPER_ADMIN')">
+                <div class="nav-group-label">Administration</div>
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/dashboard">
-                  <i class="fa fa-chart-line"></i> <span>Dashboard</span>
+                  <i class="fa-solid fa-gauge"></i> <span class="nav-text">Dashboard</span>
                 </a>
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/organisations">
-                  <i class="fa fa-building"></i> <span>Organisations</span>
+                  <i class="fa-solid fa-building-columns"></i> <span class="nav-text">Organisations</span>
                 </a>
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/orgadmins">
-                  <i class="fa fa-users"></i> <span>Org Admins</span>
+                  <i class="fa-solid fa-users-gear"></i> <span class="nav-text">Org Admins</span>
                 </a>
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/create-organisation">
-                  <i class="fa fa-plus-circle"></i> <span>Create Organisation</span>
+                  <i class="fa-solid fa-plus"></i> <span class="nav-text">Create Organisation</span>
                 </a>
                 <a class="nav-link" href="${pageContext.request.contextPath}/superadmin/permissions">
-                  <i class="fa fa-key"></i> <span>Permission</span>
+                  <i class="fa-solid fa-shield-check"></i> <span class="nav-text">Permission</span>
                 </a>
-                <a class="nav-link toggle-link" href="#">
-                  <i class="fa fa-bell"></i> <span>Notification</span>
-                </a>
-                <ul class="sub-menu">
-                  <li><a href="${pageContext.request.contextPath}/superadmin/notifications/templates">
-                      <i class="fa fa-file-text"></i> <span>Notification Template</span>
-                    </a></li>
-                  <li><a href="${pageContext.request.contextPath}/superadmin/notifications/events">
-                      <i class="fa fa-bell"></i> <span>Notification Event</span>
-                    </a></li>
-                </ul>
+                <div class="nav-group">
+                  <a class="nav-link toggle-link" href="javascript:void(0)">
+                    <i class="fa-solid fa-bell"></i> <span class="nav-text">Notification</span>
+                    <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                  </a>
+                  <ul class="sub-menu">
+                    <li><a href="${pageContext.request.contextPath}/superadmin/notifications/templates">Templates</a>
+                    </li>
+                    <li><a href="${pageContext.request.contextPath}/superadmin/notifications/events">Events</a></li>
+                  </ul>
+                </div>
+
+                <!-- In sidebar.jsp - Under SUPER ADMIN section -->
+
+                <div class="nav-group">
+                  <a class="nav-link toggle-link" href="javascript:void(0)">
+                    <i class="fa-solid fa-globe"></i> <span class="nav-text">URL Monitor (All)</span>
+                    <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                  </a>
+                  <ul class="sub-menu">
+                    <li><a href="${pageContext.request.contextPath}/superadmin/monitor/dashboard">Global Dashboard</a>
+                    </li>
+                    <li><a href="${pageContext.request.contextPath}/superadmin/monitor/urls">All URLs</a></li>
+                    <li><a href="${pageContext.request.contextPath}/superadmin/monitor/incidents">All Incidents</a></li>
+                  </ul>
+                </div>
               </sec:authorize>
 
               <!-- ================= ACCOUNTANT ================= -->
               <sec:authorize access="hasAuthority('ACCOUNTANT')">
+                <div class="nav-group-label">Accounting</div>
                 <a class="nav-link" href="${pageContext.request.contextPath}/accountant-panel">
-                  <i class="fa fa-wallet"></i> Accountant Panel
+                  <i class="fa-solid fa-calculator"></i> <span class="nav-text">Accountant Panel</span>
                 </a>
               </sec:authorize>
 
               <!-- ================= ORG ADMIN ================= -->
               <sec:authorize access="hasAuthority('ORG_ADMIN')">
-
-                <!-- Dashboard -->
-                <a class="nav-link toggle-link" href="#">
-                  <i class="fa fa-tachometer-alt"></i> Dashboards <i class="fa fa-plus toggle-icon"></i>
-                </a>
-                <ul class="sub-menu">
-                  <li>
-                    <a href="${pageContext.request.contextPath}/org/dashboard">
-                      <i class="fa fa-tachometer-alt"></i> Home
-                    </a>
-                  </li>
-                  <li>
-                    <a href="${pageContext.request.contextPath}/org/attendance-analytics-dashboard">
-                      <i class="fa fa-user-check"></i> Attendance
-                    </a>
-                  </li>
-                </ul>
-
-                <!-- Departments -->
-                <app:ifModule code="ORG_STRUCTURE">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-sitemap"></i> Organisation <i class="fa fa-plus toggle-icon"></i>
+                <div class="nav-group-label">Organization</div>
+                <div class="nav-group">
+                  <a class="nav-link toggle-link" href="javascript:void(0)">
+                    <i class="fa-solid fa-chart-line"></i> <span class="nav-text">Dashboards</span>
+                    <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
                   </a>
                   <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/org/roles">Roles</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/departments">Departments</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/designations">Designations</a></li>
-                    <app:ifModule code="ORG_POLICY">
-                      <li>
-                        <a class="nav-link"
-                          href="${pageContext.request.contextPath}/org/organisation-policy">Settings</a>
-                      </li>
-                    </app:ifModule>
-                    <li><a href="${pageContext.request.contextPath}/org/notifications/smtp-settings">SMTP
-                        Settings</a>
+                    <li><a href="${pageContext.request.contextPath}/org/dashboard">Home</a></li>
+                    <li><a href="${pageContext.request.contextPath}/org/attendance-analytics-dashboard">Attendance</a>
                     </li>
-                    <li><a href="${pageContext.request.contextPath}/org/notifications/preferences">Notification
-                        Preferences</a></li>
                   </ul>
+                </div>
+
+                <app:ifModule code="ORG_STRUCTURE">
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-sitemap"></i> <span class="nav-text">Organisation</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li><a href="${pageContext.request.contextPath}/org/roles">Roles</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/departments">Departments</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/designations">Designations</a></li>
+                      <app:ifModule code="ORG_POLICY">
+                        <li><a href="${pageContext.request.contextPath}/org/organisation-policy">Settings</a></li>
+                      </app:ifModule>
+                      <li><a href="${pageContext.request.contextPath}/org/notifications/smtp-settings">SMTP Settings</a>
+                      </li>
+                      <li><a href="${pageContext.request.contextPath}/org/notifications/preferences">Notification
+                          Prefs</a></li>
+                    </ul>
+                  </div>
                 </app:ifModule>
 
-                <!-- Roles & Permissions
-                <app:ifModule code="ROLE_PERMISSION">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-shield-alt"></i> Roles & Permissions <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/org/roles">All Roles</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/create-role">Create Role</a></li>
-                  </ul>
-                </app:ifModule> -->
+                <div class="nav-group-label">People</div>
 
-                <!-- Employees -->
                 <app:ifModule code="EMPLOYEE">
                   <sec:authorize
                     access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM', 'EMPLOYEE_CREATE')">
-                    <a class="nav-link toggle-link" href="#">
-                      <i class="fa fa-users"></i> Employees <i class="fa fa-plus toggle-icon"></i>
-                    </a>
-                    <ul class="sub-menu">
-                      <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
-                        <li><a href="${pageContext.request.contextPath}/org/create-employee">Add Employee</a></li>
-                      </sec:authorize>
-                      <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
-                        <li><a href="${pageContext.request.contextPath}/org/employees">Employees</a></li>
-                      </sec:authorize>
-                    </ul>
+                    <div class="nav-group">
+                      <a class="nav-link toggle-link" href="javascript:void(0)">
+                        <i class="fa-solid fa-users"></i> <span class="nav-text">Employees</span>
+                        <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
+                          <span class="ms-auto"
+                            onclick="window.location.href='${pageContext.request.contextPath}/org/create-employee'; event.stopPropagation();">
+                            <i class="fa-solid fa-plus small text-zinc-400 hover:text-zinc-900"></i>
+                          </span>
+                        </sec:authorize>
+                        <i class="fa-solid fa-chevron-right ms-2 small toggle-chevron"></i>
+                      </a>
+                      <ul class="sub-menu">
+                        <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
+                          <li><a href="${pageContext.request.contextPath}/org/create-employee">Add Employee</a></li>
+                        </sec:authorize>
+                        <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
+                          <li><a href="${pageContext.request.contextPath}/org/employees">All Employees</a></li>
+                        </sec:authorize>
+                      </ul>
+                    </div>
                   </sec:authorize>
                 </app:ifModule>
 
-                <!-- Attendance -->
+                <div class="nav-group-label">Operations</div>
+
                 <app:ifModule code="ATTENDANCE">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-clock"></i> Attendance <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/org/attendance">Today's Attendance</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/attendance/reports">Reports</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/devices">Devices</a></li>
-                  </ul>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-calendar-check"></i> <span class="nav-text">Attendance</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li><a href="${pageContext.request.contextPath}/org/attendance">Today's Attendance</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/attendance/reports">Reports</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/devices">Devices</a></li>
+                    </ul>
+                  </div>
                 </app:ifModule>
 
-                <!-- Leave -->
                 <app:ifModule code="LEAVE">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-calendar-alt"></i> Leave <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/org/leaves">Leave Requests</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/leave-types">Leave Types</a></li>
-                    <li><a href="${pageContext.request.contextPath}/org/leave-balances">Leave Balances</a></li>
-                  </ul>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-calendar-days"></i> <span class="nav-text">Leave</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li><a href="${pageContext.request.contextPath}/org/leaves">Leave Requests</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/leave-types">Leave Types</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/leave-balances">Leave Balances</a></li>
+                    </ul>
+                  </div>
                 </app:ifModule>
 
-
-
-
-
-                <!-- Payroll -->
                 <app:ifModule code="PAYROLL">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-wallet"></i> <span class="nav-text">Payroll</span>
-                    <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <!-- Payroll Setup -->
-                    <li class="sub-header text-muted small mt-2">Setup</li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/payroll/salary-components">
-                        <i class="fa fa-coins me-2 text-primary"></i> <span class="nav-text">Salary Components</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/payroll/salary-structures">
-                        <i class="fa fa-layer-group me-2 text-success"></i> <span class="nav-text">Salary
-                          Structures</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/payroll/salary-assignments">
-                        <i class="fa fa-user-tie me-2 text-info"></i> <span class="nav-text">Employee Assignments</span>
-                      </a>
-                    </li>
-
-                    <!-- Statutory & Tax -->
-                    <li class="sub-header text-muted small mt-2">Statutory & Tax</li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/payroll/statutory-tax">
-                        <i class="fa fa-balance-scale me-2 text-warning"></i> <span class="nav-text">Statutory & Tax
-                          Setup</span>
-                      </a>
-                    </li>
-
-                    <!-- Template Management (NEW SECTION) -->
-                    <li class="sub-header text-muted small mt-2">Templates</li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/salary-slip-template/list">
-                        <i class="fa fa-file-alt me-2 text-primary"></i> <span class="nav-text">Salary Slip
-                          Templates</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/salary-slip-template/design">
-                        <i class="fa fa-drafting-compass me-2 text-info"></i> <span class="nav-text">Template
-                          Designer</span>
-                      </a>
-                    </li>
-
-                    <!-- Payroll Operations -->
-                    <li class="sub-header text-muted small mt-2">Operations</li>
-                    <li>
-                      <a href="${pageContext.request.contextPath}/payroll/payruns">
-                        <i class="fa fa-play-circle me-2 text-danger"></i> <span class="nav-text">PayRun
-                          Dashboard</span>
-                      </a>
-                    </li>
-                  </ul>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-wallet"></i> <span class="nav-text">Payroll</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Setup</li>
+                      <li><a href="${pageContext.request.contextPath}/payroll/salary-components">Salary Components</a>
+                      </li>
+                      <li><a href="${pageContext.request.contextPath}/payroll/salary-structures">Salary Structures</a>
+                      </li>
+                      <li><a href="${pageContext.request.contextPath}/payroll/salary-assignments">Employee
+                          Assignments</a></li>
+                      <li><a href="${pageContext.request.contextPath}/payroll/statutory-tax">Statutory & Tax</a></li>
+                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Templates</li>
+                      <li><a href="${pageContext.request.contextPath}/salary-slip-template/list">Salary Slip
+                          Templates</a></li>
+                      <li><a href="${pageContext.request.contextPath}/salary-slip-template/design">Template Designer</a>
+                      </li>
+                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Operations</li>
+                      <li><a href="${pageContext.request.contextPath}/payroll/payruns">PayRun Dashboard</a></li>
+                    </ul>
+                  </div>
                 </app:ifModule>
 
-                <!-- Asset Management -->
+
+
+
                 <app:ifModule code="ASSET_MANAGEMENT">
-                  <sec:authorize access="hasAnyAuthority('ORG_ADMIN','ASSEST_MANAGEMENT')">
-                    <a class="nav-link toggle-link" href="#">
-                      <i class="fa fa-boxes-stacked"></i> Assets <i class="fa fa-plus toggle-icon"></i>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-box-open"></i> <span class="nav-text">Assets</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
                     </a>
                     <ul class="sub-menu">
                       <li><a href="${pageContext.request.contextPath}/org/assets">All Assets</a></li>
@@ -220,14 +209,33 @@
                       <li><a href="${pageContext.request.contextPath}/org/assets/assignments">Assignments</a></li>
                       <li><a href="${pageContext.request.contextPath}/org/assets/maintenance">Maintenance Logs</a></li>
                     </ul>
-                  </sec:authorize>
+                  </div>
                 </app:ifModule>
 
-                <!-- Organisation Hub -->
+
+                <!-- In sidebar.jsp - Under Operations section, after Payroll or before Resources -->
+
+                <app:ifModule code="URL_MONITOR">
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-globe"></i> <span class="nav-text">URL Monitor</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li><a href="${pageContext.request.contextPath}/org/monitor/dashboard">Dashboard</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/monitor/urls">URLs</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/monitor/groups">Groups</a></li>
+                      <li><a href="${pageContext.request.contextPath}/org/monitor/incidents">Incidents</a></li>
+                    </ul>
+                  </div>
+                </app:ifModule>
+
                 <app:ifModule code="ORG_HUB">
-                  <sec:authorize access="hasAnyAuthority('ORG_ADMIN','EMPLOYEE')">
-                    <a class="nav-link toggle-link" href="#">
-                      <i class="fa fa-info-circle"></i> Organisation Hub <i class="fa fa-plus toggle-icon"></i>
+                  <div class="nav-group-label">Resources</div>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-hubspot"></i> <span class="nav-text">Organisation Hub</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
                     </a>
                     <ul class="sub-menu">
                       <li><a href="${pageContext.request.contextPath}/org/knowledge-base">Knowledge Base</a></li>
@@ -235,56 +243,51 @@
                       <li><a href="${pageContext.request.contextPath}/org/events">Events</a></li>
                       <li><a href="${pageContext.request.contextPath}/org/holidays">Holidays</a></li>
                     </ul>
-                  </sec:authorize>
+                  </div>
                 </app:ifModule>
-
               </sec:authorize>
 
               <!-- ================= EMPLOYEE ================= -->
               <sec:authorize access="hasAuthority('EMPLOYEE')">
-                <app:ifModule code="EMPLOYEE">
-                  <a class="nav-link" href="${pageContext.request.contextPath}/employee/dashboard">
-                    <i class="fa fa-chart-line"></i> Dashboard
-                  </a>
-                  <a class="nav-link" href="${pageContext.request.contextPath}/employee/attendance">
-                    <i class="fa fa-clock"></i> My Attendance
-                  </a>
-                  <a class="nav-link" href="${pageContext.request.contextPath}/employee/leave">
-                    <i class="fa fa-calendar-check"></i> My Leaves
-                  </a>
-                  <a class="nav-link" href="${pageContext.request.contextPath}/employee/salaries">
-                    <i class="fa fa-wallet"></i> My Salaries
-                  </a>
-                </app:ifModule>
-
+                <div class="nav-group-label">Activity</div>
+                <a class="nav-link" href="${pageContext.request.contextPath}/employee/dashboard">
+                  <i class="fa-solid fa-house-chimney-window"></i> <span class="nav-text">Dashboard</span>
+                </a>
+                <a class="nav-link" href="${pageContext.request.contextPath}/employee/attendance">
+                  <i class="fa-solid fa-user-clock"></i> <span class="nav-text">My Attendance</span>
+                </a>
+                <a class="nav-link" href="${pageContext.request.contextPath}/employee/leave">
+                  <i class="fa-solid fa-calendar-check"></i> <span class="nav-text">My Leaves</span>
+                </a>
+                <a class="nav-link" href="${pageContext.request.contextPath}/employee/salaries">
+                  <i class="fa-solid fa-file-invoice-dollar"></i> <span class="nav-text">My Salaries</span>
+                </a>
 
                 <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
-                  <a class="nav-link" href="${pageContext.request.contextPath}/org/employees"><i
-                      class="fa fa-users"></i> Employees</a>
-                </sec:authorize>
-
-                <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
-                  <a class="nav-link" href="${pageContext.request.contextPath}/org/attendance"><i
-                      class="fa fa-clock"></i>Employee Attendance</a>
-                </sec:authorize>
-
-                <sec:authorize access="hasAnyAuthority('EMPLOYEE_VIEW_ALL', 'EMPLOYEE_VIEW_TEAM')">
+                  <a class="nav-link" href="${pageContext.request.contextPath}/org/employees">
+                    <i class="fa-solid fa-users"></i> <span class="nav-text">Employees</span>
+                  </a>
+                  <a class="nav-link" href="${pageContext.request.contextPath}/org/attendance">
+                    <i class="fa-solid fa-clock"></i> <span class="nav-text">Employee Attendance</span>
+                  </a>
                   <a class="nav-link" href="${pageContext.request.contextPath}/employee/leaves">
-                    <i class="fa fa-calendar-check"></i> Leave Requests
+                    <i class="fa-solid fa-calendar-day"></i> <span class="nav-text">Leave Requests</span>
                   </a>
                 </sec:authorize>
-
 
                 <app:ifModule code="PRODUCTIVITY_MANAGEMENT">
-                  <a class="nav-link toggle-link" href="#">
-                    <i class="fa fa-briefcase"></i> My Work <i class="fa fa-plus toggle-icon"></i>
-                  </a>
-                  <ul class="sub-menu">
-                    <li><a href="${pageContext.request.contextPath}/work/dashboard">Dashboard</a></li>
-                    <li><a href="${pageContext.request.contextPath}/work/projects">Projects</a></li>
-                    <li><a href="${pageContext.request.contextPath}/work/tasks">Tasks</a></li>
-                    <li><a href="${pageContext.request.contextPath}/work/tickets">Tickets</a></li>
-                  </ul>
+                  <div class="nav-group">
+                    <a class="nav-link toggle-link" href="javascript:void(0)">
+                      <i class="fa-solid fa-briefcase"></i> <span class="nav-text">My Work</span>
+                      <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
+                    </a>
+                    <ul class="sub-menu">
+                      <li><a href="${pageContext.request.contextPath}/work/dashboard">Dashboard</a></li>
+                      <li><a href="${pageContext.request.contextPath}/work/projects">Projects</a></li>
+                      <li><a href="${pageContext.request.contextPath}/work/tasks">Tasks</a></li>
+                      <li><a href="${pageContext.request.contextPath}/work/tickets">Tickets</a></li>
+                    </ul>
+                  </div>
                 </app:ifModule>
               </sec:authorize>
 

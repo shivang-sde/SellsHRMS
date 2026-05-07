@@ -4,27 +4,21 @@
       <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
         <nav class="hrms-header">
-          <div class="container-fluid d-flex align-items-center justify-content-between px-3">
+          <div class="container-fluid d-flex align-items-center justify-content-between p-0">
             <!-- Left: Sidebar Toggle + Brand -->
-            <div class="d-flex align-items-center gap-2">
-              <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
-                <i class="fa fa-bars-staggered"></i>
+            <div class="d-flex align-items-center gap-3">
+              <button id="sidebarToggle" class="sidebar-toggle-btn">
+                <i class="fa-solid fa-bars-staggered"></i>
               </button>
 
               <c:choose>
                 <c:when test="${not empty sessionScope.LOGO_URL}">
-                  <div class="brand-logo-wrap" title="Company Logo">
-                    <img src="${sessionScope.LOGO_URL}" alt="Company Logo">
+                  <div class="brand-logo-wrap">
+                    <img src="${sessionScope.LOGO_URL}" alt="Logo" style="height: 28px; width: auto;">
                   </div>
-
                 </c:when>
                 <c:otherwise>
-                  <div class="brand-logo-wrap">
-                    <i class="fa fa-building fa-xl text-primary"></i>
-                  </div>
-                  <span class="ms-2 fw-bold text-dark d-none d-lg-inline"
-                    style="letter-spacing: -0.5px; font-size: 1.1rem;">Sells<span
-                      class="text-primary">HRMS</span></span>
+                  <span class="brand-text">Sells<span class="text-muted-foreground">HRMS</span></span>
                 </c:otherwise>
               </c:choose>
             </div>
@@ -37,41 +31,31 @@
                   <c:choose>
                     <c:when test="${not empty sessionScope.PROFILE_IMAGE_URL}">
                       <img src="${sessionScope.PROFILE_IMAGE_URL}"
-                        onerror="this.src=''; this.parentElement.innerHTML='${fn:substring(sessionScope.USER_NAME, 0, 1)}'"
-                        alt="Profile">
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" alt="P">
+                      <span style="display:none;">${fn:substring(sessionScope.USER_NAME, 0, 1)}</span>
                     </c:when>
                     <c:otherwise>
                       ${fn:substring(sessionScope.USER_NAME, 0, 1)}
                     </c:otherwise>
                   </c:choose>
                 </div>
-                <div class="user-info">
+                <div class="user-info d-none d-md-flex">
                   <span class="user-name">${sessionScope.USER_NAME}</span>
-                  <span class="user-role" style="text-transform: capitalize;">
-                    <c:out value="${fn:replace(sessionScope.SYSTEM_ROLE, '_', ' ')}" />
-                  </span>
-
+                  <span class="user-role">${fn:replace(sessionScope.SYSTEM_ROLE, '_', ' ')}</span>
                 </div>
               </div>
 
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                <li class="dropdown-header">Manage Account</li>
+              <ul class="dropdown-menu dropdown-menu-end border shadow-sm" aria-labelledby="userMenu">
+                <li class="dropdown-header text-muted-foreground small fw-bold px-3 py-2">ACCOUNT</li>
                 <sec:authorize access="hasAuthority('EMPLOYEE')">
                   <li><a class="dropdown-item" href="${pageContext.request.contextPath}/employee/profile">
-                      <i class="fa-regular fa-user text-primary"></i> My Profile</a></li>
+                      <i class="fa-regular fa-user"></i> Profile</a></li>
                 </sec:authorize>
-                <!-- <li><a class="dropdown-item" href="#">
-            <i class="fa-regular fa-circle-question text-secondary"></i> Knowledge Base</a></li>
-         -->
                 <div class="dropdown-divider"></div>
-
-
                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                    <i class="fa fa-key text-warning"></i> Change Password</a></li>
-
-
+                    <i class="fa-solid fa-key"></i> Password</a></li>
                 <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
-                    <i class="fa fa-arrow-right-from-bracket"></i> Sign Out</a></li>
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a></li>
               </ul>
             </div>
           </div>
@@ -80,37 +64,31 @@
         <!-- Change Password Modal -->
         <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
-            <form id="changePasswordForm" class="modal-content overflow-hidden border-0 shadow"
-              style="border-radius: 16px;">
-              <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Update Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <form id="changePasswordForm" class="modal-content border-0 shadow-lg">
+              <div class="modal-header border-bottom px-4">
+                <h5 class="modal-title fw-semibold">Update Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
               </div>
               <div class="modal-body p-4">
-                <p class="text-muted small mb-4">Ensure your new password contains at least 8 characters with a mix of
-                  letters and numbers.</p>
+                <p class="text-muted-foreground small mb-4">Ensure your new password contains at least 8 characters.</p>
 
                 <div class="mb-3">
-                  <label class="form-label fw-600 small">Current Password</label>
-                  <input type="password" class="form-control" id="currentPassword" placeholder="Enter current password"
-                    required style="border-radius: 10px; padding: 10px 14px;">
+                  <label class="form-label">Current Password</label>
+                  <input type="password" class="form-control" id="currentPassword" required>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label fw-600 small">New Password</label>
-                  <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" required
-                    style="border-radius: 10px; padding: 10px 14px;">
+                  <label class="form-label">New Password</label>
+                  <input type="password" class="form-control" id="newPassword" required>
                 </div>
                 <div class="mb-4">
-                  <label class="form-label fw-600 small">Confirm New Password</label>
-                  <input type="password" class="form-control" id="confirmPassword" placeholder="Repeat new password"
-                    required style="border-radius: 10px; padding: 10px 14px;">
+                  <label class="form-label">Confirm New Password</label>
+                  <input type="password" class="form-control" id="confirmPassword" required>
                 </div>
 
                 <div id="changePasswordMessage"></div>
               </div>
-              <div class="modal-footer border-0 pt-0 p-4">
-                <button type="submit" class="btn btn-primary w-100"
-                  style="border-radius: 10px; padding: 12px; font-weight: 600;">Securely Update Password</button>
+              <div class="modal-footer border-top p-4">
+                <button type="submit" class="btn btn-primary w-100">Update Password</button>
               </div>
             </form>
           </div>

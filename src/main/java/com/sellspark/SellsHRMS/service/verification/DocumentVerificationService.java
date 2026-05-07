@@ -15,7 +15,7 @@ import com.sellspark.SellsHRMS.entity.Organisation;
 import com.sellspark.SellsHRMS.entity.VerificationToken;
 import com.sellspark.SellsHRMS.repository.OrganisationRepository;
 import com.sellspark.SellsHRMS.repository.VerificationTokenRepository;
-import com.sellspark.SellsHRMS.utils.FileStorageUtils;
+import com.sellspark.SellsHRMS.util.FileStorageUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,395 +1,218 @@
-/**
- * Attendance Dashboard JavaScript
- * Handles data fetching and chart rendering for the attendance dashboard
- */
-
 (function () {
-    'use strict';
+    "use strict";
 
-    // Dashboard Configuration
     const DASHBOARD_CONFIG = {
-        API_BASE: window.APP.CONTEXT_PATH + '/api/dashboard',
-        ORG_ID: window.APP.ORG_ID,
-        REFRESH_INTERVAL: 300000, // 5 minutes
         CHART_COLORS: {
-            primary: '#667eea',
-            success: '#4ade80',
-            danger: '#ef4444',
-            warning: '#facc15',
-            info: '#60a5fa',
-            purple: '#a78bfa',
-            pink: '#f472b6'
+            primary: '#18181b',    // Zinc 900
+            secondary: '#71717a',  // Zinc 500
+            emerald: '#10b981',    // Emerald 500
+            rose: '#ef4444',       // Red 500
+            amber: '#f59e0b',      // Amber 500
+            zinc100: '#f4f4f5'
         }
     };
 
-    // Chart instances
     let charts = {
         attendance: null,
         absence: null,
+        lateArrivals: null,
         deptMissed: null,
         weeklyHours: null
     };
 
     /**
-     * Initialize Dashboard
+     * Get start and end dates based on filter selection
      */
-    function initDashboard() {
-        console.log('🚀 Initializing Attendance Dashboard...');
-        console.log('Organisation ID:', DASHBOARD_CONFIG.ORG_ID);
+    function getFilterRange() {
+        const rangeType = $('#dateRangeSelect').val();
+        let startDate, endDate = new Date().toISOString().split('T')[0];
+        const now = new Date();
 
-        if (!DASHBOARD_CONFIG.ORG_ID) {
-            showError('Organisation ID not found. Please login again.');
-            return;
+        if (rangeType === 'custom') {
+            startDate = $('#startDateInput').val();
+            endDate = $('#endDateInput').val();
+        } else {
+            const start = new Date();
+            switch (rangeType) {
+                case '7days': start.setDate(now.getDate() - 7); break;
+                case '30days': start.setDate(now.getDate() - 30); break;
+                case 'currentMonth': start.setDate(1); break;
+                case 'last3months': start.setMonth(now.getMonth() - 3); break;
+                default: start.setDate(now.getDate() - 30);
+            }
+            startDate = start.toISOString().split('T')[0];
         }
-
-        // Load all dashboard data
-        loadDashboardData();
-
-        // Setup auto-refresh
-        setInterval(loadDashboardData, DASHBOARD_CONFIG.REFRESH_INTERVAL);
+        return { startDate, endDate };
     }
 
     /**
-     * Load All Dashboard Data
+     * Fetch all data with current filters
      */
     async function loadDashboardData() {
+        const orgId = window.APP.ORG_ID;
+        const { startDate, endDate } = getFilterRange();
+        const baseUrl = '/api/dashboard';
+
+        // Use ISO format for dates as expected by @DateTimeFormat
+        const queryParams = `orgId=${orgId}&startDate=${startDate}&endDate=${endDate}`;
+
+        showLoading(true);
         try {
-            showLoading(true);
-
-            const orgId = DASHBOARD_CONFIG.ORG_ID;
-            const baseUrl = DASHBOARD_CONFIG.API_BASE;
-
-            // Fetch all data in parallel
-            const [summary, trend, reasons, deptMissed, weeklyHours, lateArrivals, dailyLateArrivals] = await Promise.all([
-                fetchData(`${baseUrl}/summary?orgId=${orgId}`),
-                fetchData(`${baseUrl}/attendance-trend?orgId=${orgId}`),
-                fetchData(`${baseUrl}/absence-reasons?orgId=${orgId}`),
-                fetchData(`${baseUrl}/days-missed-department?orgId=${orgId}`),
-                fetchData(`${baseUrl}/weekly-hours?orgId=${orgId}`),
-                fetchData(`${baseUrl}/late-arrivals-trend?orgId=${orgId}`),
-                fetchData(`${baseUrl}/late-arrivals-daily?orgId=${orgId}&days=30`)
+            await Promise.all([
+                fetchData(`${baseUrl}/summary?${queryParams}`).then(updateSummaryCards),
+                fetchData(`${baseUrl}/attendance-trend?${queryParams}`).then(renderAttendanceChart),
+                fetchData(`${baseUrl}/absence-reasons?${queryParams}`).then(renderAbsenceReasonsChart),
+                fetchData(`${baseUrl}/days-missed-department?${queryParams}`).then(renderDeptMissedChart),
+                fetchData(`${baseUrl}/late-arrivals-daily?${queryParams}`).then(renderLateArrivalsDailyChart),
+                fetchData(`${baseUrl}/weekly-hours?${queryParams}`).then(renderWeeklyHoursChart)
             ]);
-
-            console.log('Late Arrivals Daily:', dailyLateArrivals);
-            console.log('Late Arrivals Trend:', lateArrivals);
-            console.log('Summary:', summary);
-            console.log('Trend:', trend);
-            console.log('Reasons:', reasons);
-            console.log('Dept Missed:', deptMissed);
-            console.log('Weekly Hours:', weeklyHours);
-
-            // renderLateArrivalsTrendChart(lateArrivals);
-            renderLateArrivalsDailyChart(dailyLateArrivals);
-
-            // function renderLateArrivalsTrendChart(data) {
-            //     const ctx = document.getElementById('lateArrivalsTrendChart');
-            //     if (!ctx) return;
-
-            //     if (charts.lateArrivals) charts.lateArrivals.destroy();
-
-            //     charts.lateArrivals = new Chart(ctx, {
-            //         type: 'bar',
-            //         data: {
-            //             labels: data.map(d => d.monthLabel),
-            //             datasets: [{
-            //                 label: 'Late Arrivals',
-            //                 data: data.map(d => parseFloat(d.attendanceRate || 0)),
-            //                 backgroundColor: '#3b82f6',
-            //                 borderRadius: 6
-            //             }]
-            //         },
-            //         options: {
-            //             responsive: true,
-            //             maintainAspectRatio: false,
-            //             scales: { y: { beginAtZero: true } },
-            //             plugins: {
-            //                 legend: { display: true, position: 'top' }
-            //             }
-            //         }
-            //     });
-            // }
-
-
-            // Update UI with fetched data
-            updateSummaryCards(summary);
-            renderAttendanceTrendChart(trend);
-            renderAbsenceReasonsChart(reasons);
-            renderDeptMissedChart(deptMissed);
-            renderWeeklyHoursChart(weeklyHours);
-
-            showLoading(false);
-            console.log('✅ Dashboard data loaded successfully');
-
         } catch (error) {
-            console.error('❌ Error loading dashboard:', error);
-            showError('Failed to load dashboard data. Please refresh the page.');
+            console.error('Failed to load dashboard data:', error);
+            showError('Error syncing analytics. Please check your network or try again.');
+        } finally {
             showLoading(false);
         }
     }
 
-    /**
-     * Fetch Data from API
-     */
-    async function fetchData(url) {
-        const response = await fetch(url, {
+    function fetchData(url) {
+        return $.ajax({
+            url: url,
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
+            dataType: 'json'
         });
+    }
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+    function showLoading(show) {
+        const loadingEl = $('#dashboardLoading');
+        show ? loadingEl.fadeIn(200) : loadingEl.fadeOut(200);
+    }
 
-        return await response.json();
+    function showError(message) {
+        console.error(message);
     }
 
     /**
-     * Update Summary Cards
+     * UPDATE KPI CARDS
      */
-    function updateSummaryCards(summary) {
-        const avgAttendance = parseFloat(summary.averageAttendance) || 0;
-        const prevAttendance = parseFloat(summary.previousAttendance) || 0;
-        const daysMissed = summary.totalDaysMissed || 0;
-        const prevDaysMissed = summary.previousDaysMissed || 0;
-        const activeEmp = summary.activeEmployees || 0;
-        const lateArrivals = summary.todayLateArrivals || 0;
+    function updateSummaryCards(data) {
+        $('#avgAttendance').text(data.averageAttendance.toFixed(1) + '%');
+        $('#daysMissed').text(data.totalDaysMissed);
+        $('#lateArrivals').text(data.todayLateArrivals);
+        $('#activeEmployees').text(data.activeEmployees);
 
-        const attendanceChange = avgAttendance - prevAttendance;
-        const daysMissedChange = daysMissed - prevDaysMissed;
+        renderTrendIndicator($('#attendanceChange'), data.averageAttendance, data.previousAttendance, true);
+        renderTrendIndicator($('#daysMissedChange'), data.totalDaysMissed, data.previousDaysMissed, false);
+    }
 
-        // Update Average Attendance
-        $('#avgAttendance').text(avgAttendance.toFixed(1) + '%');
+    function renderTrendIndicator($el, current, previous, higherIsBetter) {
+        const diff = current - previous;
+        const isPositive = diff >= 0;
+        const colorClass = (isPositive === higherIsBetter) ? 'text-emerald-600' : 'text-rose-600';
+        const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
 
-        const attendanceChangeEl = $('#attendanceChange');
-        const changeText = `${attendanceChange >= 0 ? '+' : ''}${attendanceChange.toFixed(1)}% vs Previous (${prevAttendance.toFixed(1)}%)`;
-        attendanceChangeEl.text(changeText);
-        attendanceChangeEl.removeClass('positive negative').addClass(attendanceChange >= 0 ? 'positive' : 'negative');
-
-        // Update Days Missed
-        $('#daysMissed').text(daysMissed);
-        $('#activeEmployees').text(activeEmp);
-        $('#lateArrivals').text(lateArrivals);
-
-        const daysMissedChangeEl = $('#daysMissedChange');
-        const missedChangeText = `${daysMissedChange >= 0 ? '+' : ''}${daysMissedChange} vs Previous (${prevDaysMissed})`;
-        daysMissedChangeEl.text(missedChangeText);
-        daysMissedChangeEl.removeClass('positive negative').addClass(daysMissedChange <= 0 ? 'positive' : 'negative');
+        $el.html(`<i class="fas ${icon} me-1"></i> ${Math.abs(diff).toFixed(1)} vs prev period`)
+            .removeClass('text-emerald-600 text-rose-600')
+            .addClass(colorClass);
     }
 
     /**
-     * Render Attendance Trend Chart
+     * CHART RENDERING FUNCTIONS
      */
-    function renderAttendanceTrendChart(data) {
+    function renderAttendanceChart(data) {
         const ctx = document.getElementById('attendanceChart');
-
-        // Destroy existing chart
-        if (charts.attendance) {
-            charts.attendance.destroy();
-        }
+        if (charts.attendance) charts.attendance.destroy();
 
         charts.attendance = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.map(d => d.monthLabel),
+                labels: data.map(d => `${d.month}/${d.year}`),
                 datasets: [{
                     label: 'Attendance Rate (%)',
                     data: data.map(d => parseFloat(d.attendanceRate)),
                     borderColor: DASHBOARD_CONFIG.CHART_COLORS.primary,
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
+                    backgroundColor: 'rgba(16, 185, 129, 0.09)',
+                    borderWidth: 2,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: DASHBOARD_CONFIG.CHART_COLORS.primary,
-                    pointBorderWidth: 2
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            font: { size: 12 },
-                            padding: 15
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleFont: { size: 14 },
-                        bodyFont: { size: 13 },
-                        callbacks: {
-                            label: function (context) {
-                                return 'Attendance: ' + context.parsed.y.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
-                        ticks: {
-                            callback: function (value) {
-                                return value + '%';
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
+                        grid: { color: DASHBOARD_CONFIG.CHART_COLORS.zinc100 },
+                        ticks: { callback: val => val + '%' }
                     },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
 
-    /**
-     * Render Absence Reasons Pie Chart
-     */
     function renderAbsenceReasonsChart(data) {
         const ctx = document.getElementById('absencePieChart');
+        if (charts.absence) charts.absence.destroy();
 
-        if (charts.absence) {
-            charts.absence.destroy();
-        }
-
-        const colors = [
-            DASHBOARD_CONFIG.CHART_COLORS.primary,
-            DASHBOARD_CONFIG.CHART_COLORS.info,
-            DASHBOARD_CONFIG.CHART_COLORS.warning,
-            DASHBOARD_CONFIG.CHART_COLORS.success,
-            DASHBOARD_CONFIG.CHART_COLORS.purple,
-            DASHBOARD_CONFIG.CHART_COLORS.pink
-        ];
+        const colors = ['#18181b', '#4f46e5', '#0d9488', '#e11d48', '#d97706', '#7c3aed'];
 
         charts.absence = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: data.map(d => d.reason),
                 datasets: [{
                     data: data.map(d => parseFloat(d.percentage)),
                     backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
+                    borderWidth: 0,
+                    hoverOffset: 15
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '75%',
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { size: 11 },
-                            padding: 10,
-                            generateLabels: function (chart) {
-                                const data = chart.data;
-                                return data.labels.map((label, i) => ({
-                                    text: `${label}: ${data.datasets[0].data[i].toFixed(1)}%`,
-                                    fillStyle: data.datasets[0].backgroundColor[i],
-                                    hidden: false,
-                                    index: i
-                                }));
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return context.label + ': ' + context.parsed.toFixed(1) + '%';
-                            }
-                        }
-                    }
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 15 } }
                 }
             }
         });
     }
 
-
-
-    /**
- * Render Daily Late Arrivals Chart
- * Shows last 15–30 days trend from /late-arrivals-daily
- */
     function renderLateArrivalsDailyChart(data) {
         const ctx = document.getElementById('lateArrivalsDailyChart');
-        if (!ctx) return;
+        if (charts.lateArrivals) charts.lateArrivals.destroy();
 
-        // Destroy existing instance if any
-        if (charts.lateArrivalsDaily) {
-            charts.lateArrivalsDaily.destroy();
-        }
-
-        charts.lateArrivalsDaily = new Chart(ctx, {
+        charts.lateArrivals = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(d => d.monthLabel), // here monthLabel is dayLabel ("Jan 05", etc.)
+                labels: data.map(d => d.label),
                 datasets: [{
-                    label: 'Late Arrivals',
-                    data: data.map(d => parseFloat(d.attendanceRate || 0)), // DTO uses same field
-                    backgroundColor: '#60a5fa',
-                    borderRadius: 6,
-                    borderSkipped: false
+                    label: 'Late Count',
+                    data: data.map(d => d.attendanceRate),
+                    backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.rose,
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return 'Late Arrivals: ' + context.parsed.y;
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 10,
-                            font: { size: 11 }
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                        title: { display: true, text: 'Employees', font: { size: 12 } }
-                    }
+                    y: { beginAtZero: true, grid: { color: DASHBOARD_CONFIG.CHART_COLORS.zinc100 } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
 
-
-    /**
-     * Render Department Missed Days Chart
-     */
     function renderDeptMissedChart(data) {
         const ctx = document.getElementById('deptMissedChart');
-
-        if (charts.deptMissed) {
-            charts.deptMissed.destroy();
-        }
+        if (charts.deptMissed) charts.deptMissed.destroy();
 
         charts.deptMissed = new Chart(ctx, {
             type: 'bar',
@@ -397,102 +220,49 @@
                 labels: data.map(d => d.departmentName),
                 datasets: [{
                     label: 'Days Missed',
-                    data: data.map(d => d.daysMissed),
-                    backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.danger,
-                    borderRadius: 10,
-                    borderSkipped: false
-
+                    data: data.map(d => d.missedCount),
+                    backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.amber,
+                    borderRadius: 4
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return 'Days Missed: ' + context.parsed.x;
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    y: {
-                        grid: {
-                            display: false
-                        }
-                    }
+                    x: { beginAtZero: true, grid: { color: DASHBOARD_CONFIG.CHART_COLORS.zinc100 } },
+                    y: { grid: { display: false } }
                 }
             }
         });
     }
 
-    /**
-     * Render Weekly Hours Chart
-     */
     function renderWeeklyHoursChart(data) {
         const ctx = document.getElementById('weeklyHoursChart');
-
-        console.log('Weekly Hours Data:', data);
-
-        if (charts.weeklyHours) {
-            charts.weeklyHours.destroy();
-        }
+        if (charts.weeklyHours) charts.weeklyHours.destroy();
 
         charts.weeklyHours = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(d => d.departmentName),
                 datasets: [{
-                    label: 'Average Hours',
+                    label: 'Avg Hours',
                     data: data.map(d => parseFloat(d.averageHours)),
-                    backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.success,
-                    borderRadius: 8,
-                    borderSkipped: false
+                    backgroundColor: DASHBOARD_CONFIG.CHART_COLORS.primary,
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return 'Hours: ' + context.parsed.x.toFixed(1);
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function (value) {
-                                return value + ' hrs';
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
+                    x: { grid: { display: false } },
                     y: {
-                        grid: {
-                            display: false
-                        }
+                        beginAtZero: true,
+                        grid: { color: DASHBOARD_CONFIG.CHART_COLORS.zinc100 },
+                        ticks: { callback: val => val + 'h' }
                     }
                 }
             }
@@ -500,36 +270,21 @@
     }
 
     /**
-     * Show/Hide Loading Overlay
+     * INITIALIZE
      */
-    function showLoading(show) {
-        const loadingEl = $('#dashboardLoading');
-        if (show) {
-            loadingEl.fadeIn(200);
-        } else {
-            loadingEl.fadeOut(200);
-        }
+    function initDashboard() {
+        // Event Listeners
+        $('#dateRangeSelect').on('change', function () {
+            const isCustom = $(this).val() === 'custom';
+            $('#customDateInputs').toggleClass('d-none', !isCustom);
+            if (!isCustom) loadDashboardData();
+        });
+
+        $('#applyFiltersBtn').on('click', loadDashboardData);
+
+        // Initial Load
+        loadDashboardData();
     }
 
-    /**
-     * Show Error Message
-     */
-    function showError(message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Dashboard Error',
-                text: message,
-                confirmButtonColor: DASHBOARD_CONFIG.CHART_COLORS.primary
-            });
-        } else {
-            alert(message);
-        }
-    }
-
-    // Initialize when DOM is ready
-    $(document).ready(function () {
-        initDashboard();
-    });
-
+    $(document).ready(initDashboard);
 })();

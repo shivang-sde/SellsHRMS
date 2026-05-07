@@ -8,8 +8,8 @@ import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.exception.employee.EmployeeNotFoundException;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.TaskService;
-import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 import com.sellspark.SellsHRMS.service.files.FileUploadService;
+import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -239,7 +239,8 @@ public class TaskServiceImpl implements TaskService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId, String startDate, String endDate) {
+        public List<TaskDTO> getSubordinateTasks(Long organisationId, Long managerId, String startDate,
+                        String endDate) {
                 Set<Long> subordinateIds = employeeHierarchyUtil.getAllSubordinateIds(managerId);
                 if (subordinateIds.isEmpty()) {
                         return Collections.emptyList();
@@ -249,14 +250,16 @@ public class TaskServiceImpl implements TaskService {
                 java.time.LocalDateTime end = java.time.LocalDateTime.of(2100, 1, 1, 0, 0);
 
                 if (startDate != null && !startDate.trim().isEmpty()) {
-                    try {
-                        start = java.time.LocalDate.parse(startDate).atStartOfDay();
-                    } catch (Exception e) {}
+                        try {
+                                start = java.time.LocalDate.parse(startDate).atStartOfDay();
+                        } catch (Exception e) {
+                        }
                 }
                 if (endDate != null && !endDate.trim().isEmpty()) {
-                    try {
-                        end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
-                    } catch (Exception e) {}
+                        try {
+                                end = java.time.LocalDate.parse(endDate).plusDays(1).atStartOfDay();
+                        } catch (Exception e) {
+                        }
                 }
 
                 List<Task> tasks = taskRepository.findTasksByEmployeeIds(organisationId, subordinateIds, start, end);

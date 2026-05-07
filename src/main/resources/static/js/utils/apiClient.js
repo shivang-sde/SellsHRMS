@@ -1,6 +1,8 @@
 // apiClient.js - Centralized API communication uti
 const organisationId = window.APP.ORG_ID;
 const employeeId = window.APP.EMPLOYEE_ID;
+const userId = window.APP.USER_ID;
+const role = window.APP.ROLE;
 
 const apiClient = {
   baseURL: window.APP.CONTEXT_PATH + "/api",

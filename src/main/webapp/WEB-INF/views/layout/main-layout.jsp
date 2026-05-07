@@ -63,16 +63,32 @@
 
                         <div class="hrms-main">
                             <main class="hrms-content">
-                                <div class="container-fluid py-3">
+                                <div class="container-fluid p-0">
                                     <c:choose>
                                         <c:when test="${not empty contentPage}">
                                             <c:import url="/WEB-INF/views/${contentPage}.jsp" />
                                         </c:when>
                                         <c:otherwise>
-                                            <div class="card p-5 shadow-sm text-center">
-                                                <i class="fa-solid fa-house-user fa-3x text-primary mb-3"></i>
-                                                <h3>Welcome back, ${fn:escapeXml(sessionScope.USER_NAME)}</h3>
-                                                <p class="text-muted">Select a module from the sidebar to begin.</p>
+                                            <div class="card border border-slate-200 bg-white"
+                                                style="border-radius: var(--radius);">
+                                                <div class="card-body p-5 text-center">
+                                                    <div class="mb-4">
+                                                        <i
+                                                            class="fa-solid fa-house-user fa-4x text-muted opacity-25"></i>
+                                                    </div>
+                                                    <h3 class="fw-bold mb-2">Welcome back,
+                                                        ${fn:escapeXml(sessionScope.USER_NAME)}</h3>
+                                                    <p class="text-muted-foreground mx-auto mb-4"
+                                                        style="max-width: 450px;">
+                                                        You are logged in as <span
+                                                            class="fw-semibold text-foreground">${fn:replace(sessionScope.SYSTEM_ROLE,
+                                                            '_', ' ')}</span>.
+                                                        Access your modules from the sidebar to manage organization
+                                                        tasks.
+                                                    </p>
+                                                    <a href="${pageContext.request.contextPath}/org/dashboard"
+                                                        class="btn btn-primary px-5">Go to Dashboard</a>
+                                                </div>
                                             </div>
                                         </c:otherwise>
                                     </c:choose>
@@ -85,13 +101,14 @@
                 </div>
 
                 <div id="errorModal" class="modal-overlay">
-                    <div class="modal-box">
-                        <div class="modal-icon"></div>
-                        <h3 id="errorTitle" class="fw-bold"></h3>
-                        <p id="errorMessage" class="text-muted"></p>
-                        <div class="modal-actions">
-                            <button id="errorConfirm" class="btn-primary-hrms">Confirm</button>
-                            <button id="errorCancel" class="btn-secondary-hrms">Cancel</button>
+                    <div class="modal-box border shadow-lg bg-white"
+                        style="border-radius: var(--radius); padding: 2.5rem;">
+                        <div class="modal-icon mb-4"></div>
+                        <h4 id="errorTitle" class="fw-bold mb-2"></h4>
+                        <p id="errorMessage" class="text-muted-foreground mb-5"></p>
+                        <div class="modal-actions d-flex gap-3 justify-content-center">
+                            <button id="errorConfirm" class="btn btn-primary px-4">Confirm Action</button>
+                            <button id="errorCancel" class="btn btn-outline-secondary px-4">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -102,6 +119,7 @@
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 
 
                 <script>
@@ -135,12 +153,21 @@
                 <script src="${pageContext.request.contextPath}/js/utils/axios.js"></script>
                 <script src="${pageContext.request.contextPath}/js/utils/exportToExcel.js"></script>
 
+                <script src="${pageContext.request.contextPath}/js/monitor/common.js"></script>
+                <script src="${pageContext.request.contextPath}/js/monitor/monitorAPI.js"></script>
+
                 <script src="${pageContext.request.contextPath}/js/utils/permission-helper.js"></script>
                 <script src="${pageContext.request.contextPath}/js/utils/global-helper.js"></script>
                 <script src="${pageContext.request.contextPath}/js/sidebar.js"></script>
                 <c:if test="${not empty pageScript}">
                     <script src="${pageContext.request.contextPath}/js/${pageScript}.js"></script>
                 </c:if>
+
+
+                <!-- for overriding the already existing styles -->
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/design-system.css">
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/forms.css">
+
             </body>
 
             </html>

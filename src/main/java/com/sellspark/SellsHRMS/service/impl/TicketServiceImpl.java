@@ -9,9 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.sellspark.SellsHRMS.utils.AssignmentUtil;
-import com.sellspark.SellsHRMS.utils.AssignmentUtil.AssignmentDiff;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +42,9 @@ import com.sellspark.SellsHRMS.repository.TicketAttachmentRepository;
 import com.sellspark.SellsHRMS.repository.TicketRepository;
 import com.sellspark.SellsHRMS.service.TicketService;
 import com.sellspark.SellsHRMS.service.files.FileUploadService;
-import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
+import com.sellspark.SellsHRMS.util.AssignmentUtil;
+import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
+import com.sellspark.SellsHRMS.util.AssignmentUtil.AssignmentDiff;
 
 import lombok.RequiredArgsConstructor;
 

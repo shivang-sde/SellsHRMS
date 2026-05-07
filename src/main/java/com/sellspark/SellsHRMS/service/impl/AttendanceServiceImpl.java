@@ -12,6 +12,8 @@ import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
 import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.AttendanceService;
+import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,7 +35,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.sellspark.SellsHRMS.config.UserPrincipal;
-import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
+
 import java.util.Set;
 import java.util.Collections;
 

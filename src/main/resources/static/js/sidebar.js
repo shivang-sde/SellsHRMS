@@ -1,153 +1,28 @@
 /**
- * HRMS Sidebar - Final Enterprise UX Version
- * Smooth transitions + icon-only collapse mode with hover tooltips
+ * HRMS Sidebar - Professional Enterprise Version
+ * Focus on stability, accessibility, and clean responsive behavior
  */
 document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.getElementById("hrmsSidebar");
   const toggleBtn = document.getElementById("sidebarToggle");
-  const collapseBtn = document.getElementById("sidebarCollapseBtn");
   const overlay = document.getElementById("sidebarOverlay");
-  const toggleLinks = document.querySelectorAll(".toggle-link");
   const main = document.querySelector(".hrms-viewport");
 
   /* --------------------------------------------------
-     Helper: Collapse / Expand Sidebar
+     Tooltip Management
   -------------------------------------------------- */
-  const collapseSidebar = (force = null) => {
-    const isCollapsed = force ?? !sidebar.classList.contains("collapsed");
-    sidebar.classList.toggle("collapsed", isCollapsed);
-    main.classList.toggle("collapsed", isCollapsed);
-
-    if (isCollapsed) {
-      // Close all submenus
-      document.querySelectorAll(".sub-menu.open").forEach(menu => {
-        menu.classList.remove("open");
-        menu.style.maxHeight = null;
-      });
-      document.querySelectorAll(".toggle-link.open").forEach(link => link.classList.remove("open"));
-    }
-
-    // Refresh tooltips after animation
-    setTimeout(initTooltips, 300);
+  const destroyTooltips = () => {
+    document.querySelectorAll(".nav-link[data-bs-toggle='tooltip']").forEach(el => {
+      const tooltip = bootstrap.Tooltip.getInstance(el);
+      tooltip?.dispose();
+      el.removeAttribute("data-bs-toggle");
+      el.removeAttribute("title");
+    });
   };
 
-  collapseBtn?.addEventListener("click", () => collapseSidebar());
-
-  /* --------------------------------------------------
-     Toggle Sidebar (Mobile vs Desktop)
-  -------------------------------------------------- */
-  toggleBtn?.addEventListener("click", () => {
-    const isMobile = window.innerWidth <= 992;
-
-    if (isMobile) {
-      sidebar.classList.toggle("mobile-open");
-      overlay?.classList.toggle("visible", sidebar.classList.contains("mobile-open"));
-      document.body.classList.toggle("sidebar-active", sidebar.classList.contains("mobile-open"));
-    } else {
-      collapseSidebar();
-    }
-
-    document.dispatchEvent(new CustomEvent("sidebar:toggle"));
-  });
-
-  overlay?.addEventListener("click", () => {
-    sidebar.classList.remove("mobile-open");
-    overlay.classList.remove("visible");
-    document.body.classList.remove("sidebar-active");
-  });
-
-  /* --------------------------------------------------
-     Submenu Toggle
-  -------------------------------------------------- */
-  toggleLinks.forEach(link => {
-    link.addEventListener("click", e => {
-      e.preventDefault();
-      if (sidebar.classList.contains("collapsed") && !sidebar.matches(":hover")) return; // allow clicks during hover-expand
-
-      const submenu = link.nextElementSibling;
-      if (!submenu) return;
-
-      const isOpen = submenu.classList.contains("open");
-
-      document.querySelectorAll(".sub-menu.open").forEach(menu => {
-        if (menu !== submenu && !menu.contains(submenu)) {
-          menu.classList.remove("open");
-          menu.style.maxHeight = null;
-          menu.previousElementSibling?.classList.remove("open");
-        }
-      });
-
-      submenu.classList.toggle("open", !isOpen);
-      link.classList.toggle("open", !isOpen);
-
-      if (!isOpen) {
-        submenu.style.maxHeight = submenu.scrollHeight + "px";
-        setTimeout(() => {
-          if (submenu.classList.contains("open")) submenu.style.maxHeight = "none";
-        }, 250);
-      } else {
-        submenu.style.maxHeight = submenu.scrollHeight + "px";
-        requestAnimationFrame(() => {
-          submenu.style.maxHeight = "0px";
-        });
-      }
-    });
-  });
-
-  /* --------------------------------------------------
-     Click Outside → Close Mobile Sidebar
-  -------------------------------------------------- */
-  document.addEventListener("click", e => {
-    if (
-      window.innerWidth <= 992 &&
-      sidebar.classList.contains("mobile-open") &&
-      !sidebar.contains(e.target) &&
-      !toggleBtn.contains(e.target)
-    ) {
-      sidebar.classList.remove("mobile-open");
-      overlay?.classList.remove("visible");
-      document.body.classList.remove("sidebar-active");
-    }
-  });
-
-  /* --------------------------------------------------
-     Reset on Resize
-  -------------------------------------------------- */
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 992) {
-      sidebar.classList.remove("mobile-open");
-      overlay?.classList.remove("visible");
-      document.body.classList.remove("sidebar-active");
-    }
-  });
-
-  /* --------------------------------------------------
-     Active Link Highlight
-  -------------------------------------------------- */
-  const currentPath = window.location.pathname;
-  document.querySelectorAll(".sidebar-nav a").forEach(a => {
-    if (a.pathname === currentPath && !a.classList.contains("toggle-link")) {
-      a.classList.add("active");
-      const submenu = a.closest(".sub-menu");
-      if (submenu) {
-        submenu.classList.add("open");
-        submenu.style.maxHeight = "none";
-        submenu.previousElementSibling?.classList.add("open");
-      }
-    }
-  });
-
-  /* --------------------------------------------------
-     Tooltips for Collapsed Mode
-  -------------------------------------------------- */
   const initTooltips = () => {
-    // Remove existing
-    document.querySelectorAll(".nav-link[data-bs-toggle='tooltip']").forEach(el => {
-      bootstrap.Tooltip.getInstance(el)?.dispose();
-    });
-
-    // Apply tooltip only when collapsed
-    if (sidebar.classList.contains("collapsed")) {
+    destroyTooltips();
+    if (sidebar.classList.contains("collapsed") && window.innerWidth > 992) {
       document.querySelectorAll(".nav-link").forEach(link => {
         const text = link.querySelector(".nav-text")?.textContent?.trim();
         if (text) {
@@ -160,6 +35,91 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Initialize once
+  /* --------------------------------------------------
+     Toggle Logic (Desktop Collapse / Mobile Off-canvas)
+  -------------------------------------------------- */
+  toggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isMobile = window.innerWidth <= 992;
+
+    if (isMobile) {
+      sidebar.classList.toggle("mobile-open");
+      overlay?.classList.toggle("visible", sidebar.classList.contains("mobile-open"));
+    } else {
+      sidebar.classList.toggle("collapsed");
+      main.classList.toggle("collapsed", sidebar.classList.contains("collapsed"));
+      initTooltips();
+    }
+  });
+
+  // Close mobile sidebar on overlay click
+  overlay?.addEventListener("click", () => {
+    sidebar.classList.remove("mobile-open");
+    overlay.classList.remove("visible");
+  });
+
+  /* --------------------------------------------------
+     Submenu Handling
+  -------------------------------------------------- */
+  document.querySelectorAll(".toggle-link").forEach(link => {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      
+      // Don't open submenus if sidebar is collapsed
+      if (sidebar.classList.contains("collapsed") && window.innerWidth > 992) return;
+
+      const submenu = link.nextElementSibling;
+      if (!submenu) return;
+
+      const isOpen = submenu.classList.contains("open");
+
+      // Accordion behavior: close other submenus
+      document.querySelectorAll(".sub-menu.open").forEach(menu => {
+        if (menu !== submenu) {
+          menu.classList.remove("open");
+          menu.style.maxHeight = null;
+          menu.previousElementSibling?.classList.remove("open");
+        }
+      });
+
+      submenu.classList.toggle("open", !isOpen);
+      link.classList.toggle("open", !isOpen);
+      submenu.style.maxHeight = !isOpen ? submenu.scrollHeight + "px" : null;
+    });
+  });
+
+  /* --------------------------------------------------
+     Auto-close mobile sidebar on link click
+  -------------------------------------------------- */
+  document.querySelectorAll(".sidebar-nav a").forEach(a => {
+    // Highlight Active
+    if (a.pathname === window.location.pathname && !a.classList.contains("toggle-link")) {
+      a.classList.add("active");
+      const parentSub = a.closest(".sub-menu");
+      if (parentSub) {
+        parentSub.classList.add("open");
+        parentSub.style.maxHeight = "none";
+        parentSub.previousElementSibling?.classList.add("open");
+      }
+    }
+
+    a.addEventListener("click", () => {
+      if (window.innerWidth <= 992 && !a.classList.contains("toggle-link")) {
+        sidebar.classList.remove("mobile-open");
+        overlay?.classList.remove("visible");
+      }
+    });
+  });
+
+  // Initial tooltip state
   initTooltips();
+
+  // Reset on significant resize
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 992) {
+      sidebar.classList.remove("mobile-open");
+      overlay?.classList.remove("visible");
+    }
+    initTooltips();
+  });
 });

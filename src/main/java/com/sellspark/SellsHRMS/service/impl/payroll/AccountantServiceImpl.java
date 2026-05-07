@@ -36,7 +36,7 @@ import com.sellspark.SellsHRMS.repository.payroll.SalarySlipRepository;
 import com.sellspark.SellsHRMS.service.payroll.AccountantService;
 import com.sellspark.SellsHRMS.service.payroll.SalarySlipTemplateService;
 import com.sellspark.SellsHRMS.specification.SalarySlipSpecification;
-import com.sellspark.SellsHRMS.utils.PaginationUtils;
+import com.sellspark.SellsHRMS.util.PaginationUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

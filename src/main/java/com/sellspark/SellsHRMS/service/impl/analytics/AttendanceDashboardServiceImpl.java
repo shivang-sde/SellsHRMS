@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,41 +29,36 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
     private final AttendanceDashboardRepository dashboardRepository;
     private final EmployeeRepository empRepo;
 
-    /**
-     * Get overall summary for dashboard metrics (attendance %, days missed, etc.)
-     */
     @Override
-    public AttendanceDashboardSummaryDTO getSummary(Long orgId) {
-
+    public AttendanceDashboardSummaryDTO getSummary(Long orgId, LocalDate startDate, LocalDate endDate) {
+        validateOrgId(orgId);
         Long totalActiveEmp = empRepo.countByOrganisationIdAndDeletedFalse(orgId);
 
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+        // Previous Period Calculation (same duration)
+        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        LocalDate prevStartDate = startDate.minusDays(daysBetween);
+        LocalDate prevEndDate = endDate.minusDays(daysBetween);
 
         try {
-            // Attendance %
-            BigDecimal todayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, today);
-            BigDecimal yesterdayAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, yesterday);
+            BigDecimal currentAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, startDate, endDate);
+            BigDecimal prevAvgAttendance = dashboardRepository.calculateAverageAttendance(orgId, prevStartDate, prevEndDate);
 
-            // Missed Days
-            Long todayMissed = dashboardRepository.countDaysMissedByDate(orgId, today);
-            Long yesterdayMissed = dashboardRepository.countDaysMissedByDate(orgId, yesterday);
+            Long currentMissed = dashboardRepository.countDaysMissed(orgId, startDate, endDate);
+            Long prevMissed = dashboardRepository.countDaysMissed(orgId, prevStartDate, prevEndDate);
 
-            // Late arrivals
-            Long todayLateArrivals = dashboardRepository.countTodayLateArrivals(orgId, today);
+            Long todayLateArrivals = dashboardRepository.countTodayLateArrivals(orgId, LocalDate.now());
 
-            // Build response
             return AttendanceDashboardSummaryDTO.builder()
-                    .averageAttendance(todayAvgAttendance != null ? todayAvgAttendance : BigDecimal.ZERO)
-                    .previousAttendance(yesterdayAvgAttendance != null ? yesterdayAvgAttendance : BigDecimal.ZERO)
-                    .totalDaysMissed(todayMissed != null ? todayMissed : 0L)
-                    .previousDaysMissed(yesterdayMissed != null ? yesterdayMissed : 0L)
+                    .averageAttendance(currentAvgAttendance != null ? currentAvgAttendance : BigDecimal.ZERO)
+                    .previousAttendance(prevAvgAttendance != null ? prevAvgAttendance : BigDecimal.ZERO)
+                    .totalDaysMissed(currentMissed != null ? currentMissed : 0L)
+                    .previousDaysMissed(prevMissed != null ? prevMissed : 0L)
                     .todayLateArrivals(todayLateArrivals != null ? todayLateArrivals : 0L)
                     .activeEmployees(totalActiveEmp)
                     .build();
 
         } catch (Exception e) {
-            log.error("Error calculating dashboard summary for orgId={}", orgId, e);
+            log.error("Error calculating summary for orgId={}", orgId, e);
             return AttendanceDashboardSummaryDTO.builder()
                     .averageAttendance(BigDecimal.ZERO)
                     .previousAttendance(BigDecimal.ZERO)
@@ -74,150 +70,93 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
         }
     }
 
-    /**
-     * Get monthly attendance trend for last 12 months
-     */
     @Override
-    public List<AttendanceTrendDTO> getAttendanceTrend(Long orgId) {
+    public List<AttendanceTrendDTO> getAttendanceTrend(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-        LocalDate startDate = LocalDate.now().minusMonths(12).withDayOfMonth(1);
-
         try {
-            List<AttendanceTrendDTO> trend = dashboardRepository.getAttendanceTrend(orgId, startDate);
-            return trend != null ? trend : List.of();
+            return dashboardRepository.getAttendanceTrend(orgId, startDate, endDate);
         } catch (Exception e) {
-            log.error("Error fetching attendance trend for orgId={}", orgId, e);
+            log.error("Error fetching attendance trend", e);
             return List.of();
         }
     }
 
-    /**
-     * Get absence reasons (leave types + 'Other' for plain absences)
-     */
     @Override
-    public List<AbsenceReasonDTO> getAbsenceReasons(Long orgId) {
+    public List<AbsenceReasonDTO> getAbsenceReasons(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-        LocalDate startDate = LocalDate.now().minusMonths(6);
-
         try {
-            List<AbsenceReasonDTO> reasons = dashboardRepository.getAbsenceReasonsMerged(orgId, startDate);
-            if (reasons == null || reasons.isEmpty()) {
-                return List.of();
-            }
+            List<AbsenceReasonDTO> reasons = dashboardRepository.getAbsenceReasonsMerged(orgId, startDate, endDate);
+            if (reasons == null || reasons.isEmpty()) return List.of();
 
-            long total = reasons.stream()
-                    .mapToLong(AbsenceReasonDTO::getCount)
-                    .sum();
-
+            long total = reasons.stream().mapToLong(AbsenceReasonDTO::getCount).sum();
             reasons.forEach(r -> r.calculatePercentage(total));
             return reasons;
-
         } catch (Exception e) {
-            log.error("Error fetching absence reasons for orgId={}", orgId, e);
+            log.error("Error fetching absence reasons", e);
             return List.of();
         }
     }
 
-    /**
-     * Get department-wise days missed (includes departments with 0)
-     */
     @Override
-    public List<DeptMissedDTO> getDaysMissedByDept(Long orgId) {
+    public List<DeptMissedDTO> getDaysMissedByDept(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-        LocalDate startDate = LocalDate.now().minusMonths(1);
-
         try {
-            List<DeptMissedDTO> deptData = dashboardRepository.getAllDepartmentsDaysMissed(orgId, startDate);
-            return deptData != null ? deptData : List.of();
+            return dashboardRepository.getAllDepartmentsDaysMissed(orgId, startDate, endDate);
         } catch (Exception e) {
-            log.error("Error fetching days missed by department for orgId={}", orgId, e);
+            log.error("Error fetching days missed by dept", e);
             return List.of();
         }
     }
 
-    /**
-     * Get average weekly hours per department (includes departments with 0)
-     */
     @Override
-    public List<WeeklyHoursDTO> getWeeklyHours(Long orgId) {
+    public List<WeeklyHoursDTO> getWeeklyHours(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(7);
-
         Instant startInstant = startDate.atStartOfDay(ZoneId.of("UTC")).toInstant();
         Instant endInstant = endDate.plusDays(1).atStartOfDay(ZoneId.of("UTC")).toInstant();
 
-        log.info("Weekly hours range: start={}, end={}", startInstant, endInstant);
         try {
-            List<WeeklyHoursDTO> data = dashboardRepository
-                    .getAllDepartmentsAverageWeeklyHours(orgId, startInstant, endInstant);
-
-            log.info("Weekly hours raw result: {}", data);
-            return data != null ? data : List.of();
+            return dashboardRepository.getAllDepartmentsAverageWeeklyHours(orgId, startInstant, endInstant);
         } catch (Exception e) {
-            log.error("Error fetching weekly hours for orgId={}", orgId, e);
+            log.error("Error fetching weekly hours", e);
             return List.of();
         }
     }
 
-    /**
-     * Get month-wise late arrivals count for the last 12 months
-     */
     @Override
-    public List<AttendanceTrendDTO> getLateArrivalsTrend(Long orgId) {
+    public List<AttendanceTrendDTO> getLateArrivalsTrend(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-        LocalDate startDate = LocalDate.now().minusMonths(12).withDayOfMonth(1);
-
         try {
-            List<Object[]> raw = dashboardRepository.getLateArrivalsTrend(orgId, startDate);
-            List<AttendanceTrendDTO> result = new ArrayList<>();
-
-            for (Object[] row : raw) {
-                // Safely convert year and month regardless of SQL numeric type
-                int year = ((Number) row[0]).intValue();
-                int month = ((Number) row[1]).intValue();
-                double count = ((Number) row[2]).doubleValue();
-
-                result.add(new AttendanceTrendDTO(year, month, count));
-            }
-
-            return result;
-
+            return dashboardRepository.getLateArrivalsTrend(orgId, startDate, endDate);
         } catch (Exception e) {
-            log.error("Error fetching late arrivals trend for orgId={}", orgId, e);
+            log.error("Error fetching late arrivals trend", e);
             return List.of();
         }
     }
 
-    /**
-     * Get day-wise late arrivals trend (e.g., last 15/30 days)
-     */
     @Override
-    public List<AttendanceTrendDTO> getLateArrivalsDayWiseTrend(Long orgId, int days) {
+    public List<AttendanceTrendDTO> getLateArrivalsDayWiseTrend(Long orgId, LocalDate startDate, LocalDate endDate) {
         validateOrgId(orgId);
-        LocalDate startDate = LocalDate.now().minusDays(days);
-
         try {
-            List<Object[]> raw = dashboardRepository.getLateArrivalsDayWiseTrend(orgId, startDate);
+            List<Object[]> raw = dashboardRepository.getLateArrivalsDayWiseTrend(orgId, startDate, endDate);
             List<AttendanceTrendDTO> result = new ArrayList<>();
 
             for (Object[] row : raw) {
-                java.sql.Date sqlDate = (java.sql.Date) row[0];
-                LocalDate date = sqlDate.toLocalDate(); // ✅ Proper conversion
+                LocalDate date;
+                if (row[0] instanceof java.sql.Date) {
+                    date = ((java.sql.Date) row[0]).toLocalDate();
+                } else if (row[0] instanceof LocalDate) {
+                    date = (LocalDate) row[0];
+                } else {
+                    continue;
+                }
+                
                 Double count = ((Number) row[1]).doubleValue();
-
-                // Using day label format, e.g. "Jan 05"
-                String label = date.getMonth().toString().substring(0, 3) + " "
-                        + String.format("%02d", date.getDayOfMonth());
-
+                String label = date.getMonth().toString().substring(0, 3) + " " + String.format("%02d", date.getDayOfMonth());
                 result.add(new AttendanceTrendDTO(label, count));
             }
-
             return result;
-
         } catch (Exception e) {
-            log.error("Error fetching day-wise late arrivals for orgId={}", orgId, e);
+            log.error("Error fetching daily late arrivals", e);
             return List.of();
         }
     }

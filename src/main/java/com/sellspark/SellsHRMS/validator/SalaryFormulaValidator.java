@@ -2,7 +2,7 @@ package com.sellspark.SellsHRMS.validator;
 
 import com.sellspark.SellsHRMS.dto.payroll.SalaryComponentDTO;
 import com.sellspark.SellsHRMS.entity.payroll.SalaryComponent;
-import com.sellspark.SellsHRMS.utils.FormulaExpressionEvaluator;
+import com.sellspark.SellsHRMS.util.FormulaExpressionEvaluator;
 
 import org.springframework.stereotype.Component;
 

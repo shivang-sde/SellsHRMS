@@ -1,0 +1,191 @@
+/* Monitor Module Styles */
+
+.monitor-dashboard .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.monitor-dashboard .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.status-up {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-down {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-pending {
+    background-color: #f59e0b;
+}
+
+/* Table styles */
+.table-hover tbody tr:hover {
+    background-color: rgba(14, 165, 233, 0.05);
+    cursor: pointer;
+}
+
+/* Modal animations */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    transition: transform 0.2s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .monitor-dashboard .stats-cards .col-md-3 {
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Custom Colors matching the React 'Slate' theme */
+.text-slate-900 {
+    color: #0f172a;
+}
+
+.text-slate-500 {
+    color: #64748b;
+}
+
+.bg-emerald-50 {
+    background-color: #ecfdf5;
+}
+
+.border-emerald-200 {
+    border-color: #a7f3d0;
+}
+
+.text-emerald-800 {
+    color: #065f46;
+}
+
+/* Card Hover Effects */
+.url-card,
+.group-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0;
+}
+
+.url-card:hover,
+.group-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-color: #cbd5e1;
+    cursor: pointer;
+}
+
+/* Status Dots */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.dot-up {
+    background-color: #10b981;
+}
+
+/* Emerald 500 */
+.dot-down {
+    background-color: #ef4444;
+    animation: pulse-red 2s infinite;
+}
+
+/* Red 500 */
+.dot-pending {
+    background-color: #94a3b8;
+}
+
+/* Slate 400 */
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* Badge Styles */
+.badge-status {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.badge-up {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-down {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Nav Tabs Customization */
+.nav-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #2563eb;
+    /* Brand Blue */
+    border-bottom-color: #2563eb;
+    background: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0f172a;
+    border-color: transparent;
+}

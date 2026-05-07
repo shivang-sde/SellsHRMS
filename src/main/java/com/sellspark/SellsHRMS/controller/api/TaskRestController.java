@@ -9,10 +9,10 @@ import com.sellspark.SellsHRMS.dto.project.TaskAttachmentDTO;
 import com.sellspark.SellsHRMS.dto.project.TaskActivityDTO;
 import com.sellspark.SellsHRMS.payload.ApiResponse;
 import com.sellspark.SellsHRMS.service.TaskService;
+import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
 import com.sellspark.SellsHRMS.repository.EmployeeRepository;
 import com.sellspark.SellsHRMS.repository.TaskActivityRepository;
 import com.sellspark.SellsHRMS.repository.TaskRepository;
-import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
 
 import lombok.RequiredArgsConstructor;
 

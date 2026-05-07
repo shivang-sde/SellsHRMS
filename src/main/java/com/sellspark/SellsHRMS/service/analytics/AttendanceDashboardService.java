@@ -1,57 +1,46 @@
 package com.sellspark.SellsHRMS.service.analytics;
 
+import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.*;
+import java.time.LocalDate;
 import java.util.List;
 
-import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.AbsenceReasonDTO;
-import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.AttendanceDashboardSummaryDTO;
-import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.AttendanceTrendDTO;
-import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.DeptMissedDTO;
-import com.sellspark.SellsHRMS.dto.dashboard.analytics.attendance.WeeklyHoursDTO;
-
+/**
+ * Service interface for Attendance and Absenteeism Dashboard Analytics
+ */
 public interface AttendanceDashboardService {
 
-  /**
-   * * Get overall dashboard summary with current and previous period metrics.
-   * 
-   * @param orgId organisation ID
-   * @return summary DTO
-   */
-  AttendanceDashboardSummaryDTO getSummary(Long orgId);
+    /**
+     * Get overall summary for dashboard metrics (attendance %, days missed, etc.)
+     */
+    AttendanceDashboardSummaryDTO getSummary(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  /**
-   * * Get monthly attendance trend for the last 12 months.
-   * * @param orgId organisation ID *
-   * 
-   * @return list of attendance trend DTOs
-   **/
-  List<AttendanceTrendDTO> getAttendanceTrend(Long orgId);
+    /**
+     * Get attendance trend for the specified range
+     */
+    List<AttendanceTrendDTO> getAttendanceTrend(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  /**
-   * * Get absence reasons distribution with percentages.
-   * * @param orgId organisation ID
-   * * @return list of absence reason DTOs *
-   */
+    /**
+     * Get absence reasons distribution for the specified range
+     */
+    List<AbsenceReasonDTO> getAbsenceReasons(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  List<AbsenceReasonDTO> getAbsenceReasons(Long orgId);
+    /**
+     * Get department-wise days missed for the specified range
+     */
+    List<DeptMissedDTO> getDaysMissedByDept(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  List<AttendanceTrendDTO> getLateArrivalsDayWiseTrend(Long orgId, int days);
+    /**
+     * Get average weekly hours per department for the specified range
+     */
+    List<WeeklyHoursDTO> getWeeklyHours(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  List<AttendanceTrendDTO> getLateArrivalsTrend(Long orgId);
+    /**
+     * Get month-wise late arrivals count for the specified range
+     */
+    List<AttendanceTrendDTO> getLateArrivalsTrend(Long orgId, LocalDate startDate, LocalDate endDate);
 
-  /**
-   * * Get days missed grouped by department.
-   * * @param orgId organisation ID
-   * * @return list of department missed DTOs
-   */
-
-  List<DeptMissedDTO> getDaysMissedByDept(Long orgId);
-
-  /**
-   * * Get average weekly hours by department. *
-   * 
-   * @param orgId organisation ID *
-   * @return list of weekly hours DTOs
-   */
-
-  List<WeeklyHoursDTO> getWeeklyHours(Long orgId);
+    /**
+     * Get day-wise late arrivals trend for the specified range
+     */
+    List<AttendanceTrendDTO> getLateArrivalsDayWiseTrend(Long orgId, LocalDate startDate, LocalDate endDate);
 }

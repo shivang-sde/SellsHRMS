@@ -1,28 +1,230 @@
 /* ================================================
-   HRMS Sidebar — Anchor Layout Companion
-   Supplements layout.css for sidebar-specific tweaks
+   HRMS Sidebar — Clean High-Density Edition
    ================================================ */
 
-/* The sidebar variables, base styles, and hover-expand rules
-   all live in layout.css. This file adds mobile + active tweaks. */
-
-/* ---- Mobile Mode ---- */
-@media (max-width: 992px) {
-  .hrms-sidebar {
-    left: calc(-1 * var(--sidebar-width));
-    transition: left var(--transition-speed) ease;
-  }
-  .hrms-sidebar.mobile-open {
-    left: 0;
-  }
-  body.sidebar-active {
-    overflow: hidden;
-  }
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--zinc-100);
+  transition: all var(--transition-timing);
 }
 
-/* Active path highlighting inside submenu */
-.sub-menu a.active {
-  background: rgba(14, 165, 233, 0.15);
-  color: #38bdf8;
+.hrms-sidebar.collapsed .sidebar-header {
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar-logo {
+  height: 28px;
+  width: auto;
+}
+
+.sidebar-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--zinc-900);
+  white-space: nowrap;
+}
+
+.hrms-sidebar.collapsed:not(:hover) .sidebar-brand {
+  display: none;
+}
+
+/* Hide text when collapsed, show on hover */
+.hrms-sidebar.collapsed:not(:hover) .nav-text,
+.hrms-sidebar.collapsed:not(:hover) .nav-group-label,
+.hrms-sidebar.collapsed:not(:hover) .toggle-chevron {
+  display: none;
+}
+
+.hrms-sidebar {
+  width: var(--sidebar-width);
+  background-color: #ffffff;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  transition: width var(--transition-timing), transform var(--transition-timing);
+  border-right: 1px solid var(--zinc-200);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.hrms-sidebar.collapsed {
+  width: 72px;
+}
+
+.hrms-sidebar.collapsed .nav-text,
+.hrms-sidebar.collapsed .nav-group-label,
+.hrms-sidebar.collapsed .toggle-chevron {
+  display: none;
+}
+
+.hrms-sidebar.collapsed:hover .nav-text,
+.hrms-sidebar.collapsed:hover .nav-group-label,
+.hrms-sidebar.collapsed:hover .toggle-chevron {
+  display: block;
+}
+
+.sidebar-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0;
+  overflow-x: hidden;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0.75rem;
+}
+
+/* Custom Scrollbar */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--zinc-200);
+  border-radius: 10px;
+}
+
+.nav-group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--zinc-400);
+  padding: 1.5rem 1rem 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  color: var(--zinc-600);
+  text-decoration: none;
+  font-size: 0.875rem;
   font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+  position: relative;
+}
+
+.nav-link i {
+  width: 20px;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--zinc-500);
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: var(--zinc-50);
+  color: var(--zinc-900);
+}
+
+.nav-link:hover i {
+  color: var(--zinc-900);
+}
+
+.nav-link.active {
+  background-color: var(--zinc-100);
+  color: var(--zinc-950);
+  font-weight: 600;
+}
+
+.nav-link.active i {
+  color: var(--zinc-950);
+}
+
+/* Sub-menu styling matching the clean look */
+.sub-menu {
+  list-style: none;
+  padding: 0.25rem 0 0.5rem 2.75rem;
+  display: none;
+}
+
+.toggle-link.open + .sub-menu {
+  display: block;
+}
+
+.sub-menu li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: var(--zinc-500);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.sub-menu li a:hover {
+  background-color: var(--zinc-50);
+  color: var(--zinc-900);
+}
+
+.sub-menu li a.active {
+  color: var(--zinc-900);
+  font-weight: 600;
+}
+
+.toggle-chevron {
+  font-size: 0.75rem;
+  color: var(--zinc-400);
+  transition: transform 0.2s ease;
+}
+
+.toggle-link.open .toggle-chevron {
+  transform: rotate(90deg);
+}
+
+/* Responsive (Mobile) */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 992px) {
+  .hrms-sidebar {
+    transform: translateX(-100%);
+    width: 280px !important;
+  }
+
+  .hrms-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .hrms-sidebar.collapsed {
+    width: 280px;
+  }
+
+  .hrms-sidebar.collapsed .nav-text,
+  .hrms-sidebar.collapsed .nav-group-label,
+  .hrms-sidebar.collapsed .toggle-chevron {
+    display: block;
+  }
 }

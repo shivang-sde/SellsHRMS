@@ -21,8 +21,7 @@ import com.sellspark.SellsHRMS.repository.*;
 import com.sellspark.SellsHRMS.service.EmployeeService;
 import com.sellspark.SellsHRMS.service.LeaveService;
 import com.sellspark.SellsHRMS.service.UserService;
-import com.sellspark.SellsHRMS.utils.EmployeeCodeGenerator;
-import com.sellspark.SellsHRMS.utils.EmployeeHierarchyUtil;
+import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

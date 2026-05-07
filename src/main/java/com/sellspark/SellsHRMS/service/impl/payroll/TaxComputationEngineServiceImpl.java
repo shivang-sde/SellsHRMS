@@ -8,7 +8,7 @@ import com.sellspark.SellsHRMS.exception.ResourceNotFoundException;
 import com.sellspark.SellsHRMS.repository.payroll.IncomeTaxRuleRepository;
 import com.sellspark.SellsHRMS.repository.payroll.IncomeTaxSlabRepository;
 import com.sellspark.SellsHRMS.service.payroll.TaxComputationEngineService;
-import com.sellspark.SellsHRMS.utils.FormulaExpressionEvaluator;
+import com.sellspark.SellsHRMS.util.FormulaExpressionEvaluator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

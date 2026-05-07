@@ -1,0 +1,154 @@
+/* ================================================
+   Global Form Styling — HRMS Design System
+   ================================================ */
+
+/* Labels — Standardize across all forms */
+.form-label {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: var(--zinc-500) !important;
+    margin-bottom: 0.35rem !important;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Inputs & Selects — Standardize across all forms */
+.form-control,
+.form-select {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    height: 38px !important;
+    border: 1px solid var(--zinc-200) !important;
+    border-radius: calc(var(--radius) / 1.5) !important;
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+/* Focus States */
+.form-control:focus,
+.form-select:focus {
+    outline: none !important;
+    border-color: var(--zinc-900) !important;
+    box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.05) !important;
+    background-color: var(--background) !important;
+}
+
+/* Placeholders */
+.form-control::placeholder {
+    color: var(--zinc-300) !important;
+    font-size: 0.8125rem;
+}
+
+/* Disabled States */
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--zinc-50) !important;
+    color: var(--zinc-400) !important;
+    cursor: not-allowed;
+}
+
+/* Required Indicator */
+.required-dot {
+    color: #ef4444;
+    margin-left: 2px;
+    font-weight: bold;
+}
+
+/* Form Field Helper Text */
+.form-text {
+    font-size: 0.75rem !important;
+    color: var(--zinc-400) !important;
+    margin-top: 0.25rem !important;
+}
+
+/* Checkboxes & Radios Custom Styling */
+.form-check-input {
+    border-color: var(--zinc-300) !important;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--zinc-900) !important;
+    border-color: var(--zinc-900) !important;
+}
+
+.form-check-label {
+    font-size: 0.875rem;
+    color: var(--zinc-700);
+    cursor: pointer;
+}
+
+/* Section Grouping Title */
+.form-group-title {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--zinc-400);
+    font-weight: 700;
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--zinc-100);
+    display: block;
+}
+
+/* Row Gutter for Forms — High Density */
+.row.g-compact {
+    --bs-gutter-x: 1.25rem !important;
+    --bs-gutter-y: 1.25rem !important;
+}
+
+/* Enterprise Cards for Forms */
+.card {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem !important;
+    background-color: var(--zinc-50) !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--zinc-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header i {
+    color: var(--zinc-400);
+    font-size: 0.875rem;
+}
+
+.card-body {
+    padding: 1.25rem 1.5rem !important;
+}
+
+/* Utility to remove arrows from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Form Layout Container */
+.compact-form-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
