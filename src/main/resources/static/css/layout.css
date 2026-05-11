@@ -4,10 +4,12 @@
 
 :root {
   /* Monochrome Zinc Palette (shadcn style) */
-  --primary: #18181b; /* Zinc 900 */
-  --primary-hover: #27272a; /* Zinc 800 */
+  --primary: #18181b;
+  /* Zinc 900 */
+  --primary-hover: #27272a;
+  /* Zinc 800 */
   --primary-foreground: #ffffff;
-  
+
   /* Zinc Gray Scale */
   --zinc-50: #fafafa;
   --zinc-100: #f4f4f5;
@@ -35,8 +37,8 @@
   --border: var(--zinc-200);
   --input: var(--zinc-200);
   --ring: var(--zinc-950);
-  
-  --radius: 0.75rem; 
+
+  --radius: 0.75rem;
 
   /* Layout Constants */
   --header-height: 64px;
@@ -59,8 +61,10 @@ body.hrms-app {
   background-color: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden; /* Prevent horizontal scroll */
-  overflow-y: hidden; /* Fixed height layout */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+  overflow-y: hidden;
+  /* Fixed height layout */
 }
 
 h1,
@@ -192,7 +196,8 @@ h6 {
   display: flex;
   flex-direction: column;
   margin-left: var(--sidebar-width);
-  width: calc(100% - var(--sidebar-width)); /* Explicit width to prevent overflow */
+  width: calc(100% - var(--sidebar-width));
+  /* Explicit width to prevent overflow */
   transition: all var(--transition-timing);
 }
 
@@ -221,18 +226,21 @@ h6 {
 }
 
 @media (max-width: 992px) {
-  .hrms-viewport, 
+
+  .hrms-viewport,
   .hrms-viewport.collapsed {
     margin-left: 0 !important;
     width: 100% !important;
   }
 
   .hrms-content {
-    padding: 1rem; /* Standard mobile padding (16px) */
+    padding: 1rem;
+    /* Standard mobile padding (16px) */
   }
 
   /* Enterprise touch: hide some decorations on mobile to save space */
   .hrms-main {
-    background-color: var(--background); /* Pure white on mobile for cleaner look */
+    background-color: var(--background);
+    /* Pure white on mobile for cleaner look */
   }
 }

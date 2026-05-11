@@ -1,5 +1,6 @@
 package com.sellspark.SellsHRMS.controller.view;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller; // Import the @Controller annotation
 import org.springframework.ui.Model;
@@ -20,6 +21,9 @@ public class LoginPageController {
 
     private final OrganisationRepository organisationRepository;
 
+    @Value("${app.baseUrl}")
+    private final String baseUrl;
+
     @GetMapping({ "/", "/login", "/new-login" })
     public String loginPage(HttpServletRequest request, Model model) {
         String domain = extractDomain(request);
@@ -29,7 +33,7 @@ public class LoginPageController {
         // This will resolve to /WEB-INF/views/auth/login.jsp
 
         if (org != null && org.getLogoUrl() != null) {
-            model.addAttribute("orgLogo", org.getLogoUrl());
+            model.addAttribute("orgLogo", baseUrl + org.getLogoUrl());
             model.addAttribute("orgName", org.getName());
         }
         // else {

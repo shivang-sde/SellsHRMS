@@ -11,7 +11,7 @@
               </c:when>
               <c:otherwise>
                 <div class="sidebar-brand">
-                  <span class="brand-text">Sells<span class="text-slate-400">HRMS</span></span>
+                  <span class="brand-text">Sells<span class="text-zinc-400">HRMS</span></span>
                 </div>
               </c:otherwise>
             </c:choose>
@@ -120,7 +120,7 @@
                         <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
                           <span class="ms-auto"
                             onclick="window.location.href='${pageContext.request.contextPath}/org/create-employee'; event.stopPropagation();">
-                            <i class="fa-solid fa-plus small text-zinc-400 hover:text-zinc-900"></i>
+                            <i class="fa-solid fa-plus small text-zinc-500 hover:text-white"></i>
                           </span>
                         </sec:authorize>
                         <i class="fa-solid fa-chevron-right ms-2 small toggle-chevron"></i>
@@ -174,7 +174,7 @@
                       <i class="fa-solid fa-chevron-right ms-auto small toggle-chevron"></i>
                     </a>
                     <ul class="sub-menu">
-                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Setup</li>
+                      <li class="nav-group-label" style="padding-left:0; color:var(--zinc-500);">Setup</li>
                       <li><a href="${pageContext.request.contextPath}/payroll/salary-components">Salary Components</a>
                       </li>
                       <li><a href="${pageContext.request.contextPath}/payroll/salary-structures">Salary Structures</a>
@@ -182,12 +182,12 @@
                       <li><a href="${pageContext.request.contextPath}/payroll/salary-assignments">Employee
                           Assignments</a></li>
                       <li><a href="${pageContext.request.contextPath}/payroll/statutory-tax">Statutory & Tax</a></li>
-                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Templates</li>
+                      <li class="nav-group-label" style="padding-left:0; color:var(--zinc-500);">Templates</li>
                       <li><a href="${pageContext.request.contextPath}/salary-slip-template/list">Salary Slip
                           Templates</a></li>
                       <li><a href="${pageContext.request.contextPath}/salary-slip-template/design">Template Designer</a>
                       </li>
-                      <li class="nav-group-label" style="padding-left:0; color:#52525b;">Operations</li>
+                      <li class="nav-group-label" style="padding-left:0; color:var(--zinc-500);">Operations</li>
                       <li><a href="${pageContext.request.contextPath}/payroll/payruns">PayRun Dashboard</a></li>
                     </ul>
                   </div>

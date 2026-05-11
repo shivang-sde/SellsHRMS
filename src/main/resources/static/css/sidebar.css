@@ -7,8 +7,8 @@
   display: flex;
   align-items: center;
   padding: 0 1.5rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid var(--zinc-100);
+  background-color: var(--zinc-950);
+  border-bottom: 1px solid var(--zinc-900);
   transition: all var(--transition-timing);
 }
 
@@ -26,7 +26,7 @@
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--zinc-900);
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -43,14 +43,14 @@
 
 .hrms-sidebar {
   width: var(--sidebar-width);
-  background-color: #ffffff;
+  background-color: var(--zinc-950);
   height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 1000;
   transition: width var(--transition-timing), transform var(--transition-timing);
-  border-right: 1px solid var(--zinc-200);
+  border-right: 1px solid var(--zinc-900);
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -93,14 +93,14 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--zinc-200);
+  background: var(--zinc-800);
   border-radius: 10px;
 }
 
 .nav-group-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--zinc-400);
+  color: var(--zinc-500);
   padding: 1.5rem 1rem 0.5rem;
   letter-spacing: 0.02em;
 }
@@ -110,7 +110,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.625rem 1rem;
-  color: var(--zinc-600);
+  color: var(--zinc-400);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
@@ -129,28 +129,41 @@
 }
 
 .nav-link:hover {
-  background-color: var(--zinc-50);
-  color: var(--zinc-900);
+  background-color: var(--zinc-900);
+  color: #ffffff;
 }
 
 .nav-link:hover i {
-  color: var(--zinc-900);
+  color: #ffffff;
 }
 
 .nav-link.active {
-  background-color: var(--zinc-100);
-  color: var(--zinc-950);
+  background-color: var(--zinc-800);
+  color: #ffffff;
   font-weight: 600;
 }
 
 .nav-link.active i {
-  color: var(--zinc-950);
+  color: #ffffff;
+}
+
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.625rem;
+  bottom: 0.625rem;
+  width: 3px;
+  background-color: #ffffff;
+  border-radius: 0 4px 4px 0;
 }
 
 /* Sub-menu styling matching the clean look */
 .sub-menu {
   list-style: none;
-  padding: 0.25rem 0 0.5rem 2.75rem;
+  padding: 0.25rem 0 0.5rem 1rem;
+  margin-left: 1.75rem;
+  border-left: 1px solid var(--zinc-800);
   display: none;
 }
 
@@ -169,12 +182,12 @@
 }
 
 .sub-menu li a:hover {
-  background-color: var(--zinc-50);
-  color: var(--zinc-900);
+  background-color: var(--zinc-900);
+  color: #ffffff;
 }
 
 .sub-menu li a.active {
-  color: var(--zinc-900);
+  color: #ffffff;
   font-weight: 600;
 }
 
