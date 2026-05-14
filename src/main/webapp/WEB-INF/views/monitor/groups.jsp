@@ -21,8 +21,7 @@
 
             </div>
 
-            <!-- After the Create Group button -->
-            <div class="alert alert-secondary border-start border-4 border-secondary mt-3 small">
+            <div class="alert alert-secondary border-start border-4 border-secondary m-3 small">
                 <i class="fa-solid fa-lightbulb text-warning"></i>
                 <strong>Pro Tip:</strong> Add users to your groups to receive email notifications.
                 Users will only get alerts after enabling URL Monitor notifications in

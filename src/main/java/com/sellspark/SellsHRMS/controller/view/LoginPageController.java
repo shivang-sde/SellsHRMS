@@ -21,8 +21,8 @@ public class LoginPageController {
 
     private final OrganisationRepository organisationRepository;
 
-    @Value("${app.baseUrl}")
-    private final String baseUrl;
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     @GetMapping({ "/", "/login", "/new-login" })
     public String loginPage(HttpServletRequest request, Model model) {

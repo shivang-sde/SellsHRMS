@@ -3,6 +3,12 @@
 
         <style>
             :root {
+                --slate-50: #f8fafc;
+                --slate-100: #f1f5f9;
+                --slate-200: #e2e8f0;
+                --slate-600: #475569;
+                --slate-900: #0f172a;
+
                 --zinc-50: #fafafa;
                 --zinc-100: #f4f4f5;
                 --zinc-200: #e4e4e7;
@@ -17,8 +23,8 @@
             }
 
             .dashboard-wrapper {
-                padding: 1.5rem;
-                background-color: var(--zinc-50);
+                padding: 2rem;
+                background-color: var(--slate-100);
                 min-height: calc(100vh - 64px);
             }
 
@@ -54,31 +60,32 @@
 
             .kpi-card {
                 background: #ffffff;
-                border: 1px solid var(--zinc-200);
-                border-radius: 1rem;
+                border: 1px solid var(--slate-200);
+                border-radius: 1.25rem;
                 padding: 1.5rem;
                 display: flex;
                 align-items: center;
                 gap: 1.25rem;
-                transition: all 0.2s ease;
+                transition: all 0.3s ease;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             }
 
             .kpi-card:hover {
-                border-color: var(--zinc-300);
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
-                transform: translateY(-2px);
+                border-color: var(--slate-300);
+                box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.08);
+                transform: translateY(-4px);
             }
 
             .kpi-icon {
-                width: 48px;
-                height: 48px;
-                background: var(--zinc-100);
-                color: var(--zinc-900);
-                border-radius: 0.75rem;
+                width: 52px;
+                height: 52px;
+                background: var(--slate-100);
+                color: var(--slate-900);
+                border-radius: 1rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 1.25rem;
+                font-size: 1.35rem;
             }
 
             .kpi-info h6 {

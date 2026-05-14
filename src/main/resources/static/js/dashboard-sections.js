@@ -12,21 +12,75 @@ $(document).ready(function () {
     const data = response.data || {};
     console.log("Dashboard data:", data);
 
-    renderList("#birthdaysContainer", data.birthdays, e => `${e.fullName || (e.firstName + " " + e.lastName)}`);
-    renderList("#anniversaryContainer", data.anniversaries, e => `${e.fullName || (e.firstName + " " + e.lastName)}`);
-    renderList("#holidayContainer", data.holidays, h => `${h.holidayName} - ${formatDate(h.holidayDate)}`);
+    renderList("#birthdaysContainer", data.birthdays, e => `
+        <div class="d-flex align-items-center gap-3 w-100">
+            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                <i class="fas fa-birthday-cake text-pink small"></i>
+            </div>
+            <div>
+                <div class="fw-medium">${e.fullName || (e.firstName + " " + e.lastName)}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Birthday Today</div>
+            </div>
+        </div>
+    `);
+    $("#birthdaysCount").text(data.birthdays?.length || 0);
+
+    renderList("#anniversaryContainer", data.anniversaries, e => `
+        <div class="d-flex align-items-center gap-3 w-100">
+            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                <i class="fas fa-medal text-warning small"></i>
+            </div>
+            <div>
+                <div class="fw-medium">${e.fullName || (e.firstName + " " + e.lastName)}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Work Anniversary</div>
+            </div>
+        </div>
+    `);
+    $("#anniversariesCount").text(data.anniversaries?.length || 0);
+
+    renderList("#holidayContainer", data.holidays, h => `
+        <div class="d-flex align-items-center gap-3 w-100">
+            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                <i class="fas fa-calendar-day text-info small"></i>
+            </div>
+            <div>
+                <div class="fw-medium">${h.holidayName}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">${formatDate(h.holidayDate)}</div>
+            </div>
+        </div>
+    `);
+    $("#holidaysCount").text(data.holidays?.length || 0);
 
     // Combine Events + Announcements for one card
     const combined = [];
     if (Array.isArray(data.events))
       combined.push(...data.events.map(ev => ({
-        label: `<i class="fa fa-calendar-day text-primary"></i> ${ev.title} - ${formatDate(ev.startDate)}`
+        label: `
+            <div class="d-flex align-items-center gap-3 w-100">
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                    <i class="fas fa-calendar-alt text-primary small"></i>
+                </div>
+                <div>
+                    <div class="fw-medium">${ev.title}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${formatDate(ev.startDate)}</div>
+                </div>
+            </div>`
       })));
     if (Array.isArray(data.announcements))
       combined.push(...data.announcements.map(an => ({
-        label: `<i class="fa fa-bullhorn text-warning"></i> <b>${an.title}</b> - ${an.message}`
+        label: `
+            <div class="d-flex align-items-center gap-3 w-100">
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                    <i class="fas fa-bullhorn text-warning small"></i>
+                </div>
+                <div>
+                    <div class="fw-bold text-dark">${an.title}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${an.message}</div>
+                </div>
+            </div>`
       })));
     renderList("#eventsContainer", combined, i => i.label);
+    $("#eventsCount").text(combined.length);
   }).fail(() => showToast("error", "Failed to load dashboard data"));
 
   async function loadUpcomingReminders() {
@@ -44,18 +98,27 @@ $(document).ready(function () {
       }
 
       const html = reminders.map(r => `
-            <div class="border-bottom mb-2 pb-1">
-                <div class="fw-bold text-truncate" title="${r.title}">${r.title}</div>
-                <div class="small text-muted text-truncate" title="${r.description || '-'}">
-                    ${r.description || '-'}
-                </div>
-                <div class="small text-primary mt-1">
-                    <i class="fas fa-clock me-1"></i>${formatDateTime(r.reminderAt)}
+            <div class="border-bottom mb-2 pb-2">
+                <div class="d-flex align-items-start gap-2">
+                    <div class="mt-1">
+                        <i class="fas fa-circle-check text-success" style="font-size: 0.65rem;"></i>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold text-dark text-truncate" title="${r.title}">${r.title}</div>
+                        <div class="small text-muted text-truncate" style="opacity: 0.8;" title="${r.description || '-'}">
+                            ${r.description || '-'}
+                        </div>
+                        <div class="small text-primary mt-1 d-flex align-items-center gap-1">
+                            <i class="far fa-clock"></i>
+                            <span>${formatDateTime(r.reminderAt)}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
 
       container.html(html);
+      $("#remindersCount").text(reminders.length);
 
     } catch (err) {
       console.error('Failed to load reminders', err.message);
