@@ -17,4 +17,5 @@ public class UpdateUrlRequest {
     private Integer timeout;
     private Integer failureThreshold;
     private Boolean isActive;
+    private String groupId;
 }

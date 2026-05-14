@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <!-- Create Group Modal -->
+    <!-- Create/edit Group Modal -->
     <div class="modal fade" id="createGroupModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -67,6 +67,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="groupForm">
+                        <input type="hidden" id="groupId">
                         <div class="mb-3">
                             <label class="form-label">Group Name *</label>
                             <input type="text" class="form-control" id="groupName" required>
@@ -79,7 +80,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="createGroup()">Create</button>
+                    <button type="button" class="btn btn-primary" id="saveGroupBtn" onclick="saveGroup()">Create</button>
                 </div>
             </div>
         </div>

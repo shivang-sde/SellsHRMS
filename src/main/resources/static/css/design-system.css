@@ -196,3 +196,168 @@ body.hrms-app {
 .hrms-p {
     padding: var(--space-md);
 }
+
+/* =========================================
+   TOAST NOTIFICATIONS (PREMIUM)
+   ========================================= */
+
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 13000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hrms-toast {
+    min-width: 300px;
+    max-width: 400px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hrms-toast.showing {
+    animation: toast-in 0.4s forwards;
+}
+
+.hrms-toast.hiding {
+    animation: toast-out 0.4s forwards;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.toast-message {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: var(--text);
+}
+
+/* Toast Progress Bar */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.toast-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: currentColor;
+    animation: toast-progress 5s linear forwards;
+}
+
+/* Type Specifics */
+.hrms-toast-success i {
+    color: var(--success);
+}
+
+.hrms-toast-success .toast-progress::after {
+    color: var(--success);
+}
+
+.hrms-toast-error i {
+    color: var(--danger);
+}
+
+.hrms-toast-error .toast-progress::after {
+    color: var(--danger);
+}
+
+.hrms-toast-warning i {
+    color: var(--warning);
+}
+
+.hrms-toast-warning .toast-progress::after {
+    color: var(--warning);
+}
+
+.hrms-toast-info i {
+    color: var(--primary);
+}
+
+.hrms-toast-info .toast-progress::after {
+    color: var(--primary);
+}
+
+@keyframes toast-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toast-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes toast-progress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+/* =========================================
+   MODAL ENHANCEMENTS
+   ========================================= */
+
+.modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+    text-align: center;
+}

@@ -79,7 +79,7 @@
 
 
         <!-- Add/Edit URL Modal -->
-        <div class="modal fade" id="urlModal" tabindex="-1">
+        <div class="modal fade shadow-lg modal-dialog-scrollable" id="urlModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">

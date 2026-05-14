@@ -102,6 +102,14 @@ public class MonitorUrlServiceImpl implements MonitorUrlService {
         if (request.getIsActive() != null)
             url.setIsActive(request.getIsActive());
 
+        if (request.getGroupId() != null && !request.getGroupId().isEmpty()) {
+            try {
+                monitorGroupService.addUrlToGroup(request.getGroupId(), url.getId(), organisationId, userId);
+            } catch (Exception e) {
+                log.warn("Failed to update URL in group: {}", e.getMessage());
+            }
+        }
+
         url.setUpdatedAt(LocalDateTime.now());
 
         MonitorUrl updated = urlRepository.save(url);
@@ -167,7 +175,7 @@ public class MonitorUrlServiceImpl implements MonitorUrlService {
     public UrlDetailDTO getUrlDetail(String id, Long organisationId, Long userId) {
         MonitorUrl url = getUrlEntity(id, organisationId);
 
-        Pageable checksPageable = PageRequest.of(0, 25);
+        Pageable checksPageable = PageRequest.of(0, 5);
         List<MonitorCheck> checks = checkRepository.findLatestByUrlId(id, checksPageable).getContent();
         List<MonitorIncident> incidents = incidentRepository.findByUrlIdOrderByStartedAtDesc(id);
         List<MonitorGroup> groups = groupUrlRepository.findGroupsByUrlId(id);

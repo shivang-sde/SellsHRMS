@@ -5,16 +5,9 @@
 
         <aside id="hrmsSidebar" class="hrms-sidebar">
           <div class="sidebar-header">
-            <c:choose>
-              <c:when test="${not empty sessionScope.LOGO_URL}">
-                <img src="${sessionScope.LOGO_URL}" alt="Logo" class="sidebar-logo">
-              </c:when>
-              <c:otherwise>
-                <div class="sidebar-brand">
-                  <span class="brand-text">Sells<span class="text-zinc-400">HRMS</span></span>
-                </div>
-              </c:otherwise>
-            </c:choose>
+            <button id="sidebarToggle" class="sidebar-toggle-btn sidebar-toggle-inside bg-white">
+              <i class="fa-solid fa-bars-staggered text-black bg-white"></i>
+            </button>
           </div>
           <div class="sidebar-inner">
             <nav class="sidebar-nav">
@@ -118,7 +111,7 @@
                       <a class="nav-link toggle-link" href="javascript:void(0)">
                         <i class="fa-solid fa-users"></i> <span class="nav-text">Employees</span>
                         <sec:authorize access="hasAnyAuthority('ORG_ADMIN', 'EMPLOYEE_CREATE')">
-                          <span class="ms-auto"
+                          <span class="ms-auto quick-action"
                             onclick="window.location.href='${pageContext.request.contextPath}/org/create-employee'; event.stopPropagation();">
                             <i class="fa-solid fa-plus small text-zinc-500 hover:text-white"></i>
                           </span>

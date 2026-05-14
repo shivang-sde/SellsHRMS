@@ -67,14 +67,14 @@ function renderUrls(urls) {
                 <td>${url.lastResponseTime ? url.lastResponseTime + 'ms' : '--'}</td>
                 <td><small>${url.lastCheckedAt ? formatDate(url.lastCheckedAt) : 'Never'}</small></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="checkNow('${url.id}')" title="Check Now">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
                     <button class="btn btn-sm btn-outline-secondary me-1" onclick="toggleUrl('${url.id}')" title="${url.isActive ? 'Pause' : 'Resume'}">
                         <i class="fa-solid ${url.isActive ? 'fa-pause' : 'fa-play'}"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-info me-1" onclick="showUrlDetail('${url.id}')" title="Details">
                         <i class="fa-solid fa-chart-line"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editUrl('${url.id}')" title="Edit">
+                        <i class="fa-solid fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteUrl('${url.id}', '${escapeHtml(url.name)}')" title="Delete">
                         <i class="fa-solid fa-trash"></i>

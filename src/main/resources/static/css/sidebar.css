@@ -1,15 +1,67 @@
 /* ================================================
-   HRMS Sidebar — Clean High-Density Edition
+   HRMS Sidebar — Enterprise Professional Edition
+   Strict Behavior: Collapsible (No Hover Expand)
    ================================================ */
 
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --transition-speed: 0.2s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hrms-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--zinc-950);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  transition: width var(--transition-speed) var(--transition-timing),
+    transform var(--transition-speed) var(--transition-timing);
+  border-right: 1px solid var(--zinc-900);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Prevent horizontal scroll during transition */
+}
+
+/* ── Collapsed State (Desktop) ── */
+.hrms-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* STRICT: No expansion on hover */
+.hrms-sidebar.collapsed:hover {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* Hide specific elements when collapsed */
+.hrms-sidebar.collapsed .nav-text,
+.hrms-sidebar.collapsed .nav-group-label,
+.hrms-sidebar.collapsed .toggle-chevron,
+.hrms-sidebar.collapsed .quick-action,
+.hrms-sidebar.collapsed .sidebar-brand {
+  display: none !important;
+}
+
+/* STRICT: Submenus must NEVER show when collapsed */
+.hrms-sidebar.collapsed .sub-menu {
+  display: none !important;
+}
+
+/* ── Sidebar Header ── */
 .sidebar-header {
   height: var(--header-height);
   display: flex;
   align-items: center;
-  padding: 0 1.5rem;
+  justify-content: end;
+  padding: 0 1.25rem;
   background-color: var(--zinc-950);
   border-bottom: 1px solid var(--zinc-900);
-  transition: all var(--transition-timing);
+  transition: padding var(--transition-speed);
 }
 
 .hrms-sidebar.collapsed .sidebar-header {
@@ -23,67 +75,49 @@
 }
 
 .sidebar-brand {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: #ffffff;
   white-space: nowrap;
 }
 
-.hrms-sidebar.collapsed:not(:hover) .sidebar-brand {
-  display: none;
-}
-
-/* Hide text when collapsed, show on hover */
-.hrms-sidebar.collapsed:not(:hover) .nav-text,
-.hrms-sidebar.collapsed:not(:hover) .nav-group-label,
-.hrms-sidebar.collapsed:not(:hover) .toggle-chevron {
-  display: none;
-}
-
-.hrms-sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--zinc-950);
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 1000;
-  transition: width var(--transition-timing), transform var(--transition-timing);
-  border-right: 1px solid var(--zinc-900);
+/* Toggle Button Styling */
+.sidebar-toggle-inside {
+  background: #fff;
+  border: 1px solid var(--zinc-800);
+  color: var(--zinc-900);
+  width: 32px;
+  height: 32px;
+  border-radius: 1px;
   display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.hrms-sidebar.collapsed {
-  width: 72px;
+.sidebar-toggle-inside:hover {
+  background: var(--zinc-900);
+  color: #fff;
 }
 
-.hrms-sidebar.collapsed .nav-text,
-.hrms-sidebar.collapsed .nav-group-label,
-.hrms-sidebar.collapsed .toggle-chevron {
-  display: none;
+.hrms-sidebar.collapsed .sidebar-toggle-inside {
+  margin: 0 auto;
 }
 
-.hrms-sidebar.collapsed:hover .nav-text,
-.hrms-sidebar.collapsed:hover .nav-group-label,
-.hrms-sidebar.collapsed:hover .toggle-chevron {
-  display: block;
-}
-
+/* ── Navigation ── */
 .sidebar-inner {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   overflow-x: hidden;
 }
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   padding: 0 0.75rem;
 }
 
@@ -98,11 +132,12 @@
 }
 
 .nav-group-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--zinc-500);
-  padding: 1.5rem 1rem 0.5rem;
-  letter-spacing: 0.02em;
+  padding: 1.25rem 1rem 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .nav-link {
@@ -120,30 +155,21 @@
   position: relative;
 }
 
-.nav-link i {
+.nav-link i:first-child {
   width: 20px;
   font-size: 1rem;
   text-align: center;
   color: var(--zinc-500);
-  transition: color 0.2s ease;
 }
 
-.nav-link:hover {
+.nav-link:hover,
+.nav-link.active {
   background-color: var(--zinc-900);
   color: #ffffff;
 }
 
-.nav-link:hover i {
-  color: #ffffff;
-}
-
-.nav-link.active {
-  background-color: var(--zinc-800);
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.nav-link.active i {
+.nav-link:hover i:first-child,
+.nav-link.active i:first-child {
   color: #ffffff;
 }
 
@@ -158,16 +184,16 @@
   border-radius: 0 4px 4px 0;
 }
 
-/* Sub-menu styling matching the clean look */
+/* ── Sub-menu ── */
 .sub-menu {
   list-style: none;
-  padding: 0.25rem 0 0.5rem 1rem;
-  margin-left: 1.75rem;
+  padding: 0.25rem 0 0.5rem 0;
+  margin-left: 2.25rem;
   border-left: 1px solid var(--zinc-800);
   display: none;
 }
 
-.toggle-link.open + .sub-menu {
+.sub-menu.open {
   display: block;
 }
 
@@ -181,39 +207,34 @@
   transition: all 0.2s ease;
 }
 
-.sub-menu li a:hover {
-  background-color: var(--zinc-900);
-  color: #ffffff;
-}
-
+.sub-menu li a:hover,
 .sub-menu li a.active {
   color: #ffffff;
-  font-weight: 600;
 }
 
 .toggle-chevron {
-  font-size: 0.75rem;
-  color: var(--zinc-400);
-  transition: transform 0.2s ease;
+  margin-left: auto;
+  font-size: 0.7rem;
+  transition: transform var(--transition-speed);
 }
 
 .toggle-link.open .toggle-chevron {
   transform: rotate(90deg);
 }
 
-/* Responsive (Mobile) */
+/* ── Mobile View ── */
 .sidebar-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .sidebar-overlay.visible {
@@ -231,13 +252,18 @@
     transform: translateX(0);
   }
 
-  .hrms-sidebar.collapsed {
-    width: 280px;
+  /* Force elements visible in mobile even if "collapsed" class is present */
+  .hrms-sidebar.mobile-open .nav-text,
+  .hrms-sidebar.mobile-open .nav-group-label,
+  .hrms-sidebar.mobile-open .toggle-chevron,
+  .hrms-sidebar.mobile-open .quick-action,
+  .hrms-sidebar.mobile-open .sidebar-brand {
+    display: flex !important;
   }
+}
 
-  .hrms-sidebar.collapsed .nav-text,
-  .hrms-sidebar.collapsed .nav-group-label,
-  .hrms-sidebar.collapsed .toggle-chevron {
-    display: block;
+@media (min-width: 993px) {
+  .sidebar-overlay {
+    display: none !important;
   }
 }

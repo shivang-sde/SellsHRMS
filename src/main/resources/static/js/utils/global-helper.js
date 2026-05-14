@@ -1,5 +1,13 @@
 // ---------- Global Toast Helper ----------
+const activeToasts = new Set();
+
 function showToast(type, message) {
+  if (!message) return;
+  
+  // Prevent duplicate toasts for the same message
+  if (activeToasts.has(message)) return;
+  activeToasts.add(message);
+
   const container =
     document.getElementById("toast-container") ||
     (function () {
@@ -10,31 +18,28 @@ function showToast(type, message) {
       return c;
     })();
 
-  if (container && container.children.length >= 3) {
-    container.removeChild(container.firstChild);
+  // Keep max 3 toasts
+  if (container.children.length >= 3) {
+    const first = container.firstChild;
+    if (first) dismissToast(first);
   }
 
   const icons = {
-    success: "fa-circle-check text-success",
-    error: "fa-circle-xmark text-danger",
-    info: "fa-circle-info text-primary",
-    warning: "fa-triangle-exclamation text-warning",
-  };
-
-  const borderColors = {
-    success: "#10b981",
-    error: "#ef4444",
-    warning: "#f59e0b",
-    info: "#3b82f6",
+    success: "fa-circle-check",
+    error: "fa-circle-xmark",
+    info: "fa-circle-info",
+    warning: "fa-triangle-exclamation",
   };
 
   const toast = document.createElement("div");
-  toast.className = "hrms-toast";
-  toast.style.borderLeftColor = borderColors[type] || "#3b82f6";
+  toast.className = `hrms-toast hrms-toast-${type} showing`;
   toast.innerHTML = `
-    <i class="fa-solid ${icons[type] || icons.info}"></i> 
-    <span>${message}</span>
-    <button type="button" class="toast-close">&times;</button>
+    <div class="toast-content">
+        <i class="fa-solid ${icons[type] || icons.info}"></i> 
+        <span class="toast-message">${message}</span>
+    </div>
+    <button type="button" class="toast-close" aria-label="Close">&times;</button>
+    <div class="toast-progress"></div>
   `;
   container.appendChild(toast);
 
@@ -44,9 +49,9 @@ function showToast(type, message) {
   const autoDismiss = setTimeout(() => dismissToast(toast), 5000);
 
   function dismissToast(el) {
-    clearTimeout(autoDismiss);
-    el.style.opacity = "0";
-    el.style.transform = "translateX(20px)";
+    if (!el || !el.parentNode) return;
+    activeToasts.delete(message);
+    el.classList.replace("showing", "hiding");
     setTimeout(() => el.remove(), 400);
   }
 }
@@ -119,52 +124,61 @@ function showIntervention(config) {
 }
 
 // ---------- Global AJAX Error Interceptor ----------
+let activeErrorModal = null;
+
 $(document).ajaxError(function (event, jqxhr) {
   try {
     const res = jqxhr.responseJSON || JSON.parse(jqxhr.responseText || "{}");
     const code = res.errorCode;
+    const message = res.message || "An unexpected system error occurred.";
+
+    // Logic to prevent duplicate intervention modals
+    if (activeErrorModal === code) return;
 
     if (code === "ORG_LICENSE_EXPIRED" || code === "ORG_INACTIVE") {
+      activeErrorModal = code;
       showIntervention({
         title: "Action Required",
-        message:
-          "Your organization's subscription is inactive. Please contact your billing administrator.",
+        message: "Your organization's subscription is inactive. Please contact your billing administrator.",
         icon: "fa-file-invoice-dollar",
         severity: "critical",
         confirmText: "Contact Support",
         hideCancel: true,
         onConfirm: () => {
+          activeErrorModal = null;
           window.location.href = "mailto:support@sellshrms.com";
         },
       });
     } else if (code === "ORG_NOT_ASSIGNED") {
+      activeErrorModal = code;
       showIntervention({
         title: "Account Pending",
-        message:
-          "Your profile is not yet linked to an organization. Please wait for HR setup.",
+        message: "Your profile is not yet linked to an organization. Please wait for HR setup.",
         icon: "fa-building-shield",
         severity: "warning",
         confirmText: "Back to Login",
         onConfirm: () => {
+          activeErrorModal = null;
           window.location.href = window.APP.CONTEXT_PATH + "/login";
         },
+        onCancel: () => { activeErrorModal = null; }
       });
     } else if (code === "ACCESS_DENIED" || jqxhr.status === 403) {
-      showToast(
-        "error",
-        "Access Denied: You do not have permission for this action.",
-      );
+      showToast("error", "Access Denied: You do not have permission for this action.");
     } else if (jqxhr.status === 401) {
+      // Session expiry often triggers multiple parallel requests
+      if (activeErrorModal === 'SESSION_EXPIRED') return;
+      activeErrorModal = 'SESSION_EXPIRED';
+      
       showToast("info", "Session expired. Redirecting to login...");
-      setTimeout(
-        () => (window.location.href = window.APP.CONTEXT_PATH + "/login"),
-        1500,
-      );
+      setTimeout(() => {
+        window.location.href = window.APP.CONTEXT_PATH + "/login";
+      }, 1500);
     } else {
-      showToast("error", res.message || "An unexpected system error occurred.");
+      showToast("error", message);
     }
   } catch (e) {
-    showToast("error", e.message || "An unexpected system error occurred.");
+    showToast("error", "An unexpected system error occurred.");
   }
 });
 

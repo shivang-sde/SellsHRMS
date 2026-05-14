@@ -54,7 +54,7 @@
             },
 
             // ==================== URLS ====================
-            getUrls(page = 1, limit = 20, status = '', search = '') {
+            getUrls(page = 1, limit = 10, status = '', search = '') {
                 let url = `/monitor/urls?organisationId=${organisationId}&userId=${userId}&page=${page}&limit=${limit}`;
                 if (status) url += `&status=${status}`;
                 if (search) url += `&search=${encodeURIComponent(search)}`;

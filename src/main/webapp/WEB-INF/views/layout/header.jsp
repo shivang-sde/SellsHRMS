@@ -7,10 +7,9 @@
           <div class="container-fluid d-flex align-items-center justify-content-between p-0">
             <!-- Left: Sidebar Toggle + Brand -->
             <div class="d-flex align-items-center gap-3">
-              <button id="sidebarToggle" class="sidebar-toggle-btn">
+              <button id="sidebarToggle" class="sidebar-toggle-btn d-lg-none">
                 <i class="fa-solid fa-bars-staggered"></i>
               </button>
-
               <c:choose>
                 <c:when test="${not empty sessionScope.LOGO_URL}">
                   <div class="brand-logo-wrap">

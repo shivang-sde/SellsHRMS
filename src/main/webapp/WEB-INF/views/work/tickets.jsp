@@ -89,19 +89,22 @@
         </div>
       </div>
     </div>
-    </div>
 
     <!-- ============================================ -->
     <!-- SUBORDINATE TICKETS SECTION (shown if manager) -->
     <!-- ============================================ -->
     <div id="subordinateTicketsSection" class="mt-5 p-4" style="display: none;">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
+
+      <div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
           <h3 class="mb-1">
             <i class="fas fa-users-cog text-warning me-2"></i>Team Tickets
           </h3>
           <p class="text-muted mb-0">Independent tickets created by or assigned to your subordinates</p>
         </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
         <!-- Filter controls -->
         <div class="d-flex gap-2 align-items-center">
           <input type="date" class="form-control form-control-sm" id="subTicketDateFilter" style="width: 140px;"
@@ -159,7 +162,6 @@
           </div>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- Ticket Modal -->

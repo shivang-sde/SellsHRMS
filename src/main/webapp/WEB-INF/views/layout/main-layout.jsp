@@ -71,7 +71,7 @@
                                         <c:otherwise>
                                             <div class="card border border-slate-200 bg-white"
                                                 style="border-radius: var(--radius);">
-                                                <div class="card-body p-5 text-center">
+                                                <div class="card-body text-center">
                                                     <div class="mb-4">
                                                         <i
                                                             class="fa-solid fa-house-user fa-4x text-muted opacity-25"></i>

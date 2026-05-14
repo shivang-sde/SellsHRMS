@@ -3,19 +3,6 @@
         <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
             <c:set var="pageScript" value="employee-list" />
 
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h2 class="mb-0">Employees</h2>
-                        <sec:authorize access="hasAnyAuthority('EMPLOYEE_CREATE', 'ORG_ADMIN')">
-                            <a href="/org/create-employee" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Add Employee
-                            </a>
-                        </sec:authorize>
-                    </div>
-                </div>
-            </div>
-
             <!-- Filter Section -->
             <div class="card mb-3">
                 <div class="card-body">
@@ -47,6 +34,13 @@
                             <button id="btnSearch" class="btn btn-secondary w-100">
                                 <i class="fas fa-search me-2"></i>Search
                             </button>
+                        </div>
+                        <div class="col-md-2">
+                            <sec:authorize access="hasAnyAuthority('EMPLOYEE_CREATE', 'ORG_ADMIN')">
+                                <a href="/org/create-employee" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Add Employee
+                                </a>
+                            </sec:authorize>
                         </div>
                     </div>
                 </div>

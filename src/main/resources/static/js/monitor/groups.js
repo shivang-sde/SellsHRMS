@@ -13,9 +13,16 @@ $(document).ready(function () {
         showGroupDetail(groupId);
     });
 
-    // 2. Handle Delete Button Click
+    // 2. Handle Edit Button Click
+    $(document).on('click', '.btn-edit-group', function (e) {
+        e.stopPropagation();
+        const groupId = $(this).closest('tr').data('group-id');
+        editGroup(groupId);
+    });
+
+    // 3. Handle Delete Button Click
     $(document).on('click', '.btn-delete-group', function (e) {
-        e.stopPropagation(); // Prevent triggering the row click
+        e.stopPropagation();
         const $row = $(this).closest('tr');
         const groupId = $row.data('group-id');
         const groupName = $row.find('td[data-label="Name"] strong').text();
@@ -56,15 +63,18 @@ function renderGroups(groups) {
                 <td data-label="URLs" class="text-center"><span class="badge bg-info cursor: pointer;">${g.urlCount || 0}</span></td>
                 <td data-label="Members" class="text-center"><span class="badge bg-primary">${g.memberCount || 0}</span></td>
                 <td data-label="Created"><small>${date}</small></td>
-                <td data-label="Actions" class="text-end">
+        <td data-label="Actions" class="text-end">
+                    <button class="btn btn-sm btn-outline-primary btn-edit-group" title="Edit Group">
+                        <i class="fa-solid fa-edit"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete-group" title="Delete Group">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                     <button class="btn btn-sm btn-primary btn-add-member" onclick="showAddMemberOffcanvas('${g.id}')">
-                        <i class="fa-solid fa-plus"></i> Add Member
+                        <i class="fa-solid fa-plus"></i> Member
                     </button>
                     <button class="btn btn-sm btn-primary btn-add-url" onclick="showAddUrlOffcanvas('${g.id}')">
-                        <i class="fa-solid fa-plus"></i> Add URL
+                        <i class="fa-solid fa-plus"></i> URL
                     </button>
                 </td>
             </tr>
@@ -77,12 +87,31 @@ function renderGroups(groups) {
 // --- Modal & Action Functions ---
 
 function showCreateGroupModal() {
+    $('#createGroupModal .modal-title').text('Create New Group');
+    $('#saveGroupBtn').text('Create');
+    $('#groupId').val('');
     $('#groupName').val('');
     $('#groupDescription').val('');
     $('#createGroupModal').modal('show');
 }
 
-async function createGroup() {
+async function editGroup(groupId) {
+    try {
+        const response = await monitorAPI.getGroup(groupId);
+        const group = response.group;
+        $('#createGroupModal .modal-title').text('Edit Group');
+        $('#saveGroupBtn').text('Save Changes');
+        $('#groupId').val(group.id);
+        $('#groupName').val(group.name);
+        $('#groupDescription').val(group.description);
+        $('#createGroupModal').modal('show');
+    } catch (error) {
+        showToast('error', 'Failed to load group details');
+    }
+}
+
+async function saveGroup() {
+    const groupId = $('#groupId').val();
     const name = $('#groupName').val().trim();
     const description = $('#groupDescription').val().trim();
 
@@ -91,13 +120,20 @@ async function createGroup() {
         return;
     }
 
+    const data = { name, description };
+
     try {
-        await monitorAPI.createGroup({ name, description });
-        showToast('success', 'Group created successfully');
+        if (groupId) {
+            await monitorAPI.updateGroup(groupId, data);
+            showToast('success', 'Group updated successfully');
+        } else {
+            await monitorAPI.createGroup(data);
+            showToast('success', 'Group created successfully');
+        }
         $('#createGroupModal').modal('hide');
         loadGroups();
     } catch (error) {
-        showToast('error', 'Failed to create group');
+        showToast('error', groupId ? 'Failed to update group' : 'Failed to create group');
     }
 }
 
