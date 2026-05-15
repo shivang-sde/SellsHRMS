@@ -13,7 +13,7 @@
               <c:choose>
                 <c:when test="${not empty sessionScope.LOGO_URL}">
                   <div class="brand-logo-wrap">
-                    <img src="${sessionScope.LOGO_URL}" alt="Logo" style="height: 28px; width: auto;">
+                    <img src="${sessionScope.LOGO_URL}" alt="Logo" class="brand-logo-img">
                   </div>
                 </c:when>
                 <c:otherwise>

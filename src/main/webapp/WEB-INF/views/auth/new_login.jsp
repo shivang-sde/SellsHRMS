@@ -86,27 +86,38 @@
                 }
 
                 .hero-illustration {
-                    max-width: 80%;
-                    max-height: 50vh;
+                    width: 100%;
+                    max-width: 600px;
                     height: auto;
-                    margin-top: 3rem;
+                    max-height: 45vh;
+                    margin-top: 2.5rem;
                     object-fit: contain;
-                    filter: drop-shadow(0 20px 40px rgba(79, 70, 229, 0.1));
+                    filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.25));
                     animation: float 6s ease-in-out infinite;
                 }
 
-                @media (max-height: 800px) {
+                @media (max-height: 850px) {
                     .hero-title {
-                        font-size: 2rem;
+                        font-size: 2.25rem;
                     }
 
                     .hero-illustration {
-                        margin-top: 1rem;
-                        max-height: 50vh;
+                        margin-top: 1.5rem;
+                        max-height: 40vh;
+                        max-width: 450px;
                     }
 
                     .auth-hero {
-                        padding: 2rem;
+                        padding: 3rem;
+                    }
+                }
+
+                @media (max-height: 700px) {
+                    .hero-subtitle {
+                        display: none;
+                    }
+                    .hero-illustration {
+                        max-height: 35vh;
                     }
                 }
 
@@ -142,8 +153,28 @@
                 }
 
                 .brand-logo {
-                    height: 40px;
-                    margin-bottom: 3rem;
+                    height: 48px;
+                    margin-bottom: 2.5rem;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .brand-logo img {
+                    height: 100%;
+                    width: auto;
+                    max-width: 180px;
+                    object-fit: contain;
+                }
+
+                .brand-logo-text {
+                    font-weight: 800;
+                    font-size: 1.5rem;
+                    letter-spacing: -0.04em;
+                    color: var(--zinc-900);
+                }
+
+                .brand-logo-text span {
+                    color: var(--primary);
                 }
 
                 .login-header {
@@ -285,12 +316,10 @@
                         <div class="brand-logo">
                             <c:choose>
                                 <c:when test="${not empty orgLogo}">
-                                    <img src="${orgLogo}" alt="Logo" style="height: 100%;">
+                                    <img src="${orgLogo}" alt="Logo">
                                 </c:when>
                                 <c:otherwise>
-                                    <span
-                                        style="font-weight: 800; font-size: 1.5rem; letter-spacing: -0.03em;">Sells<span
-                                            style="color: var(--primary);">HRMS</span></span>
+                                    <span class="brand-logo-text">Sells<span>HRMS</span></span>
                                 </c:otherwise>
                             </c:choose>
                         </div>
