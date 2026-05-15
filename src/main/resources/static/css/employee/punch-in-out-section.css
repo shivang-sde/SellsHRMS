@@ -1,233 +1,196 @@
 /* ============================================================
    PUNCH IN/OUT SECTION — punch-in-out-section.css
-   Breakpoints:
-     xs  < 576px   (phones, portrait)
-     sm  ≥ 576px   (phones, landscape / large phones)
-     md  ≥ 768px   (tablets)
-     lg  ≥ 992px   (small desktops / landscape tablet)
-     xl  ≥ 1200px  (desktops)
-     xxl ≥ 1400px  (wide screens)
+   Modern Slate & Zinc Edition
    ============================================================ */
 
-/* ── Outer wrapper ─────────────────────────────────────────── */
+:root {
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    
+    --zinc-100: #f4f4f5;
+    --zinc-200: #e4e4e7;
+    --zinc-300: #d4d4d8;
+    --zinc-400: #a1a1aa;
+    --zinc-500: #71717a;
+    
+    --primary: #3b82f6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+}
+
 .punch-section-wrapper {
-    padding: clamp(0.5rem, 1.5vw, 1.5rem);
-    margin-bottom: 1rem;
-    width: 100%; /* Ensure it spans properly inside widgets */
+    padding: 1.5rem;
+    background: var(--slate-50);
+    border-radius: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-/* ── Punch Card (left panel on desktop) ────────────────────── */
-.punch-card-refined {
+/* ── Punch Card ────────────────────────────────────────────── */
+.punch-card-premium {
     background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.3s ease;
+    border: 1px solid var(--slate-200);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    min-width: 0; /* Enable flex shrinking */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.punch-card-refined:hover {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.09) !important;
+.punch-card-premium:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    border-color: var(--slate-300);
 }
 
-/* ── Coloured top strip that changes with state ─────────────── */
 .status-indicator-glow {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 4px;
-    background: #adb5bd;
-    transition: background 0.5s ease, box-shadow 0.5s ease;
+    background: var(--slate-300);
+    transition: all 0.5s ease;
     z-index: 1;
 }
 
 .card-state-active .status-indicator-glow {
-    background: #10b981;
+    background: var(--success);
     box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
 }
 
-/* ── Clock block ────────────────────────────────────────────── */
-.punch-clock-block {
-    min-width: 0; /* allow text-overflow inside flex */
-    flex: 1 1 auto;
-}
-
 .punch-date-label {
-    font-size: clamp(0.65rem, 1.5vw, 0.75rem);
-    letter-spacing: 0.8px;
-    white-space: normal;
-    word-break: break-word;
-    display: block;
-    line-height: 1.2;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--slate-500);
+    text-transform: uppercase;
 }
 
 .punch-time {
-    font-size: clamp(1.8rem, 4.5vw, 2.5rem);
-    line-height: 1.1;
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    color: var(--slate-900);
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
 }
 
-/* ── Action Buttons ─────────────────────────────────────────── */
+/* Working From Select */
+.input-group.bg-light {
+    background-color: var(--slate-50) !important;
+    border: 1px solid var(--slate-100);
+}
+
+.form-select.bg-transparent {
+    color: var(--slate-700);
+    font-size: 0.9rem;
+}
+
+/* Buttons */
 .punch-btn {
-    font-size: clamp(0.85rem, 1.5vw, 1rem);
-    letter-spacing: 0.2px;
-    padding: clamp(0.5rem, 1.5vw, 0.8rem) 1rem;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 0.875rem;
+    border-radius: 0.75rem !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
 
-/* ── GPS tag ─────────────────────────────────────────────────── */
-.x-small {
-    font-size: 0.75rem;
-    word-break: break-word;
-    white-space: normal;
-    text-align: center;
+#btnPunchIn {
+    background-color: var(--slate-900);
+    border-color: var(--slate-900);
 }
 
-/* ── Utility helpers ─────────────────────────────────────────── */
-.ls-1 {
-    letter-spacing: 1px;
+#btnPunchIn:hover {
+    background-color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* ── Soft background helpers ─────────────────────────────────── */
-.bg-soft-primary { background-color: #eef2ff; }
-.bg-soft-danger { background-color: #fff1f2; }
-.bg-soft-success { background-color: #f0fdf4; }
-.bg-soft-info { background-color: #ecfeff; }
-.bg-soft-secondary { background-color: #f8f9fa; color: #6c757d; }
+#btnPunchOut {
+    border-color: var(--slate-200);
+    color: var(--danger);
+}
 
-/* ============================================================
-   SUMMARY CARDS
-   ============================================================ */
+#btnPunchOut:hover {
+    background-color: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+}
 
+/* ── Summary Cards ──────────────────────────────────────────── */
 .summary-card {
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-    min-width: 0; /* Ensure it compresses */
-    height: 100%;
+    background: #ffffff;
+    border: 1px solid var(--slate-200);
+    transition: all 0.3s ease;
 }
 
 .summary-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--slate-300);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
-/* Icon badge circles */
 .icon-shape {
-    width: clamp(38px, 4vw, 44px);
-    height: clamp(38px, 4vw, 44px);
-    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    border-radius: 50%;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
 }
 
-/* Data value inside each summary card */
+.bg-soft-primary { background: #dbeafe; color: var(--primary); }
+.bg-soft-danger { background: #fee2e2; color: var(--danger); }
+.bg-soft-success { background: #d1fae5; color: var(--success); }
+.bg-soft-info { background: #e0f2fe; color: #0ea5e9; }
+
 .summary-value {
-    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 1.5rem;
+    color: var(--slate-900);
+    letter-spacing: -0.01em;
 }
 
-/* ============================================================
-   STATUS BADGE COMPONENT
-   ============================================================ */
+.x-small { font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; }
 
+/* ── Status Badge ───────────────────────────────────────────── */
 .status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: clamp(0.65rem, 1.5vw, 0.78rem);
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    border: 1.5px solid transparent;
-    white-space: normal;
-    max-width: 100%;
-    text-align: left;
-    transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-    user-select: none;
-    line-height: 1.2;
+    gap: 0.5rem;
+    border: 1px solid transparent;
 }
 
-.status-badge__dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: currentColor;
-    opacity: 0.6;
-    transition: opacity 0.35s, transform 0.35s;
+.status-badge--offduty { background: var(--slate-100); color: var(--slate-600); border-color: var(--slate-200); }
+.status-badge--punched-in { background: #ecfdf5; color: var(--success); border-color: #a7f3d0; }
+.status-badge--punched-in .status-badge__dot { animation: pulse 1.5s infinite; background: var(--success); }
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
-.status-badge__icon {
-    font-size: 0.78em;
-    flex-shrink: 0;
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 991.98px) {
+    .punch-section-wrapper {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .punch-time { font-size: 2.25rem; }
 }
-
-.status-badge__label {
-    line-height: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-}
-
-/* Badge modifiers keep the exact original colors */
-.status-badge--offduty { background: #f1f3f5; color: #6c757d; border-color: #dee2e6; }
-.status-badge--offduty .status-badge__dot { opacity: 0.35; }
-.status-badge--not-punched { background: #fff8e7; color: #b45309; border-color: #fcd34d; box-shadow: 0 1px 6px rgba(251, 191, 36, 0.18); }
-.status-badge--punched-in { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; border-color: #34d399; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18), 0 2px 10px rgba(16, 185, 129, 0.25); }
-.status-badge--punched-in .status-badge__dot { opacity: 1; animation: statusDotPulse 1.6s ease-in-out infinite; }
-.status-badge--punched-out { background: #f0f4ff; color: #3730a3; border-color: #a5b4fc; box-shadow: 0 1px 6px rgba(99, 102, 241, 0.15); }
-.status-badge--holiday { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); color: #9d174d; border-color: #f472b6; box-shadow: 0 1px 8px rgba(244, 114, 182, 0.2); }
-.status-badge--on-leave { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; border-color: #f87171; box-shadow: 0 1px 8px rgba(248, 113, 113, 0.2); }
-.status-badge--week-off { background: #f1f5f9; color: #475569; border-color: #cbd5e1; box-shadow: 0 1px 6px rgba(100, 116, 139, 0.15); }
-
-@keyframes statusDotPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.7); opacity: 0.4; }
-}
-
-/* ============================================================
-   RESPONSIVE OVERRIDES
-   ============================================================ */
 
 @media (max-width: 575.98px) {
-    .punch-section-wrapper { padding: 0.5rem; }
-    .punch-time { font-size: 2rem; }
-    #punchStatusBadge { margin-left: 0.25rem !important; }
-    .status-badge { font-size: 0.65rem; padding: 4px 8px; gap: 4px; }
-    .icon-shape { width: 36px; height: 36px; }
-}
-
-@media (min-width: 576px) and (max-width: 767.98px) {
-    .punch-time { font-size: 2.2rem; }
-    .status-badge { font-size: 0.75rem; }
-}
-
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .punch-time { font-size: 2.4rem; }
-}
-
-@media (min-width: 992px) and (max-width: 1199.98px) {
-    /* Narrow desktop widget constraint handling */
-    .punch-time { font-size: 2rem; }
-    .status-badge { font-size: 0.70rem; padding: 4px 8px; }
+    .summary-card .card-body { padding: 1.25rem; }
     .summary-value { font-size: 1.25rem; }
-}
-
-@media (min-width: 1200px) {
-    .punch-time { font-size: 2.6rem; }
-}
-
-/* Generic Flex/Grid responsiveness ensures embedded usage won't blow up */
-.row, .col-12, .col-md-6, .col-lg-6, .col-xl-3, .col-lg-4, .col-xl-9 {
-    min-width: 0;
 }

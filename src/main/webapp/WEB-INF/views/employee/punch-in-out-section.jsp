@@ -9,14 +9,21 @@
 
                     <%-- ────────────────────────────────────────────────────── LEFT / BOTTOM on mobile: Punch Card
                         ────────────────────────────────────────────────────── --%>
-                        <div class="col-12 col-lg-4 col-xl-3 order-2 order-lg-1">
-                            <div class="card shadow-lg border-0 rounded-4 overflow-hidden punch-card-refined"
+                        <div class="col-12 col-lg-4 col-xl-3 order-1 order-lg-1">
+                            <div class="card hrms-card punch-card-premium shadow-sm border-0 rounded-4 overflow-hidden"
                                 id="mainPunchCard">
                                 <div class="status-indicator-glow"></div>
 
                                 <div class="card-body p-4 d-flex flex-column gap-3">
+                                    <div id="punchStatusBadge" class="flex-shrink-0 ms-2">
+                                        <span class="status-badge status-badge--offduty">
+                                            <span class="status-badge__dot"></span>
+                                            <i class="status-badge__icon fas fa-moon"></i>
+                                            <span class="status-badge__label"></span>
+                                        </span>
+                                    </div>
 
-                                    <%-- Card Header: Date + Time (left) · Badge (right) --%>
+                                    <%-- Card Header: Date + Time (left) --%>
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="punch-clock-block">
                                                 <h6 id="currentDate"
@@ -26,15 +33,9 @@
                                                 <div id="currentTime" class="punch-time fw-bold text-dark">--:--:--
                                                 </div>
                                             </div>
-
-                                            <div id="punchStatusBadge" class="flex-shrink-0 ms-2">
-                                                <span class="status-badge status-badge--offduty">
-                                                    <span class="status-badge__dot"></span>
-                                                    <i class="status-badge__icon fas fa-moon"></i>
-                                                    <span class="status-badge__label"></span>
-                                                </span>
-                                            </div>
                                         </div>
+
+
 
                                         <%-- Working-From Selector + Live Timer --%>
                                             <div class="flex-grow-1 d-flex flex-column gap-2 mb-2">
@@ -55,13 +56,14 @@
                                                 </div>
 
                                                 <div id="workingHours"
-                                                    class="text-center py-2 bg-soft-primary rounded-4 flex-grow-1 d-flex flex-column justify-content-center"
+                                                    class="text-center py-3 bg-slate-50 border border-slate-100 rounded-4 flex-grow-1 d-flex flex-column justify-content-center"
                                                     style="display:none">
                                                     <span
-                                                        class="text-uppercase small fw-bold text-primary opacity-75 d-block mb-1">
+                                                        class="text-uppercase small fw-bold text-slate-500 d-block mb-1 ls-1">
                                                         Shift Duration
                                                     </span>
-                                                    <h2 id="hoursWorked" class="fw-bold text-primary mb-0">00h 00m</h2>
+                                                    <h2 id="hoursWorked" class="fw-bold text-slate-900 mb-0">00h 00m
+                                                    </h2>
                                                 </div>
                                             </div>
 
@@ -91,8 +93,8 @@
                         <%-- ────────────────────────────────────────────────────── RIGHT / TOP on mobile: 2×2 Summary
                             Cards xs-sm → 2 per row (col-6) md+ → 4 per row (col-md-3)
                             ────────────────────────────────────────────────────── --%>
-                            <div class="col-lg-8 col-xl-9 order-1 order-lg-2">
-                                <div class="row g-3">
+                            <div class="col-lg-8 col-xl-9 order-2 order-lg-2">
+                                <div class="row g-3 h-100">
 
                                     <div class="col-12 col-sm-6 ">
                                         <div class="card summary-card border-0 shadow-sm rounded-4 text-center h-100">

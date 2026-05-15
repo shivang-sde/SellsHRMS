@@ -65,7 +65,7 @@ public class SecurityConfig {
 
                                                 // 🔓 Public endpoints
                                                 .requestMatchers("/", "/login", "/new-login", "/register",
-                                                                "/error/**", "/error", "/favicon.ico",
+                                                                "/error/**", "/error", "/favicon.ico", "/files/*",
                                                                 "/api/auth/login", "/api/auth/logout",
                                                                 "/api/auth/register-superadmin",
                                                                 "/api/device/punch",

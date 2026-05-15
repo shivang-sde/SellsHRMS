@@ -65,6 +65,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/js",
             "/images",
             "/img",
+            "/img/*",
             "/error",
             "/favicon",
             "/actuator",
@@ -76,6 +77,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/verify/",
             "/api/verify/",
             "/public/",
+            "/files/*",
             "/api/public/",
             "/terms-and-conditions");
 

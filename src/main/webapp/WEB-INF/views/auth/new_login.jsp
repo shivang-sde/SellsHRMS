@@ -325,11 +325,11 @@
                                 </div>
                             </div>
 
-                            <div class="mb-4 form-check">
+                            <!-- <div class="mb-4 form-check">
                                 <input type="checkbox" class="form-check-input" id="rememberMe">
                                 <label class="form-check-label" for="rememberMe"
                                     style="font-size: 0.875rem; color: var(--zinc-600);">Remember me for 30 days</label>
-                            </div>
+                            </div> -->
 
                             <button type="submit" class="btn btn-login w-100" id="loginBtn">
                                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

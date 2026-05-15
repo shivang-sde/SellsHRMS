@@ -180,16 +180,16 @@ function initAttendanceCard(employeeId, orgId) {
   function updateGlowStrip(state) {
     const $glow = $("#mainPunchCard .status-indicator-glow");
     const colours = {
-      "punched-in": "#10b981",
-      "holiday": "#f472b6",
-      "on-leave": "#f87171",
-      "week-off": "#94a3b8",
-      "default": "#adb5bd",
+      "punched-in": "#10b981", // Emerald 500
+      "holiday": "#ec4899",   // Pink 500
+      "on-leave": "#ef4444",   // Red 500
+      "week-off": "#94a3b8",   // Slate 400
+      "default": "#cbd5e1",    // Slate 300
     };
     $glow.css({
       background: colours[state] || colours.default,
       "box-shadow": state === "punched-in"
-        ? "0 2px 12px rgba(16,185,129,0.45)"
+        ? "0 2px 12px rgba(16,185,129,0.4)"
         : "none",
     });
   }
