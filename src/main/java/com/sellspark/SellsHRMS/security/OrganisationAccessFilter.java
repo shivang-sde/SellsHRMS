@@ -77,7 +77,7 @@ public class OrganisationAccessFilter extends OncePerRequestFilter {
             "/verify/",
             "/api/verify/",
             "/public/",
-            "/files/*",
+            "/files/",
             "/api/public/",
             "/terms-and-conditions");
 

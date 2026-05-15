@@ -1,4 +1,4 @@
-<div class="row g-4 hrms-dashboard-sections">
+<div class="row g-2 hrms-dashboard-sections">
     <!-- 🔔 Reminders -->
     <div class="col-xl-3 col-lg-4 col-md-6">
         <div class="hrms-card dashboard-card kpi-style section-reminders">
@@ -108,7 +108,7 @@
         --accent-anniversaries: #f59e0b;
         --accent-holidays: #06b6d4;
         --accent-events: #6366f1;
-        
+
         /* Slate-toned palette for better depth */
         --slate-50: #f8fafc;
         --slate-100: #f1f5f9;
@@ -126,8 +126,8 @@
 
     .hrms-dashboard-sections {
         background: var(--slate-50);
-        padding: 1.5rem;
-        border-radius: 1.5rem;
+        padding: 1rem;
+        border-radius: 1rem;
     }
 
     .dashboard-card.kpi-style {
@@ -138,7 +138,7 @@
         border-radius: 1.25rem;
         border: 1px solid var(--slate-200);
         background: #ffffff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
     .dashboard-card.kpi-style:hover {
@@ -148,7 +148,7 @@
     }
 
     .card-header-kpi {
-        padding: 1.5rem;
+        padding: 1rem;
         display: flex;
         align-items: center;
         gap: 1.25rem;
@@ -165,7 +165,7 @@
         align-items: center;
         justify-content: center;
         font-size: 1.35rem;
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
     }
 
     .dashboard-card:hover .kpi-icon {
@@ -190,11 +190,35 @@
     }
 
     /* Color variations for icons with subtle glass effect backgrounds */
-    .section-reminders .kpi-icon { background: #dbeafe; color: var(--accent-reminders); border: 1px solid #bfdbfe; }
-    .section-birthdays .kpi-icon { background: #fce7f3; color: var(--accent-birthdays); border: 1px solid #fbcfe8; }
-    .section-anniversaries .kpi-icon { background: #fef3c7; color: var(--accent-anniversaries); border: 1px solid #fde68a; }
-    .section-holidays .kpi-icon { background: #cffafe; color: var(--accent-holidays); border: 1px solid #a5f3fc; }
-    .section-events .kpi-icon { background: #e0e7ff; color: var(--accent-events); border: 1px solid #c7d2fe; }
+    .section-reminders .kpi-icon {
+        background: #dbeafe;
+        color: var(--accent-reminders);
+        border: 1px solid #bfdbfe;
+    }
+
+    .section-birthdays .kpi-icon {
+        background: #fce7f3;
+        color: var(--accent-birthdays);
+        border: 1px solid #fbcfe8;
+    }
+
+    .section-anniversaries .kpi-icon {
+        background: #fef3c7;
+        color: var(--accent-anniversaries);
+        border: 1px solid #fde68a;
+    }
+
+    .section-holidays .kpi-icon {
+        background: #cffafe;
+        color: var(--accent-holidays);
+        border: 1px solid #a5f3fc;
+    }
+
+    .section-events .kpi-icon {
+        background: #e0e7ff;
+        color: var(--accent-events);
+        border: 1px solid #c7d2fe;
+    }
 
     .dashboard-card .card-body {
         padding: 1.25rem 1.5rem 1.5rem;
@@ -242,10 +266,15 @@
     }
 
     /* Additional utilities */
-    .text-pink { color: var(--accent-birthdays); }
-    .text-indigo { color: var(--accent-events); }
+    .text-pink {
+        color: var(--accent-birthdays);
+    }
+
+    .text-indigo {
+        color: var(--accent-events);
+    }
 </style>
 
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="/js/dashboard-sections.js"></script>
+<script src="/js/dashboard-sections.js"></script>

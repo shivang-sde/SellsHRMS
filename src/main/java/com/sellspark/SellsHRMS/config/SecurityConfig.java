@@ -62,10 +62,10 @@ public class SecurityConfig {
 
                                                 .requestMatchers("/api/test/payroll/**").permitAll() // <<< add this
                                                                                                      // line
-
+                                                .requestMatchers("/files/hrms/**").permitAll()
                                                 // 🔓 Public endpoints
                                                 .requestMatchers("/", "/login", "/new-login", "/register",
-                                                                "/error/**", "/error", "/favicon.ico", "/files/*",
+                                                                "/error/**", "/error", "/favicon.ico", "/files/**",
                                                                 "/api/auth/login", "/api/auth/logout",
                                                                 "/api/auth/register-superadmin",
                                                                 "/api/device/punch",
