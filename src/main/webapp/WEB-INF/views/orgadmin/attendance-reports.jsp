@@ -48,7 +48,7 @@
             <div class="col-md-3">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <h6>Total Present Days</h6>
+                        <h6>Total Present</h6>
                         <h3 id="statPresent">0</h3>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
             <div class="col-md-3">
                 <div class="card bg-danger text-white">
                     <div class="card-body">
-                        <h6>Total Absent Days</h6>
+                        <h6>Total Absent</h6>
                         <h3 id="statAbsent">0</h3>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
             <div class="col-md-3">
                 <div class="card bg-warning text-white">
                     <div class="card-body">
-                        <h6>Total Leave Days</h6>
+                        <h6>Total Leaves</h6>
                         <h3 id="statLeaves">0</h3>
                     </div>
                 </div>
@@ -164,13 +164,47 @@
                                     <select id="editStatus" class="form-select">
                                         <option value="PRESENT">Present</option>
                                         <option value="ABSENT">Absent</option>
-                                        <option value="LEAVE">Leave</option>
-                                        <option value="WEEKEND">Weekend</option>
+                                        <option value="ON_LEAVE">On Leave</option>
+                                        <option value="HALF_DAY">Half Day</option>
+                                        <option value="SHORT_DAY">Short Day</option>
+                                        <option value="HOLIDAY">Holiday</option>
+                                        <option value="WEEK_OFF">Week Off</option>
+                                        <option value="WFH">WFH</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Late/Early</label>
                                     <input type="text" id="editLateEarly" class="form-control" readonly>
+                                </div>
+                            </div>
+
+                            <!-- Attendance -> Leave Settlement Fields -->
+                            <div class="row mb-3 d-none" id="leaveFieldsContainer">
+                                <div class="col-md-6">
+                                    <label class="form-label">Leave Type <span class="text-danger">*</span></label>
+                                    <select id="editLeaveType" class="form-select">
+                                        <option value="">Select Leave Type</option>
+                                    </select>
+                                    <small id="leaveBalanceInfo" class="text-info d-none"></small>
+                                </div>
+                                <div class="col-md-6 d-none" id="halfDayTypeContainer">
+                                    <label class="form-label">Half Day Type <span class="text-danger">*</span></label>
+                                    <select id="editHalfDayType" class="form-select">
+                                        <option value="FIRST_HALF">First Half</option>
+                                        <option value="SECOND_HALF">Second Half</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label class="form-label">Leave Reason</label>
+                                    <input type="text" id="editLeaveReason" class="form-control" placeholder="Optional leave reason">
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="editAutoApproveLeave" checked>
+                                        <label class="form-check-label" for="editAutoApproveLeave">
+                                            Auto Approve Leave
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 

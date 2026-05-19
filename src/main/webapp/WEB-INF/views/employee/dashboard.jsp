@@ -10,9 +10,9 @@
   </div>
 
 
-  <jsp:include page="/WEB-INF/views/organisation/dashboard-sections.jsp"/>
+  <c:import url="/WEB-INF/views/employee/punch-in-out-section.jsp" />
 
-<c:import url="/WEB-INF/views/employee/punch-in-out-section.jsp" />
+  <jsp:include page="/WEB-INF/views/organisation/dashboard-sections.jsp"/>
 
 
   <!-- Punch In / Out + Noticeboard -->

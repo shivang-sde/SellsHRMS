@@ -12,26 +12,25 @@ import com.sellspark.SellsHRMS.entity.LeaveType;
 public interface EmployeeLeaveBalanceRepository extends JpaRepository<EmployeeLeaveBalance, Long> {
 
     Optional<EmployeeLeaveBalance> findByEmployeeAndLeaveTypeAndLeaveYear(Employee employee,
-                                                                              LeaveType leaveType,
-                                                                              String leaveYear);
+            LeaveType leaveType,
+            String leaveYear);
 
     List<EmployeeLeaveBalance> findByEmployeeAndLeaveYear(Employee employee, String leaveYear);
 
     Optional<EmployeeLeaveBalance> findTopByEmployeeIdAndLeaveTypeIdOrderByIdDesc(Long empId, Long leaveTypeId);
 
-
-
     // Get all balances for an employee in a financial year
-List<EmployeeLeaveBalance> findByEmployeeIdAndLeaveYear(Long empId, String fy);
-        // Get all balances for an organization
-List<EmployeeLeaveBalance> findByOrganisationId(Long orgId);
+    List<EmployeeLeaveBalance> findByEmployeeIdAndLeaveYear(Long empId, String fy);
 
+    List<EmployeeLeaveBalance> findByOrganisationIdAndLeaveYearAndLeaveType_IsActiveTrue(Long orgId, String leaveYear);
 
-Optional<EmployeeLeaveBalance> findByEmployeeIdAndLeaveTypeIdAndLeaveYear(Long employeeId,
-                                                                          Long leaveTypeId,
-                                                                          String leaveYear);
+    // Get all balances for an organization
+    List<EmployeeLeaveBalance> findByOrganisationIdAndLeaveType_IsActiveTrue(Long orgId);
 
-// Get balances for leave type
-List<EmployeeLeaveBalance> findByLeaveTypeId(Long leaveTypeId);
+    Optional<EmployeeLeaveBalance> findByEmployeeIdAndLeaveTypeIdAndLeaveYear(Long employeeId,
+            Long leaveTypeId,
+            String leaveYear);
+
+    // Get balances for leave type
+    List<EmployeeLeaveBalance> findByLeaveTypeId(Long leaveTypeId);
 }
-

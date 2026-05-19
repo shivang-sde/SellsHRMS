@@ -150,9 +150,18 @@ public class LeaveRestController {
 
         // Org Admin: Get org-level balances
         @GetMapping("/org/{orgId}/balances")
-        public ResponseEntity<?> getOrgEmployeeLeaveBalances(@PathVariable Long orgId) {
-                var balances = leaveService.getOrgEmployeeLeaveBalances(orgId);
-                return ResponseEntity.ok(Map.of("success", true, "data", balances));
+        public ResponseEntity<?> getOrgEmployeeLeaveBalances(
+                        @PathVariable Long orgId,
+                        @RequestParam(required = false) String leaveYear) {
+                String targetYear = leaveYear;
+                if (targetYear == null || targetYear.isBlank()) {
+                        targetYear = leaveService.getCurrentLeaveYear(orgId);
+                }
+                var balances = leaveService.getOrgEmployeeLeaveBalances(orgId, targetYear);
+                return ResponseEntity.ok(Map.of(
+                                "success", true,
+                                "leaveYear", targetYear,
+                                "data", balances));
         }
 
         @GetMapping("/check")

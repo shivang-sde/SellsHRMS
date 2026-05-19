@@ -54,7 +54,7 @@ public interface LeaveService {
 
     void initializeLeaveBalancesForEmployee(Long employeeId, Long orgId, String financialYear);
 
-    List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId);
+    List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId, String leaveYear);
 
     // ============ Accrual & Carry Forward ============
     void accrueMonthlyLeaves(Long orgId, String financialYear);

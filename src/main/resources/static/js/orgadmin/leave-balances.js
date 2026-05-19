@@ -39,6 +39,8 @@ $(document).ready(function() {
           filteredBalances = allBalances;
           displayBalances(filteredBalances);
           updateSummary(filteredBalances);
+          populateLeaveYearFilter();
+          populateDepartmentFilter();
         }
       },
       error: function(xhr) {
@@ -71,32 +73,32 @@ $(document).ready(function() {
     }
 
     balances.forEach(balance => {
-      const balanceValue = balance.closingBalance;
+      const balanceValue = balance.closingBalance || 0;
       const balanceClass = balanceValue > 5 ? 'balance-positive' : 
                            balanceValue > 0 ? 'balance-low' : 'balance-negative';
 
       const row = `
-        <tr data-id="${balance.id}" data-employee="${balance.employeeName.toLowerCase()}" 
-            data-department="${balance.departmentName.toLowerCase()}" 
-            data-leavetype="${balance.leaveTypeName.toLowerCase()}">
+        <tr data-id="${balance.id}" data-employee="${(balance.employeeName || '').toLowerCase()}" 
+            data-department="${(balance.departmentName || '').toLowerCase()}" 
+            data-leavetype="${(balance.leaveTypeName || '').toLowerCase()}">
           <td>
-            <strong>${balance.employeeName}</strong>
+            <strong>${balance.employeeName || 'N/A'}</strong>
           </td>
-          <td>${balance.employeeCode}</td>
-          <td>${balance.departmentName}</td>
-          <td>${balance.leaveTypeName}</td>
+          <td>${balance.employeeCode || 'N/A'}</td>
+          <td>${balance.departmentName || '-'}</td>
+          <td>${balance.leaveTypeName || 'N/A'}</td>
           <td>
             <span class="badge ${balance.isPaid ? 'bg-success' : 'bg-secondary'} badge-sm">
               ${balance.isPaid ? 'Paid' : 'Unpaid'}
             </span>
           </td>
-          <td>${balance.openingBalance.toFixed(1)}</td>
-          <td>${balance.accrued.toFixed(1)}</td>
-          <td class="text-danger">${balance.availed.toFixed(1)}</td>
+          <td>${(balance.openingBalance || 0).toFixed(1)}</td>
+          <td>${(balance.accrued || 0).toFixed(1)}</td>
+          <td class="text-danger">${(balance.availed || 0).toFixed(1)}</td>
           <td class="${balanceClass}">${balanceValue.toFixed(1)}</td>
-          <td>${balance.carriedForward.toFixed(1)}</td>
-          <td>${balance.encashed.toFixed(1)}</td>
-          <td><small>${balance.leaveYear}</small></td>
+          <td>${(balance.carriedForward || 0).toFixed(1)}</td>
+          <td>${(balance.encashed || 0).toFixed(1)}</td>
+          <td><small>${balance.leaveYear || ''}</small></td>
         </tr>
       `;
       tbody.append(row);
@@ -106,10 +108,10 @@ $(document).ready(function() {
   }
 
   function updateSummary(balances) {
-    const uniqueEmployees = new Set(balances.map(b => b.employeeId)).size;
-    const totalAllocated = balances.reduce((sum, b) => sum + b.closingBalance, 0);
-    const totalAvailed = balances.reduce((sum, b) => sum + b.availed, 0);
-    const totalRemaining = totalAllocated - totalAvailed;
+    const uniqueEmployees = new Set(balances.map(b => b.employeeId).filter(Boolean)).size;
+    const totalAllocated = balances.reduce((sum, b) => sum + (b.openingBalance || 0) + (b.accrued || 0) + (b.carriedForward || 0), 0);
+    const totalAvailed = balances.reduce((sum, b) => sum + (b.availed || 0), 0);
+    const totalRemaining = balances.reduce((sum, b) => sum + (b.closingBalance || 0), 0);
 
     $('#totalEmployees').text(uniqueEmployees);
     $('#totalAllocated').text(totalAllocated.toFixed(1));
@@ -125,43 +127,70 @@ $(document).ready(function() {
       method: 'GET',
       success: function(response) {
         const select = $('#leaveTypeFilter');
+        select.empty();
+        select.append('<option value="">All Leave Types</option>');
         response.forEach(type => {
-          select.append(`<option value="${type.name}">${type.name}</option>`);
+          if (type && type.name) {
+            select.append(`<option value="${type.name}">${type.name}</option>`);
+          }
         });
       }
     });
+  }
 
-    // Extract unique departments from balances
-    // This will be populated after balances are loaded
-    setTimeout(() => {
-      const departments = [...new Set(allBalances.map(b => b.departmentName))];
-      const select = $('#departmentFilter');
-      departments.forEach(dept => {
-        if (dept && dept !== '-') {
-          select.append(`<option value="${dept}">${dept}</option>`);
-        }
-      });
-    }, 500);
+  function populateDepartmentFilter() {
+    const departments = [...new Set(allBalances.map(b => b.departmentName).filter(Boolean))];
+    departments.sort();
+    const select = $('#departmentFilter');
+    select.empty();
+    select.append('<option value="">All Departments</option>');
+    departments.forEach(dept => {
+      if (dept && dept !== '-') {
+        select.append(`<option value="${dept}">${dept}</option>`);
+      }
+    });
+  }
+
+  function populateLeaveYearFilter() {
+    const years = [...new Set(allBalances.map(b => b.leaveYear).filter(Boolean))];
+    years.sort((a, b) => b.localeCompare(a)); // sort descending
+    
+    const select = $('#financialYearFilter');
+    select.empty();
+    select.append('<option value="">All Leave Years</option>');
+    years.forEach(yr => {
+      select.append(`<option value="${yr}">${yr}</option>`);
+    });
   }
 
   // Apply filters
   function applyFilters() {
-    const searchTerm = $('#employeeSearch').val().toLowerCase();
-    const department = $('#departmentFilter').val().toLowerCase();
-    const leaveType = $('#leaveTypeFilter').val().toLowerCase();
+    const searchTerm = ($('#employeeSearch').val() || '').toLowerCase().trim();
+    const department = ($('#departmentFilter').val() || '').toLowerCase().trim();
+    const leaveType = ($('#leaveTypeFilter').val() || '').toLowerCase().trim();
+    const leaveYear = ($('#financialYearFilter').val() || '').toLowerCase().trim();
 
     filteredBalances = allBalances.filter(balance => {
+      const empName = (balance.employeeName || '').toLowerCase();
+      const empCode = (balance.employeeCode || '').toLowerCase();
+      const deptName = (balance.departmentName || '').toLowerCase();
+      const lTypeName = (balance.leaveTypeName || '').toLowerCase();
+      const lYear = (balance.leaveYear || '').toLowerCase();
+
       const matchesSearch = searchTerm === '' || 
-        balance.employeeName.toLowerCase().includes(searchTerm) ||
-        balance.employeeCode.toLowerCase().includes(searchTerm);
+        empName.includes(searchTerm) ||
+        empCode.includes(searchTerm);
       
       const matchesDepartment = department === '' || 
-        balance.departmentName.toLowerCase() === department;
+        deptName === department;
       
       const matchesLeaveType = leaveType === '' || 
-        balance.leaveTypeName.toLowerCase() === leaveType;
+        lTypeName === leaveType;
 
-      return matchesSearch && matchesDepartment && matchesLeaveType;
+      const matchesLeaveYear = leaveYear === '' || 
+        lYear === leaveYear;
+
+      return matchesSearch && matchesDepartment && matchesLeaveType && matchesLeaveYear;
     });
 
     displayBalances(filteredBalances);
@@ -173,21 +202,21 @@ $(document).ready(function() {
     const balance = allBalances.find(b => b.id === balanceId);
     if (!balance) return;
 
-    $('#detailEmployeeName').text(balance.employeeName);
-    $('#detailEmployeeCode').text(balance.employeeCode);
+    $('#detailEmployeeName').text(balance.employeeName || 'N/A');
+    $('#detailEmployeeCode').text(balance.employeeCode || 'N/A');
     $('#detailLeaveType').html(`
-      ${balance.leaveTypeName} 
+      ${balance.leaveTypeName || 'N/A'} 
       <span class="badge ${balance.isPaid ? 'bg-success' : 'bg-secondary'} ms-2">
         ${balance.isPaid ? 'Paid' : 'Unpaid'}
       </span>
     `);
-    $('#detailFY').text(balance.financialYear);
-    $('#detailOpening').text(balance.openingBalance.toFixed(1));
-    $('#detailAccrued').text(balance.accrued.toFixed(1));
-    $('#detailAvailed').text(balance.availed.toFixed(1));
-    $('#detailBalance').text((balance.closingBalance - balance.availed).toFixed(1));
-    $('#detailCarriedForward').text(balance.carriedForward.toFixed(1));
-    $('#detailEncashed').text(balance.encashed.toFixed(1));
+    $('#detailFY').text(balance.leaveYear || 'N/A');
+    $('#detailOpening').text((balance.openingBalance || 0).toFixed(1));
+    $('#detailAccrued').text((balance.accrued || 0).toFixed(1));
+    $('#detailAvailed').text((balance.availed || 0).toFixed(1));
+    $('#detailBalance').text((balance.closingBalance || 0).toFixed(1));
+    $('#detailCarriedForward').text((balance.carriedForward || 0).toFixed(1));
+    $('#detailEncashed').text((balance.encashed || 0).toFixed(1));
 
     $('#balanceDetailsModal').modal('show');
   }
@@ -200,13 +229,13 @@ $(document).ready(function() {
     }
 
     // Create CSV content
-    let csv = 'Employee Name,Employee Code,Department,Leave Type,Type,Opening Balance,Accrued,Availed,Balance,Carried Forward,Encashed,Financial Year\n';
+    let csv = 'Employee Name,Employee Code,Department,Leave Type,Type,Opening Balance,Accrued,Availed,Balance,Carried Forward,Encashed,Leave Year\n';
     
     filteredBalances.forEach(balance => {
-      const balanceValue = balance.closingBalance - balance.availed;
-      csv += `"${balance.employeeName}","${balance.employeeCode}","${balance.departmentName}","${balance.leaveTypeName}",`;
-      csv += `"${balance.isPaid ? 'Paid' : 'Unpaid'}",${balance.openingBalance},${balance.accrued},${balance.availed},`;
-      csv += `${balanceValue},${balance.carriedForward},${balance.encashed},"${balance.financialYear}"\n`;
+      const balanceValue = balance.closingBalance || 0;
+      csv += `"${balance.employeeName || ''}","${balance.employeeCode || ''}","${balance.departmentName || ''}","${balance.leaveTypeName || ''}",`;
+      csv += `"${balance.isPaid ? 'Paid' : 'Unpaid'}",${balance.openingBalance || 0},${balance.accrued || 0},${balance.availed || 0},`;
+      csv += `${balanceValue},${balance.carriedForward || 0},${balance.encashed || 0},"${balance.leaveYear || ''}"\n`;
     });
 
     // Create download link

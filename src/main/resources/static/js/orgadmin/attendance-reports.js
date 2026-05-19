@@ -165,8 +165,9 @@ $(document).ready(function () {
     let html = "";
     data.forEach((record) => {
       const date = record.punchIn
-        ? new Date(record.punchIn).toLocaleDateString()
-        : new Date(record.attendanceDate).toLocaleDateString();
+  ? new Date(record.punchIn).toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" })
+  : new Date(record.attendanceDate).toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
+
 
       const lateEarly = [];
       if (record.isLate)
@@ -210,6 +211,8 @@ $(document).ready(function () {
 
 
 
+  let currentEditEmployeeId = null;
+
   window.editAttendance = function (attendanceId) {
     const record = reportData.find(r => r.summaryId == attendanceId);
 
@@ -217,13 +220,14 @@ $(document).ready(function () {
       showToast("error", "Attendance record not found");
       return;
     }
+    
+    currentEditEmployeeId = record.employeeId;
 
     $('#editAttendanceId').val(record.summaryId);
     $('#editEmployeeName').val(record.employeeName || '');
-
     const dateStr = record.punchIn
       ? record.punchIn.split('T')[0]
-      : new Date().toISOString().split('T')[0];
+      : record.attendanceDate.split('T')[0];
     $('#editAttendanceDate').val(dateStr);
 
     function formatTimeForInput(dateTimeStr) {
@@ -243,9 +247,54 @@ $(document).ready(function () {
     if (record.isLate) lateEarly.push("Late");
     if (record.isEarlyOut) lateEarly.push("Early");
     $('#editLateEarly').val(lateEarly.join(", ") || 'No');
+    
+    $('#leaveFieldsContainer').addClass('d-none');
+    $('#halfDayTypeContainer').addClass('d-none');
+    $('#editLeaveType').val('');
+    $('#editHalfDayType').val('FIRST_HALF');
+    $('#editLeaveReason').val('');
+    $('#editAutoApproveLeave').prop('checked', true);
+    $('#leaveBalanceInfo').addClass('d-none').text('');
+
+    $('#editStatus').trigger('change');
 
     $('#editAttendanceModal').modal('show');
   };
+
+  $('#editStatus').on('change', function() {
+      const status = $(this).val();
+      if (status === 'ON_LEAVE' || status === 'HALF_DAY') {
+          $('#leaveFieldsContainer').removeClass('d-none');
+          if (status === 'HALF_DAY') {
+              $('#halfDayTypeContainer').removeClass('d-none');
+          } else {
+              $('#halfDayTypeContainer').addClass('d-none');
+          }
+          loadLeaveTypesForModal();
+      } else {
+          $('#leaveFieldsContainer').addClass('d-none');
+          $('#halfDayTypeContainer').addClass('d-none');
+      }
+  });
+
+  function loadLeaveTypesForModal() {
+      if ($('#editLeaveType option').length > 1) return;
+
+      $.ajax({
+          url: `/api/leave-type/org/${orgId}`,
+          method: 'GET',
+          success: function(data) {
+            console.log("leave types : ",data);
+              let options = '<option value="">Select Leave Type</option>';
+              data.forEach(type => {
+                  if (type.visibleToEmployees) {
+                      options += `<option value="${type.id}">${type.name}</option>`;
+                  }
+              });
+              $('#editLeaveType').html(options);
+          }
+      });
+  }
 
   $('#btnSaveAttendance').on('click', function (e) {
     e.preventDefault();
@@ -280,6 +329,20 @@ $(document).ready(function () {
     payload.punchOut = newPunchOut;
     payload.status = status;
     payload.remarks = remarks;
+    
+    if (status === 'ON_LEAVE' || status === 'HALF_DAY') {
+        const leaveTypeId = $('#editLeaveType').val();
+        if (!leaveTypeId) {
+            showToast("error", "Please select a Leave Type");
+            return;
+        }
+        payload.leaveTypeId = parseInt(leaveTypeId);
+        payload.leaveReason = $('#editLeaveReason').val();
+        payload.autoApproveLeave = $('#editAutoApproveLeave').is(':checked');
+        if (status === 'HALF_DAY') {
+            payload.halfDayType = $('#editHalfDayType').val();
+        }
+    }
 
     $.ajax({
       url: `/api/attendance/update`,

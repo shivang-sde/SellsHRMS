@@ -238,8 +238,20 @@ public class LeaveServiceImpl implements LeaveService {
     public void cancelLeave(Long leaveId, Long employeeId, Long orgId) {
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave", "id", leaveId));
-        if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING)
-            throw new InvalidOperationException("Only pending leaves can be canceled.");
+        if (leave.getLeaveStatus() == Leave.LeaveStatus.APPROVE) {
+            // Rollback balance
+            String ly = getCurrentLeaveYear(leave.getEmployee().getOrganisation().getId());
+            EmployeeLeaveBalance bal = balanceRepository
+                    .findByEmployeeAndLeaveTypeAndLeaveYear(leave.getEmployee(), leave.getLeaveType(), ly)
+                    .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employee code",
+                            leave.getEmployee().getEmployeeCode()));
+            bal.setAvailed(bal.getAvailed() - leave.getLeaveDays());
+            bal.setClosingBalance(bal.getClosingBalance() + leave.getLeaveDays());
+            bal.setLastUpdatedOn(LocalDateTime.now());
+            balanceRepository.save(bal);
+        } else if (leave.getLeaveStatus() != Leave.LeaveStatus.PENDING) {
+            throw new InvalidOperationException("Only pending or approved leaves can be canceled.");
+        }
 
         leave.setLeaveStatus(Leave.LeaveStatus.CANCELED);
         leaveRepository.save(leave);
@@ -470,28 +482,61 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId) {
-        return balanceRepository.findAll().stream()
-                .filter(b -> b.getOrganisation().getId().equals(orgId))
-                .map(b -> EmployeeLeaveBalanceDTO.builder()
-                        .id(b.getId())
-                        .employeeId(b.getEmployee().getId())
-                        .employeeName(b.getEmployee().getFirstName() + " " + b.getEmployee().getLastName())
-                        .employeeCode(b.getEmployee().getEmployeeCode())
-                        .departmentName(b.getEmployee().getDepartment() != null
-                                ? b.getEmployee().getDepartment().getName()
-                                : "-")
-                        .leaveTypeId(b.getLeaveType().getId())
-                        .leaveTypeName(b.getLeaveType().getName())
-                        .isPaid(b.getLeaveType().getIsPaid())
-                        .leaveYear(b.getLeaveYear())
-                        .openingBalance(b.getOpeningBalance())
-                        .accrued(b.getAccrued())
-                        .availed(b.getAvailed())
-                        .carriedForward(b.getCarriedForward())
-                        .encashed(b.getEncashed())
-                        .closingBalance(b.getClosingBalance())
-                        .build())
+    public List<EmployeeLeaveBalanceDTO> getOrgEmployeeLeaveBalances(Long orgId, String leaveYear) {
+        List<EmployeeLeaveBalance> balances;
+        if (leaveYear != null && !leaveYear.isBlank()) {
+            balances = balanceRepository.findByOrganisationIdAndLeaveYearAndLeaveType_IsActiveTrue(orgId, leaveYear);
+        } else {
+            balances = balanceRepository.findByOrganisationIdAndLeaveType_IsActiveTrue(orgId);
+        }
+
+        return balances.stream()
+                .map(b -> {
+                    String employeeName = "N/A";
+                    String employeeCode = "N/A";
+                    String departmentName = "-";
+                    Long employeeId = null;
+                    if (b.getEmployee() != null) {
+                        employeeId = b.getEmployee().getId();
+                        employeeName = (b.getEmployee().getFirstName() != null ? b.getEmployee().getFirstName() : "")
+                                + (b.getEmployee().getLastName() != null ? " " + b.getEmployee().getLastName() : "");
+                        employeeName = employeeName.trim().isEmpty() ? "N/A" : employeeName.trim();
+                        employeeCode = b.getEmployee().getEmployeeCode() != null ? b.getEmployee().getEmployeeCode()
+                                : "N/A";
+                        if (b.getEmployee().getDepartment() != null) {
+                            departmentName = b.getEmployee().getDepartment().getName() != null
+                                    ? b.getEmployee().getDepartment().getName()
+                                    : "-";
+                        }
+                    }
+
+                    Long leaveTypeId = null;
+                    String leaveTypeName = "N/A";
+                    Boolean isPaid = false;
+                    if (b.getLeaveType() != null) {
+                        leaveTypeId = b.getLeaveType().getId();
+                        leaveTypeName = b.getLeaveType().getName() != null ? b.getLeaveType().getName() : "N/A";
+                        isPaid = b.getLeaveType().getIsPaid() != null ? b.getLeaveType().getIsPaid() : false;
+                    }
+
+                    return EmployeeLeaveBalanceDTO.builder()
+                            .id(b.getId())
+                            .employeeId(employeeId)
+                            .employeeName(employeeName)
+                            .employeeCode(employeeCode)
+                            .departmentName(departmentName)
+                            .leaveTypeId(leaveTypeId)
+                            .leaveTypeName(leaveTypeName)
+                            .isPaid(isPaid)
+                            .leaveYear(b.getLeaveYear())
+                            .openingBalance(b.getOpeningBalance() != null ? b.getOpeningBalance() : 0.0)
+                            .accrued(b.getAccrued() != null ? b.getAccrued() : 0.0)
+                            .availed(b.getAvailed() != null ? b.getAvailed() : 0.0)
+                            .carriedForward(b.getCarriedForward() != null ? b.getCarriedForward() : 0.0)
+                            .encashed(b.getEncashed() != null ? b.getEncashed() : 0.0)
+                            .closingBalance(b.getClosingBalance() != null ? b.getClosingBalance() : 0.0)
+                            .build();
+                })
                 .toList();
     }
 
@@ -812,8 +857,8 @@ public class LeaveServiceImpl implements LeaveService {
         String ly = getCurrentLeaveYear(leave.getEmployee().getOrganisation().getId());
         EmployeeLeaveBalance bal = balanceRepository
                 .findByEmployeeAndLeaveTypeAndLeaveYear(leave.getEmployee(), leave.getLeaveType(), ly)
-                .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employeeId",
-                        leave.getEmployee().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("EmployeeLeaveBalance", "employeeCode",
+                        leave.getEmployee().getEmployeeCode()));
         bal.setAvailed(bal.getAvailed() + leave.getLeaveDays());
         bal.setClosingBalance(bal.getClosingBalance() - leave.getLeaveDays());
         bal.setLastUpdatedOn(LocalDateTime.now());

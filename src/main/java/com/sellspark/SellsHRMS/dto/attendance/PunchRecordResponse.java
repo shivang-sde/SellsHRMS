@@ -22,4 +22,10 @@ public class PunchRecordResponse {
     private Boolean isLate;
     private Boolean isEarlyOut;
     private String remarks;
+
+    // Attendance -> Leave Settlement Additions
+    private Long leaveTypeId;
+    private String leaveReason;
+    private String halfDayType; // FIRST_HALF or SECOND_HALF
+    private Boolean autoApproveLeave;
 }

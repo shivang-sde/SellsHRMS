@@ -11,6 +11,7 @@ import com.sellspark.SellsHRMS.notification.enums.TargetRole;
 import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
 import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
+import com.sellspark.SellsHRMS.service.AttendanceLeaveSettlementService;
 import com.sellspark.SellsHRMS.service.AttendanceService;
 import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
 
@@ -54,6 +55,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final HolidayRepository holidayRepo;
     private final OrganisationPolicyRepository policyRepo;
     private final DeviceRepository deviceRepo;
+
+    private final AttendanceLeaveSettlementService attendanceLeaveSettlementService;
 
     private final NotificationEventPublisher notificationEventPublisher;
 
@@ -297,7 +300,15 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Status is still updated from request if UI permits, but derived flags are
         // backend authoritative
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
-            summary.setStatus(AttendanceSummary.AttendanceStatus.valueOf(request.getStatus()));
+            AttendanceSummary.AttendanceStatus newStatus = AttendanceSummary.AttendanceStatus
+                    .valueOf(request.getStatus());
+            summary.setStatus(newStatus);
+            if (newStatus == AttendanceSummary.AttendanceStatus.ON_LEAVE
+                    || newStatus == AttendanceSummary.AttendanceStatus.HALF_DAY) {
+                attendanceLeaveSettlementService.processLeaveForAttendance(summary, request);
+            } else {
+                attendanceLeaveSettlementService.reverseLeaveForAttendance(summary);
+            }
         }
 
         summary.setIsLate(isLate);

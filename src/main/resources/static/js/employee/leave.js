@@ -338,7 +338,6 @@ $(document).ready(function () {
       data: JSON.stringify(formData),
       success: function (response) {
         if (response.success) {
-          console.log('Apply Leave Response:', response);
           showToast('success', response.message);
           $('#applyLeaveModal').modal('hide');
           $('#applyLeaveForm')[0].reset();
