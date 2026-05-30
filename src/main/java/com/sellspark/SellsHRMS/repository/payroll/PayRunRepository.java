@@ -17,9 +17,9 @@ public interface PayRunRepository extends JpaRepository<PayRun, Long> {
     // 🔹 All pay runs for an organisation
     List<PayRun> findByOrganisation_IdOrderByStartDateDesc(Long organisationId);
 
-    Optional<PayRun> findByOrganisation_IdAndMonthAndYear(Long orgId, Integer month, Integer year);
-
     Optional<PayRun> findTopByOrganisation_IdOrderByYearDescMonthDesc(Long orgId);
+
+    Optional<PayRun> findByOrganisation_IdAndMonthAndYear(Long orgId, Integer month, Integer year);
 
     @Query("""
                 SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
@@ -40,8 +40,6 @@ public interface PayRunRepository extends JpaRepository<PayRun, Long> {
 
     // 🔹 Active/Ready pay runs
     List<PayRun> findByOrganisation_IdAndStatus(Long organisationId, PayRunStatus status);
-
-    boolean existsByOrganisation_IdAndMonthAndYear(Long organisationId, Integer month, Integer year);
 
     // 🔹 Check if a pay run already exists for the same period
     Optional<PayRun> findByOrganisation_IdAndStartDateAndEndDate(Long organisationId, LocalDate startDate,

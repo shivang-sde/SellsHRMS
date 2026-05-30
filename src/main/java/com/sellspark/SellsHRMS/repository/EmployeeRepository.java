@@ -56,18 +56,32 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         @Query("SELECT COUNT(e) FROM Employee e WHERE e.organisation.id = :orgId AND e.deleted = false")
         long countByOrganisationIdAndDeletedFalse(@Param("orgId") Long orgId);
 
-        @Query("SELECT e FROM Employee e " +
-                        "WHERE e.organisation.id = :orgId " +
+        @Query(value = "SELECT * FROM tbl_employee e " +
+                        "WHERE e.organisation_id = :orgId " + // fixed
                         "AND e.status = 'ACTIVE' " +
-                        "AND e.dob BETWEEN :startDate AND :endDate")
+                        "AND e.deleted = false " +
+                        "AND ( " +
+                        "    DAYOFYEAR(e.dob) BETWEEN DAYOFYEAR(:startDate) AND DAYOFYEAR(:endDate) " +
+                        "    OR " +
+                        "    (DAYOFYEAR(:startDate) > DAYOFYEAR(:endDate) AND " +
+                        "     (DAYOFYEAR(e.dob) >= DAYOFYEAR(:startDate) OR " +
+                        "      DAYOFYEAR(e.dob) <= DAYOFYEAR(:endDate))) " +
+                        ")", nativeQuery = true)
         List<Employee> findUpcomingBirthdays(@Param("orgId") Long orgId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
-        @Query("SELECT e FROM Employee e " +
-                        "WHERE e.organisation.id = :orgId " +
+        @Query(value = "SELECT * FROM tbl_employee e " +
+                        "WHERE e.organisation_id = :orgId " + // fixed
                         "AND e.status = 'ACTIVE' " +
-                        "AND e.dateOfJoining BETWEEN :startDate AND :endDate")
+                        "AND e.deleted = false " + // added for consistency (recommended)
+                        "AND ( " +
+                        "    DAYOFYEAR(e.date_of_joining) BETWEEN DAYOFYEAR(:startDate) AND DAYOFYEAR(:endDate) " +
+                        "    OR " +
+                        "    (DAYOFYEAR(:startDate) > DAYOFYEAR(:endDate) AND " +
+                        "     (DAYOFYEAR(e.date_of_joining) >= DAYOFYEAR(:startDate) OR " +
+                        "      DAYOFYEAR(e.date_of_joining) <= DAYOFYEAR(:endDate))) " +
+                        ")", nativeQuery = true)
         List<Employee> findUpcomingWorkAnniversaries(@Param("orgId") Long orgId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);

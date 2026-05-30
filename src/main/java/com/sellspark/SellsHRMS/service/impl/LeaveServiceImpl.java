@@ -148,8 +148,6 @@ public class LeaveServiceImpl implements LeaveService {
                                 : org.getOrgAdmin().getEmail())
                         .recipientName(emp.getReportingTo() != null ? emp.getReportingTo().getFullName()
                                 : org.getOrgAdmin().getFullName())
-                        .bccEmails(List.of("shivangtripathi@sellspark.in", "shivang.sellpark@gmail.com",
-                                "udittyagi774@gmail.com"))
                         .templateVariables(Map.of(
                                 "recipientName", emp.getReportingTo() != null ? emp.getReportingTo().getFullName()
                                         : org.getOrgAdmin().getFullName(),

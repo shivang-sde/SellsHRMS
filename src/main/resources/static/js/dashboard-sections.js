@@ -19,7 +19,7 @@ $(document).ready(function () {
             </div>
             <div>
                 <div class="fw-medium">${e.fullName || (e.firstName + " " + e.lastName)}</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Birthday Today</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Birthday: ${e.dob} </div>
             </div>
         </div>
     `);
@@ -32,7 +32,7 @@ $(document).ready(function () {
             </div>
             <div>
                 <div class="fw-medium">${e.fullName || (e.firstName + " " + e.lastName)}</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Work Anniversary</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Work Anniversary : ${e.doj} </div>
             </div>
         </div>
     `);

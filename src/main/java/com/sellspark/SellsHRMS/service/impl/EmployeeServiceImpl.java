@@ -360,6 +360,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (emp.getStatus() != null) {
             res.setStatus(emp.getStatus().name());
         }
+        if (emp.getDob() != null) {
+            res.setDob(emp.getDob());
+        }
+        if (emp.getDateOfJoining() != null) {
+            res.setDoj(emp.getDateOfJoining());
+        }
         if (emp.getEmploymentType() != null) {
             res.setEmploymentType(emp.getEmploymentType().name());
         }
