@@ -33,6 +33,9 @@ public class EmailRequestDTO {
     // Optional manual override subject
     private String subject;
 
+    // Optional manual override HTML/text body (when templates are not used)
+    private String body;
+
     // Optional if specific template name used
     private String templateName;
 

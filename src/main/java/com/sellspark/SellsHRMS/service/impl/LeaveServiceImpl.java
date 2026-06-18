@@ -40,6 +40,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
 
+    private final OrganisationAdminRepository orgAdminRepo;
     private final OrganisationRepository organisationRepository;
     private final OrganisationPolicyRepository organisationPolicyRepository;
     private final EmployeeLeaveBalanceRepository balanceRepository;
@@ -139,11 +140,14 @@ public class LeaveServiceImpl implements LeaveService {
 
         leaveRepository.save(leave);
 
+        List<String> ccEmail = List.of(orgAdminRepo.findByOrganisation_Id(orgId).getEmail());
+
         notificationEventPublisher.publish(
                 NotificationEventData.builder()
                         .orgId(orgId)
                         .eventCode("LEAVE_APPLIED")
                         .targetRole(TargetRole.MANAGER)
+                        .ccEmails(ccEmail)
                         .recipientEmail(emp.getReportingTo() != null ? emp.getReportingTo().getEmail()
                                 : org.getOrgAdmin().getEmail())
                         .recipientName(emp.getReportingTo() != null ? emp.getReportingTo().getFullName()
@@ -294,10 +298,13 @@ public class LeaveServiceImpl implements LeaveService {
 
         updateBalanceOnApproval(leave);
 
+        List<String> ccEmail = List.of(orgAdminRepo.findByOrganisation_Id(orgId).getEmail());
+
         notificationEventPublisher.publish(
                 NotificationEventData.builder()
                         .orgId(orgId)
                         .eventCode("LEAVE_APPROVED")
+                        .ccEmails(ccEmail)
                         .targetRole(TargetRole.EMPLOYEE)
                         .recipientEmail(leave.getEmployee().getEmail())
                         .recipientName(leave.getEmployee().getFullName())
@@ -338,11 +345,13 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApproverRemarks(remarks);
 
         leaveRepository.save(leave);
+        List<String> ccEmail = List.of(orgAdminRepo.findByOrganisation_Id(orgId).getEmail());
 
         notificationEventPublisher.publish(
                 NotificationEventData.builder()
                         .orgId(orgId)
                         .eventCode("LEAVE_REJECTED")
+                        .ccEmails(ccEmail)
                         .targetRole(TargetRole.EMPLOYEE)
                         .recipientEmail(leave.getEmployee().getEmail())
                         .recipientName(leave.getEmployee().getFullName())

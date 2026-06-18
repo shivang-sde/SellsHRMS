@@ -449,6 +449,23 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    public List<PunchRecordResponse> getOrgAttendanceByDateSystem(Long orgId, LocalDate date) {
+        List<AttendanceSummary> summaries = summaryRepo
+                .findWithEmployeeAndDepartmentByOrgAndDate(orgId, date);
+
+        if (summaries.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        ZoneId zoneId = ZoneId.of(summaries.get(0).getOrganisation().getTimeZone() != null 
+                ? summaries.get(0).getOrganisation().getTimeZone() : "Asia/Kolkata");
+
+        return summaries.stream()
+                .map(summary -> mapToResponse(summary.getPunchRecord(), summary, zoneId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<AttendanceSummary> getOrgAttendanceSummary(Long orgId, LocalDate date) {
         List<AttendanceSummary> summaries = summaryRepo
                 .findByOrganisationIdAndAttendanceDateOrderByAttendanceDateDesc(orgId, date);

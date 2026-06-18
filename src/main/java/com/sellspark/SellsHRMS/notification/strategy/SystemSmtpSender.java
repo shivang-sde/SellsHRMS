@@ -37,7 +37,11 @@ public class SystemSmtpSender implements MailSenderStrategy {
             helper.setFrom(systemFromEmail, systemFromName);
             helper.setTo(request.getToEmail());
             helper.setSubject("[HRMS] " + request.getSubject());
-            helper.setText(renderSystemTemplate(request), true);
+            
+            String emailBody = (request.getBody() != null && !request.getBody().isEmpty())
+                    ? request.getBody()
+                    : renderSystemTemplate(request);
+            helper.setText(emailBody, true);
 
             if (request.getCcEmails() != null && !request.getCcEmails().isEmpty()) {
                 helper.setCc(request.getCcEmails().toArray(new String[0]));
