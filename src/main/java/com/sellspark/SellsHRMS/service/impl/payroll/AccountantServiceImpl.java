@@ -208,7 +208,7 @@ public class AccountantServiceImpl implements AccountantService {
             // String pdfUrl = uploadUrlPath + "/" + relativePath;
 
             // Public URL (for frontend)
-            String pdfUrl = baseUrl + "/" + relativePath;
+            String pdfUrl = baseUrl + relativePath;
 
             Path dir = Paths.get(baseDir).resolve(folderPath);
             Files.createDirectories(dir);
