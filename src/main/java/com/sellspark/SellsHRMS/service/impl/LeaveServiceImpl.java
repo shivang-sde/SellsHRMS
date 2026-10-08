@@ -13,6 +13,7 @@ import com.sellspark.SellsHRMS.notification.enums.TargetRole;
 import com.sellspark.SellsHRMS.notification.event.NotificationEventData;
 import com.sellspark.SellsHRMS.notification.event.NotificationEventPublisher;
 import com.sellspark.SellsHRMS.repository.*;
+import com.sellspark.SellsHRMS.service.AttendanceLeaveSyncService;
 import com.sellspark.SellsHRMS.service.LeaveService;
 import com.sellspark.SellsHRMS.util.EmployeeHierarchyUtil;
 import com.sellspark.SellsHRMS.util.LeaveBalanceCalculator;
@@ -48,6 +49,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveBalanceCalculator leaveBalanceCalculator;
     private final EmployeeHierarchyUtil employeeHierarchyUtil;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final AttendanceLeaveSyncService attendanceLeaveSyncService;
 
     @Override
     public LeaveResponseDTO applyLeave(Long orgId, Long employeeId, LeaveRequestDTO request) {
@@ -297,6 +299,7 @@ public class LeaveServiceImpl implements LeaveService {
                 leaveYearStart);
 
         updateBalanceOnApproval(leave);
+        attendanceLeaveSyncService.syncApprovedLeaveToAttendance(leave);
 
         List<String> ccEmail = List.of(orgAdminRepo.findByOrganisation_Id(orgId).getEmail());
 
