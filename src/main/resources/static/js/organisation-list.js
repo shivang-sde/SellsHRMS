@@ -30,27 +30,53 @@ document.addEventListener("DOMContentLoaded", () => {
           ? `<span class="badge rounded-pill bg-soft-success text-success px-3">Active</span>`
           : `<span class="badge rounded-pill bg-soft-danger text-danger px-3">Inactive</span>`;
 
-        const buildDoc = (name, val, url, isVerified) => {
+        const buildDoc = (name, val, url, isVerified, orgId, docType) => {
           let valHtml = val ? val : '<span class="text-muted text-decoration-underline" style="font-style: italic;">Not Provided</span>';
           let linkHtml = url ? `<a href="${url}" target="_blank" class="ms-1 text-primary text-decoration-none" style="font-size: 0.9rem;" title="Download Document"><i class="fas fa-cloud-download-alt"></i></a>` : '';
           let iconHtml = isVerified ? `<i class="fas fa-check-circle text-success ms-1" title="Verified"></i>` : `<i class="fas fa-times-circle text-danger ms-1" title="Not Verified"></i>`;
-          return `<div class="x-small mb-1"><span class="fw-bold text-secondary" style="display:inline-block; width: 50px;">${name}:</span> ${valHtml} ${linkHtml} ${iconHtml}</div>`;
+          
+          // Add Verify button for unverified documents that have values
+          let verifyBtn = '';
+          if (!isVerified && val && val.trim() !== '') {
+            verifyBtn = `<button class="btn btn-xs btn-outline-success ms-1" 
+                         onclick="manuallyVerifyDocument(${orgId}, '${docType}')" 
+                         title="Manually Verify ${name}">
+                         <i class="fas fa-check"></i> Verify</button>`;
+          }
+          
+          return `<div class="x-small mb-1"><span class="fw-bold text-secondary" style="display:inline-block; width: 50px;">${name}:</span> ${valHtml} ${linkHtml} ${iconHtml} ${verifyBtn}</div>`;
         };
 
         const docsHtml = `
-            ${buildDoc('PAN', org.pan, org.panUrl, org.isPanVerified || org.panVerified)}
-            ${buildDoc('Aadhaar', org.aadhar, org.aadharUrl, org.isAadharVerified || org.aadharVerified)}
-            ${buildDoc('GST', org.gst, org.gstUrl, org.isGstVerified || org.gstVerified)}
-            ${buildDoc('TAN', org.tan, org.tanUrl, org.isTanVerified || org.tanVerified)}
+            ${buildDoc('PAN', org.pan, org.panUrl, org.isPanVerified, org.id, 'PAN')}
+            ${buildDoc('Aadhaar', org.aadhar, org.aadharUrl, org.isAadharVerified, org.id, 'AADHAAR')}
+            ${buildDoc('GST', org.gst, org.gstUrl, org.isGstVerified, org.id, 'GST')}
+            ${buildDoc('TAN', org.tan, org.tanUrl, org.isTanVerified, org.id, 'TAN')}
         `;
+
+        // Check if all documents are verified
+        const allVerified = org.isPanVerified && 
+                           org.isAadharVerified && 
+                           org.isGstVerified && 
+                           org.isTanVerified;
+
+        // Check if all documents have values (required for verify-all)
+        const hasAllDocs = org.pan && org.aadhar && org.gst && org.tan;
 
         const verificationBadgesHtml = `
             <div class="mt-2 d-flex flex-wrap gap-1">
-                <span class="badge ${org.isPanVerified || org.panVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="PAN Verification">PAN</span>
-                <span class="badge ${org.isAadharVerified || org.aadharVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="Aadhaar Verification">UIDAI</span>
-                <span class="badge ${org.isGstVerified || org.gstVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="GST Verification">GST</span>
-                <span class="badge ${org.isTanVerified || org.tanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="TAN Verification">TAN</span>
+                <span class="badge ${org.isPanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="PAN Verification">PAN</span>
+                <span class="badge ${org.isAadharVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="Aadhaar Verification">UIDAI</span>
+                <span class="badge ${org.isGstVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="GST Verification">GST</span>
+                <span class="badge ${org.isTanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="TAN Verification">TAN</span>
             </div>
+            ${!allVerified && hasAllDocs ? `
+                <button class="btn btn-xs btn-outline-primary mt-2" 
+                        onclick="manuallyVerifyAllDocuments(${org.id})" 
+                        title="Verify All Documents">
+                        <i class="fas fa-check-double"></i> Verify All
+                </button>
+            ` : ''}
         `;
 
         const row = `
@@ -113,6 +139,74 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.innerHTML = `<tr><td colspan="8" class="text-danger text-center">Error loading data.</td></tr>`;
     }
   }
+
+  // ------------------------
+  // MANUAL VERIFICATION FUNCTIONS
+  // ------------------------
+
+  /**
+   * Manually verify a single document
+   */
+  window.manuallyVerifyDocument = async function (orgId, docType) {
+    if (!confirm(`Are you sure you want to manually verify the ${docType} document for this organisation?`)) {
+      return;
+    }
+
+    try {
+      const endpoint = `/api/superadmin/organisation/${orgId}/documents/${docType}/verify`;
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ verificationNote: "Manual verification by Super Admin" })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to verify document");
+      }
+
+      const data = await res.json();
+      showToast("success", data.message || "Document verified successfully");
+      loadOrganisations(); // Refresh the list
+    } catch (err) {
+      console.error("Manual verification failed", err);
+      showToast("error", err.message || "Failed to verify document");
+    }
+  };
+
+  /**
+   * Manually verify all documents for an organisation
+   */
+  window.manuallyVerifyAllDocuments = async function (orgId) {
+    if (!confirm(`Are you sure you want to manually verify ALL documents for this organisation?`)) {
+      return;
+    }
+
+    try {
+      const endpoint = `/api/superadmin/organisation/${orgId}/documents/verify-all`;
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ verificationNote: "Bulk manual verification by Super Admin" })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to verify all documents");
+      }
+
+      const data = await res.json();
+      showToast("success", data.message || "All documents verified successfully");
+      loadOrganisations(); // Refresh the list
+    } catch (err) {
+      console.error("Manual verify-all failed", err);
+      showToast("error", err.message || "Failed to verify all documents");
+    }
+  };
 
   // ------------------------
   // ORGANISATION OPERATIONS
@@ -230,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
       new bootstrap.Modal(document.getElementById("manageModulesModal")).show();
     } catch (err) {
       console.error("Failed to load modules", err);
-      showToast("error",);
+      showToast("error", "Failed to load modules");
     }
   };
 
@@ -259,6 +353,5 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("error", err.message);
     }
   });
-
 
 });

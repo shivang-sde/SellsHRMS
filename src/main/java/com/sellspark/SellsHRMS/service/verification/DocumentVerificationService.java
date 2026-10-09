@@ -2,6 +2,7 @@ package com.sellspark.SellsHRMS.service.verification;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -417,6 +418,189 @@ public class DocumentVerificationService {
             throw new RuntimeException("Verification token has expired");
         }
         return vt.getOrganisation();
+    }
+
+    // ─── Manual Super Admin Verification ────────────────────────────
+
+    /**
+     * Manually verifies a single document for an organisation.
+     * Only accessible to Super Admin users.
+     * 
+     * @param orgId Organisation ID
+     * @param documentType The document type to verify (PAN, AADHAAR, GST, TAN)
+     * @param actingUserEmail The email of the Super Admin performing the action
+     * @param verificationNote Optional note for audit trail
+     * @return ManualVerificationResponse with verification result
+     */
+    @Transactional
+    public ManualVerificationResponse manuallyVerifyDocument(
+            Long orgId, DocumentType documentType, String actingUserEmail, String verificationNote) {
+        
+        Organisation org = findOrg(orgId);
+        
+        // Validate that the required document information exists
+        if (!hasRequiredDocumentInfo(org, documentType)) {
+            String docName = documentType.name();
+            log.warn("[MANUAL_VERIFY] Document {} cannot be verified - missing required information for org {}", 
+                    docName, orgId);
+            throw new RuntimeException("Cannot verify " + docName + " - required document information is missing");
+        }
+        
+        // Check if already verified
+        if (isAlreadyVerified(org, documentType)) {
+            log.info("[MANUAL_VERIFY] Document {} is already verified for org {}", documentType, orgId);
+            return ManualVerificationResponse.builder()
+                    .success(false)
+                    .message(documentType.name() + " is already verified")
+                    .documentType(documentType)
+                    .organisationId(orgId)
+                    .organisationName(org.getName())
+                    .build();
+        }
+        
+        // Set the corresponding verification flag
+        setDocumentVerified(org, documentType, true);
+        org.setUpdatedAt(LocalDateTime.now());
+        organisationRepo.save(org);
+        
+        // Log the manual verification action
+        log.info("[MANUAL_VERIFY] ✅ Super Admin {} manually verified {} for org {} ({})", 
+                actingUserEmail, documentType, orgId, org.getName());
+        
+        if (verificationNote != null && !verificationNote.isBlank()) {
+            log.info("[MANUAL_VERIFY_NOTE] Note: {}", verificationNote);
+        }
+        
+        return ManualVerificationResponse.successForDocument(
+                orgId, org.getName(), documentType, 
+                documentType.name() + " manually verified successfully");
+    }
+
+    /**
+     * Manually verifies all documents for an organisation.
+     * Only accessible to Super Admin users.
+     * Atomic operation - if any document fails validation, no changes are made.
+     * 
+     * @param orgId Organisation ID
+     * @param actingUserEmail The email of the Super Admin performing the action
+     * @param verificationNote Optional note for audit trail
+     * @return ManualVerificationResponse with verification result
+     */
+    @Transactional
+    public ManualVerificationResponse manuallyVerifyAllDocuments(
+            Long orgId, String actingUserEmail, String verificationNote) {
+        
+        Organisation org = findOrg(orgId);
+        
+        // Check if all documents are already verified
+        if (org.isPanVerified() && org.isAadharVerified() && org.isGstVerified() && org.isTanVerified()) {
+            log.info("[MANUAL_VERIFY_ALL] All documents already verified for org {}", orgId);
+            return ManualVerificationResponse.builder()
+                    .success(false)
+                    .message("All documents are already verified")
+                    .organisationId(orgId)
+                    .organisationName(org.getName())
+                    .build();
+        }
+        
+        // Validate all documents have required information
+        boolean allValid = true;
+        StringBuilder missingDocs = new StringBuilder();
+        
+        for (DocumentType docType : DocumentType.values()) {
+            if (!hasRequiredDocumentInfo(org, docType)) {
+                allValid = false;
+                if (missingDocs.length() > 0) {
+                    missingDocs.append(", ");
+                }
+                missingDocs.append(docType.name());
+            }
+        }
+        
+        if (!allValid) {
+            log.warn("[MANUAL_VERIFY_ALL] Cannot verify all documents for org {} - missing: {}", 
+                    orgId, missingDocs);
+            throw new RuntimeException("Cannot verify all documents - missing required information for: " + missingDocs);
+        }
+        
+        // Set all verification flags
+        org.setPanVerified(true);
+        org.setAadharVerified(true);
+        org.setGstVerified(true);
+        org.setTanVerified(true);
+        org.setUpdatedAt(LocalDateTime.now());
+        organisationRepo.save(org);
+        
+        // Log the manual verification action
+        log.info("[MANUAL_VERIFY_ALL] ✅ Super Admin {} manually verified ALL documents for org {} ({})", 
+                actingUserEmail, orgId, org.getName());
+        
+        if (verificationNote != null && !verificationNote.isBlank()) {
+            log.info("[MANUAL_VERIFY_ALL_NOTE] Note: {}", verificationNote);
+        }
+        
+        return ManualVerificationResponse.successForAll(
+                orgId, org.getName(), 
+                List.of(DocumentType.PAN, DocumentType.AADHAAR, DocumentType.GST, DocumentType.TAN),
+                "All documents manually verified successfully");
+    }
+
+    // ─── Manual Verification Helpers ────────────────────────────────
+
+    /**
+     * Checks if an organisation has the required information for a document type.
+     */
+    private boolean hasRequiredDocumentInfo(Organisation org, DocumentType documentType) {
+        switch (documentType) {
+            case PAN:
+                return org.getPan() != null && !org.getPan().isBlank();
+            case AADHAAR:
+                return org.getAadhar() != null && !org.getAadhar().isBlank();
+            case GST:
+                return org.getGst() != null && !org.getGst().isBlank();
+            case TAN:
+                return org.getTan() != null && !org.getTan().isBlank();
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Checks if a document is already verified.
+     */
+    private boolean isAlreadyVerified(Organisation org, DocumentType documentType) {
+        switch (documentType) {
+            case PAN:
+                return org.isPanVerified();
+            case AADHAAR:
+                return org.isAadharVerified();
+            case GST:
+                return org.isGstVerified();
+            case TAN:
+                return org.isTanVerified();
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Sets the verification flag for a document type.
+     */
+    private void setDocumentVerified(Organisation org, DocumentType documentType, boolean verified) {
+        switch (documentType) {
+            case PAN:
+                org.setPanVerified(verified);
+                break;
+            case AADHAAR:
+                org.setAadharVerified(verified);
+                break;
+            case GST:
+                org.setGstVerified(verified);
+                break;
+            case TAN:
+                org.setTanVerified(verified);
+                break;
+        }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────
