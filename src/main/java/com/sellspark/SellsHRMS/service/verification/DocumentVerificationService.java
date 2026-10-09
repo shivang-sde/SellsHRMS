@@ -438,13 +438,13 @@ public class DocumentVerificationService {
         
         Organisation org = findOrg(orgId);
         
-        // Validate that the required document information exists
-        if (!hasRequiredDocumentInfo(org, documentType)) {
-            String docName = documentType.name();
-            log.warn("[MANUAL_VERIFY] Document {} cannot be verified - missing required information for org {}", 
-                    docName, orgId);
-            throw new RuntimeException("Cannot verify " + docName + " - required document information is missing");
-        }
+        // // Validate that the required document information exists
+        // if (!hasRequiredDocumentInfo(org, documentType)) {
+        //     String docName = documentType.name();
+        //     log.warn("[MANUAL_VERIFY] Document {} cannot be verified - missing required information for org {}", 
+        //             docName, orgId);
+        //     throw new RuntimeException("Cannot verify " + docName + " - required document information is missing");
+        // }
         
         // Check if already verified
         if (isAlreadyVerified(org, documentType)) {
