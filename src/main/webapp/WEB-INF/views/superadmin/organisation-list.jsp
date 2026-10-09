@@ -171,6 +171,9 @@
 
   <style>
     /* Custom Styles for SuperAdmin Org List */
+    table {
+      width: 100%;
+    }
     .bg-soft-success {
       background-color: #dcfce7 !important;
       color: #15803d !important;
@@ -215,5 +218,120 @@
 
     .module-item.disabled-module {
       opacity: 0.7;
+    }
+
+    /* Organisation Table Enhancements */
+    #orgTable {
+      table-layout: fixed;
+    }
+
+    #orgTable th,
+    #orgTable td {
+      vertical-align: middle !important;
+    }
+
+    /* Column-specific styling */
+    .org-name-col {
+      max-width: 220px;
+      overflow: hidden;
+    }
+
+    .documents-col {
+      max-width: 300px;
+    }
+
+    .documents-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .doc-row {
+      display: flex;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .doc-label {
+      color: #6c757d;
+      font-weight: 600;
+      min-width: 60px;
+    }
+
+    .doc-value {
+      color: #212529;
+      word-break: break-word;
+    }
+
+    .status-col {
+      max-width: 180px;
+    }
+
+    .verification-summary {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+
+    .verification-summary.text-success {
+      color: #22c55e;
+      font-weight: 500;
+    }
+
+    .capacity-col {
+      max-width: 120px;
+    }
+
+    .validity-col {
+      max-width: 100px;
+    }
+
+    .actions-col {
+      max-width: 80px;
+    }
+
+    /* Verification badges */
+    .bg-success-subtle {
+      background-color: #dcfce7 !important;
+      color: #15803d !important;
+    }
+
+    .bg-danger-subtle {
+      background-color: #fee2e2 !important;
+      color: #b91c1c !important;
+    }
+
+    /* Button styling */
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+      border-radius: 0.25rem;
+    }
+
+    .btn-outline-success {
+      color: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .btn-outline-success:hover {
+      background-color: #22c55e;
+      color: white;
+    }
+
+    .btn-outline-primary {
+      color: #3b82f6;
+      border-color: #3b82f6;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #orgTable th,
+      #orgTable td {
+        white-space: nowrap;
+      }
     }
   </style>

@@ -96,7 +96,14 @@ out/
 *.temp
 *.swp
 *.swo
-*~
+*.jetro
+*.cursor
+*.windsurfrules
+*.agents/
+*.deep-research
+*.AGENT.md
+*.CLAUDE.md
+*.github
 
 ############################
 # Uploads

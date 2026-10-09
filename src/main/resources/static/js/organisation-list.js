@@ -6,138 +6,225 @@ document.addEventListener("DOMContentLoaded", () => {
   loadOrganisations();
 
   // -----------------------
+  // UTILITY FUNCTIONS
+  // -----------------------
+
+  /**
+   * Safely escape text for HTML insertion
+   */
+  function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Format document value for display with truncation
+   */
+  function formatDocumentValue(val) {
+    if (!val || val.trim() === "") {
+      return '<span class="text-muted" style="font-style: italic; font-size: 0.85rem;">Not Provided</span>';
+    }
+    // Truncate long values to prevent table expansion
+    if (val.length > 20) {
+      return `<span title="${escapeHtml(val)}">${escapeHtml(val.substring(0, 18))}...</span>`;
+    }
+    return escapeHtml(val);
+  }
+
+  /**
+   * Create verification status badge
+   */
+  function getVerificationStatusBadge(isVerified) {
+    if (isVerified) {
+      return '<span class="badge bg-success-subtle text-success px-2 py-1" style="font-size: 0.75rem;"><i class="fas fa-check-circle me-1"></i>Verified</span>';
+    }
+    return '';
+  }
+
+  /**
+   * Create verify button for unverified documents with values
+   */
+  function getVerifyButton(orgId, docType, docValue, isVerified) {
+    // Only show verify button if: document has a value AND is not already verified
+    if (!isVerified && docValue && docValue.trim() !== "") {
+      return `<button class="btn btn-sm btn-outline-success px-2 py-0" 
+                     onclick="manuallyVerifyDocument(${orgId}, '${docType}')" 
+                     title="Verify ${docType}">
+                     <i class="fas fa-check me-1"></i>Verify</button>`;
+    }
+    return '';
+  }
+
+  /**
+   * Get document download link
+   */
+  function getDocumentLink(url, docType) {
+    if (url && url.trim() !== "") {
+      return `<a href="${escapeHtml(url)}" target="_blank" 
+                class="text-primary text-decoration-none ms-1" 
+                title="Download ${docType} document">
+                <i class="fas fa-download" style="font-size: 0.85rem;"></i></a>`;
+    }
+    return '';
+  }
+
+  // -----------------------
   // LOAD ALL ORGANISATIONS
   // -----------------------
   async function loadOrganisations() {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center">Loading...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>`;
+    
     try {
       const res = await fetch("/api/superadmin/organisations");
 
       if (!res.ok) throw new Error("Failed to load organisations");
       const data = await res.json();
-      console.log("org data", data)
-
+      
       if (!Array.isArray(data) || !data.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center">No organisations found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No organisations found.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = "";
       data.forEach((org, i) => {
-
-        // Determine status badge color
-        const statusBadge = org.isActive
-          ? `<span class="badge rounded-pill bg-soft-success text-success px-3">Active</span>`
-          : `<span class="badge rounded-pill bg-soft-danger text-danger px-3">Inactive</span>`;
-
-        const buildDoc = (name, val, url, isVerified, orgId, docType) => {
-          let valHtml = val ? val : '<span class="text-muted text-decoration-underline" style="font-style: italic;">Not Provided</span>';
-          let linkHtml = url ? `<a href="${url}" target="_blank" class="ms-1 text-primary text-decoration-none" style="font-size: 0.9rem;" title="Download Document"><i class="fas fa-cloud-download-alt"></i></a>` : '';
-          let iconHtml = isVerified ? `<i class="fas fa-check-circle text-success ms-1" title="Verified"></i>` : `<i class="fas fa-times-circle text-danger ms-1" title="Not Verified"></i>`;
-          
-          // Add Verify button for unverified documents that have values
-          let verifyBtn = '';
-          if (!isVerified && val && val.trim() !== '') {
-            verifyBtn = `<button class="btn btn-xs btn-outline-success ms-1" 
-                         onclick="manuallyVerifyDocument(${orgId}, '${docType}')" 
-                         title="Manually Verify ${name}">
-                         <i class="fas fa-check"></i> Verify</button>`;
-          }
-          
-          return `<div class="x-small mb-1"><span class="fw-bold text-secondary" style="display:inline-block; width: 50px;">${name}:</span> ${valHtml} ${linkHtml} ${iconHtml} ${verifyBtn}</div>`;
-        };
-
-        const docsHtml = `
-            ${buildDoc('PAN', org.pan, org.panUrl, org.isPanVerified, org.id, 'PAN')}
-            ${buildDoc('Aadhaar', org.aadhar, org.aadharUrl, org.isAadharVerified, org.id, 'AADHAAR')}
-            ${buildDoc('GST', org.gst, org.gstUrl, org.isGstVerified, org.id, 'GST')}
-            ${buildDoc('TAN', org.tan, org.tanUrl, org.isTanVerified, org.id, 'TAN')}
-        `;
-
-        // Check if all documents are verified
-        const allVerified = org.isPanVerified && 
-                           org.isAadharVerified && 
-                           org.isGstVerified && 
-                           org.isTanVerified;
-
-        // Check if all documents have values (required for verify-all)
-        const hasAllDocs = org.pan && org.aadhar && org.gst && org.tan;
-
-        const verificationBadgesHtml = `
-            <div class="mt-2 d-flex flex-wrap gap-1">
-                <span class="badge ${org.isPanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="PAN Verification">PAN</span>
-                <span class="badge ${org.isAadharVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="Aadhaar Verification">UIDAI</span>
-                <span class="badge ${org.isGstVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="GST Verification">GST</span>
-                <span class="badge ${org.isTanVerified ? 'bg-success' : 'bg-danger'}" style="font-size: 0.65rem;" title="TAN Verification">TAN</span>
-            </div>
-            ${!allVerified && hasAllDocs ? `
-                <button class="btn btn-xs btn-outline-primary mt-2" 
-                        onclick="manuallyVerifyAllDocuments(${org.id})" 
-                        title="Verify All Documents">
-                        <i class="fas fa-check-double"></i> Verify All
-                </button>
-            ` : ''}
-        `;
-
-        const row = `
-        <tr>
-            <td class="ps-4 text-muted small">${i + 1}</td>
-            <td>
-                <div class="fw-bold text-dark">${org.name}</div>
-                <div class="text-muted x-small">${org.domain}</div>
-            </td>
-            <td>
-                ${docsHtml}
-            </td>
-            <td>
-                <div class="mb-1">${statusBadge}</div>
-                ${verificationBadgesHtml}
-            </td>
-            <td>
-                <div class="small fw-bold text-dark">${org.maxEmployees} Employees</div>
-                <div class="progress mt-1" style="height: 4px; width: 80px;">
-                    <div class="progress-bar bg-primary" style="width: 70%"></div>
-                </div>
-            </td>
-            <td>
-                <div class="small">${org.validity ?? "-"}</div>
-            </td>
-            <td class="text-end pe-4">
-                <div class="dropdown">
-                    <button class="btn btn-light btn-sm rounded-circle border shadow-sm" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="editOrganisation(${org.id})">
-                            <i class="fa fa-edit text-primary me-2"></i> Edit Details</a>
-                        </li>
-                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="openManageModulesModal(${org.id}, '${org.name}')">
-                            <i class="fa fa-cog text-info me-2"></i> Manage Modules</a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="extendValidity(${org.id}, '${org.validity || ""}')">
-                            <i class="fa fa-calendar-plus text-secondary me-2"></i> Extend Validity</a>
-                        </li>
-                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="increaseMaxEmployees(${org.id}, ${org.maxEmployees || 0})">
-                            <i class="fa fa-users text-secondary me-2"></i> Increase Capacity</a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2 ${org.isActive ? "text-danger" : "text-success"}" href="javascript:void(0)" 
-                               onclick="toggleOrganisationStatus(${org.id}, ${org.isActive})">
-                            <i class="fa ${org.isActive ? "fa-ban" : "fa-check"} me-2"></i> 
-                            ${org.isActive ? "Deactivate Organisation" : "Activate Organisation"}</a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-        </tr>`;
+        const row = buildOrganisationRow(org, i);
         tbody.insertAdjacentHTML("beforeend", row);
       });
     } catch (err) {
-      console.error("Error loading orgs", err);
-      showToast("error", err.message);
-      tbody.innerHTML = `<tr><td colspan="8" class="text-danger text-center">Error loading data.</td></tr>`;
+      console.error("Error loading organisations", err);
+      showToast("error", err.message || "Failed to load organisations");
+      tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">Error loading data.</td></tr>`;
     }
+  }
+
+  // -----------------------
+  // ROW BUILDING
+  // -----------------------
+
+  function buildOrganisationRow(org, index) {
+    // Calculate verification state
+    const panVerified = org.isPanVerified || false;
+    const aadharVerified = org.isAadharVerified || false;
+    const gstVerified = org.isGstVerified || false;
+    const tanVerified = org.isTanVerified || false;
+    
+    const verifiedCount = [panVerified, aadharVerified, gstVerified, tanVerified].filter(Boolean).length;
+    const allVerified = verifiedCount === 4;
+    const hasAllDocValues = org.pan && org.aadhar && org.gst && org.tan;
+    const canVerifyAll = !allVerified && hasAllDocValues;
+
+    // Status badge
+    const statusBadge = org.isActive
+      ? '<span class="badge bg-success-subtle text-success px-3 py-1">Active</span>'
+      : '<span class="badge bg-danger-subtle text-danger px-3 py-1">Inactive</span>';
+
+    // Verification summary for Status & Verification column
+    const verificationSummary = getVerificationSummary(verifiedCount, allVerified);
+
+    // Build documents column
+    const documentsHtml = buildDocumentsColumn(org, panVerified, aadharVerified, gstVerified, tanVerified);
+
+    // Build verification actions (Verify All or All verified label)
+    const verifyAllHtml = getVerifyAllHtml(org.id, allVerified, canVerifyAll);
+
+    return `
+    <tr class="align-middle">
+      <td class="ps-4 text-muted small">${index + 1}</td>
+      <td class="org-name-col">
+        <div class="fw-bold text-dark mb-1">${escapeHtml(org.name || "")}</div>
+        <div class="text-muted small">${escapeHtml(org.domain || "")}</div>
+      </td>
+      <td class="documents-col">
+        ${documentsHtml}
+      </td>
+      <td class="status-col">
+        <div class="mb-2">${statusBadge}</div>
+        ${verificationSummary}
+        ${verifyAllHtml}
+      </td>
+      <td class="capacity-col">
+        <div class="small fw-bold text-dark">${org.maxEmployees || 0} Employees</div>
+      </td>
+      <td class="validity-col">
+        <div class="small">${escapeHtml(org.validity ? org.validity : "-")}</div>
+      </td>
+      <td class="text-end pe-4 actions-col">
+        <div class="dropdown">
+          <button class="btn btn-light btn-sm rounded-circle border shadow-sm" type="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+            <li><a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="editOrganisation(${org.id})">
+              <i class="fa fa-edit text-primary me-2"></i>Edit Details</a></li>
+            <li><a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="openManageModulesModal(${org.id}, '${escapeHtml(org.name || "")}')">
+              <i class="fa fa-cog text-info me-2"></i>Manage Modules</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="extendValidity(${org.id}, '${org.validity || ""}')">
+              <i class="fa fa-calendar-plus text-secondary me-2"></i>Extend Validity</a></li>
+            <li><a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="increaseMaxEmployees(${org.id}, ${org.maxEmployees || 0})">
+              <i class="fa fa-users text-secondary me-2"></i>Increase Capacity</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 small ${org.isActive ? "text-danger" : "text-success"}" 
+                   href="javascript:void(0)" onclick="toggleOrganisationStatus(${org.id}, ${org.isActive})">
+              <i class="fa ${org.isActive ? "fa-ban" : "fa-check"} me-2"></i>
+              ${org.isActive ? "Deactivate" : "Activate"} Organisation</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function buildDocumentsColumn(org, panVerified, aadharVerified, gstVerified, tanVerified) {
+    const docs = [
+      { name: 'PAN', value: org.pan, url: org.panUrl, verified: panVerified, type: 'PAN' },
+      { name: 'Aadhaar', value: org.aadhar, url: org.aadharUrl, verified: aadharVerified, type: 'AADHAAR' },
+      { name: 'GST', value: org.gst, url: org.gstUrl, verified: gstVerified, type: 'GST' },
+      { name: 'TAN', value: org.tan, url: org.tanUrl, verified: tanVerified, type: 'TAN' }
+    ];
+
+    const docRows = docs.map(doc => {
+      const valueHtml = formatDocumentValue(doc.value);
+      const linkHtml = getDocumentLink(doc.url, doc.name);
+      const statusBadge = getVerificationStatusBadge(doc.verified);
+      const verifyBtn = getVerifyButton(org.id, doc.type, doc.value, doc.verified);
+
+      // If verified, show value + link + Verified badge
+      // If not verified, show value + link + Verify button (if value exists)
+      const actionHtml = doc.verified ? statusBadge : verifyBtn;
+
+      return `
+        <div class="doc-row d-flex align-items-center mb-1">
+          <span class="doc-label text-secondary small fw-bold me-2" style="min-width: 60px;">${doc.name}:</span>
+          <span class="doc-value flex-grow-1 small">${valueHtml}</span>
+          ${linkHtml}
+          ${actionHtml}
+        </div>`;
+    }).join('');
+
+    return `<div class="documents-container">${docRows}</div>`;
+  }
+
+  function getVerificationSummary(verifiedCount, allVerified) {
+    if (allVerified) {
+      return '<div class="verification-summary text-success small mt-1"><i class="fas fa-check-circle me-1"></i>KYC Complete</div>';
+    }
+    return `<div class="verification-summary small mt-1">${verifiedCount} of 4 documents verified</div>`;
+  }
+
+  function getVerifyAllHtml(orgId, allVerified, canVerifyAll) {
+    if (allVerified) {
+      return '';
+    }
+    if (canVerifyAll) {
+      return `<button class="btn btn-sm btn-outline-primary mt-2" 
+                     onclick="manuallyVerifyAllDocuments(${orgId})" 
+                     title="Verify All Documents">
+                     <i class="fas fa-check-double me-1"></i>Verify All</button>`;
+    }
+    return '';
   }
 
   // ------------------------
@@ -151,6 +238,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!confirm(`Are you sure you want to manually verify the ${docType} document for this organisation?`)) {
       return;
     }
+
+    // Disable the button during request to prevent duplicate clicks
+    const buttons = document.querySelectorAll(`button[onclick="manuallyVerifyDocument(${orgId}, '${docType}')"]`);
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verifying...';
+    });
 
     try {
       const endpoint = `/api/superadmin/organisation/${orgId}/documents/${docType}/verify`;
@@ -168,11 +262,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await res.json();
-      showToast("success", data.message || "Document verified successfully");
-      loadOrganisations(); // Refresh the list
+      showToast("success", data.data ? data.data.message : data.message || "Document verified successfully");
+      loadOrganisations(); // Refresh the list to show updated state
     } catch (err) {
       console.error("Manual verification failed", err);
       showToast("error", err.message || "Failed to verify document");
+      // Re-enable buttons on error
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Verify';
+      });
     }
   };
 
@@ -182,6 +281,13 @@ document.addEventListener("DOMContentLoaded", () => {
   window.manuallyVerifyAllDocuments = async function (orgId) {
     if (!confirm(`Are you sure you want to manually verify ALL documents for this organisation?`)) {
       return;
+    }
+
+    // Disable the Verify All button during request
+    const verifyAllBtn = document.querySelector(`button[onclick="manuallyVerifyAllDocuments(${orgId})"]`);
+    if (verifyAllBtn) {
+      verifyAllBtn.disabled = true;
+      verifyAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verifying...';
     }
 
     try {
@@ -200,11 +306,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await res.json();
-      showToast("success", data.message || "All documents verified successfully");
-      loadOrganisations(); // Refresh the list
+      showToast("success", data.data ? data.data.message : data.message || "All documents verified successfully");
+      loadOrganisations(); // Refresh the list to show updated state
     } catch (err) {
       console.error("Manual verify-all failed", err);
       showToast("error", err.message || "Failed to verify all documents");
+      // Re-enable button on error
+      if (verifyAllBtn) {
+        verifyAllBtn.disabled = false;
+        verifyAllBtn.innerHTML = '<i class="fas fa-check-double me-1"></i>Verify All';
+      }
     }
   };
 
@@ -265,8 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------------------
   window.openManageModulesModal = async function (orgId, orgName) {
     selectedOrgId = orgId;
-    document.getElementById("manageModulesLabel").innerText =
-      `Manage Modules for ${orgName}`;
+    document.getElementById("manageModulesLabel").innerText = `Manage Modules for ${orgName}`;
 
     const form = document.getElementById("manageModulesForm");
     form.innerHTML = `<div class="text-center p-4">Loading modules...</div>`;
@@ -295,7 +405,7 @@ document.addEventListener("DOMContentLoaded", () => {
                      ${isChecked ? "checked" : ""}>
               <label class="form-check-label" for="mod_${m.code}">
                 ${m.name}
-                ${isChecked ? "" : `<span class="badge bg-light text-muted border ms-2">🔒 Not Available</span>`}
+                ${isChecked ? "" : `<span class="badge bg-light text-muted border ms-2 small">Not Available</span>`}
               </label>
             </div>
           </div>
@@ -315,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
             container.classList.add("disabled-module");
             if (!label.querySelector(".badge")) {
               label.insertAdjacentHTML("beforeend",
-                `<span class="badge bg-light text-muted border ms-2">🔒 Not Available</span>`);
+                `<span class="badge bg-light text-muted border ms-2 small">Not Available</span>`);
             }
           }
         });
