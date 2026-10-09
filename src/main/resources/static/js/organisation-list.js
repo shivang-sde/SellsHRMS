@@ -105,10 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildOrganisationRow(org, index) {
     // Calculate verification state
-    const panVerified = org.isPanVerified || false;
-    const aadharVerified = org.isAadharVerified || false;
-    const gstVerified = org.isGstVerified || false;
-    const tanVerified = org.isTanVerified || false;
+    const panVerified = org.panVerified || false;
+    const aadharVerified = org.aadharVerified || false;
+    const gstVerified = org.gstVerified || false;
+    const tanVerified = org.tanVerified || false;
     
     const verifiedCount = [panVerified, aadharVerified, gstVerified, tanVerified].filter(Boolean).length;
     const allVerified = verifiedCount === 4;
