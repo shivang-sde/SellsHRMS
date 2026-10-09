@@ -220,118 +220,152 @@
       opacity: 0.7;
     }
 
-    /* Organisation Table Enhancements */
+    
+/* Organisation table layout */
+#orgTable {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+#orgTable th,
+#orgTable td {
+    vertical-align: middle !important;
+    box-sizing: border-box;
+}
+
+#orgTable thead th {
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    font-size: 0.72rem;
+}
+
+/* Explicit column widths: total = 100% */
+#orgTable th:nth-child(1),
+#orgTable td:nth-child(1) {
+    width: 5%;
+}
+
+#orgTable th:nth-child(2),
+#orgTable td:nth-child(2) {
+    width: 16%;
+}
+
+#orgTable th:nth-child(3),
+#orgTable td:nth-child(3) {
+    width: 27%;
+}
+
+#orgTable th:nth-child(4),
+#orgTable td:nth-child(4) {
+    width: 17%;
+}
+
+#orgTable th:nth-child(5),
+#orgTable td:nth-child(5) {
+    width: 12%;
+}
+
+#orgTable th:nth-child(6),
+#orgTable td:nth-child(6) {
+    width: 13%;
+}
+
+#orgTable th:nth-child(7),
+#orgTable td:nth-child(7) {
+    width: 10%;
+}
+
+/* Organisation details */
+#orgTable td:nth-child(2) {
+    overflow-wrap: anywhere;
+}
+
+#orgTable td:nth-child(2) .fw-bold {
+    overflow-wrap: anywhere;
+}
+
+/* Documents column */
+#orgTable td:nth-child(3) {
+    overflow: hidden;
+}
+
+.documents-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+    width: 100%;
+}
+
+.doc-row {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    font-size: 0.78rem;
+}
+
+.doc-label {
+    min-width: 0;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.doc-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.doc-row .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Verification status */
+#orgTable td:nth-child(4) {
+    overflow-wrap: anywhere;
+}
+
+.verification-summary {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Capacity and validity */
+#orgTable td:nth-child(5),
+#orgTable td:nth-child(6) {
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+}
+
+/* Actions */
+#orgTable th:nth-child(7),
+#orgTable td:nth-child(7) {
+    text-align: right;
+}
+
+/* Keep existing hover styling */
+#orgTable tbody tr {
+    transition: background-color 0.2s;
+}
+
+#orgTable tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Smaller screens */
+@media (max-width: 992px) {
     #orgTable {
-      table-layout: fixed;
+        min-width: 1050px;
     }
 
-    #orgTable th,
-    #orgTable td {
-      vertical-align: middle !important;
+    .table-responsive {
+        overflow-x: auto;
     }
-
-    /* Column-specific styling */
-    .org-name-col {
-      max-width: 220px;
-      overflow: hidden;
-    }
-
-    .documents-col {
-      max-width: 300px;
-    }
-
-    .documents-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .doc-row {
-      display: flex;
-      align-items: center;
-      font-size: 0.85rem;
-    }
-
-    .doc-label {
-      color: #6c757d;
-      font-weight: 600;
-      min-width: 60px;
-    }
-
-    .doc-value {
-      color: #212529;
-      word-break: break-word;
-    }
-
-    .status-col {
-      max-width: 180px;
-    }
-
-    .verification-summary {
-      font-size: 0.85rem;
-      color: #6c757d;
-    }
-
-    .verification-summary.text-success {
-      color: #22c55e;
-      font-weight: 500;
-    }
-
-    .capacity-col {
-      max-width: 120px;
-    }
-
-    .validity-col {
-      max-width: 100px;
-    }
-
-    .actions-col {
-      max-width: 80px;
-    }
-
-    /* Verification badges */
-    .bg-success-subtle {
-      background-color: #dcfce7 !important;
-      color: #15803d !important;
-    }
-
-    .bg-danger-subtle {
-      background-color: #fee2e2 !important;
-      color: #b91c1c !important;
-    }
-
-    /* Button styling */
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.8rem;
-      border-radius: 0.25rem;
-    }
-
-    .btn-outline-success {
-      color: #22c55e;
-      border-color: #22c55e;
-    }
-
-    .btn-outline-success:hover {
-      background-color: #22c55e;
-      color: white;
-    }
-
-    .btn-outline-primary {
-      color: #3b82f6;
-      border-color: #3b82f6;
-    }
-
-    .btn-outline-primary:hover {
-      background-color: #3b82f6;
-      color: white;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      #orgTable th,
-      #orgTable td {
-        white-space: nowrap;
-      }
-    }
+}
   </style>

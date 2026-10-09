@@ -177,35 +177,35 @@ document.addEventListener("DOMContentLoaded", () => {
     </tr>`;
   }
 
-  function buildDocumentsColumn(org, panVerified, aadharVerified, gstVerified, tanVerified) {
+  
+function buildDocumentsColumn(org, panVerified, aadharVerified, gstVerified, tanVerified) {
     const docs = [
-      { name: 'PAN', value: org.pan, url: org.panUrl, verified: panVerified, type: 'PAN' },
-      { name: 'Aadhaar', value: org.aadhar, url: org.aadharUrl, verified: aadharVerified, type: 'AADHAAR' },
-      { name: 'GST', value: org.gst, url: org.gstUrl, verified: gstVerified, type: 'GST' },
-      { name: 'TAN', value: org.tan, url: org.tanUrl, verified: tanVerified, type: 'TAN' }
+        { name: "PAN", value: org.pan, url: org.panUrl, verified: panVerified, type: "PAN" },
+        { name: "Aadhaar", value: org.aadhar, url: org.aadharUrl, verified: aadharVerified, type: "AADHAAR" },
+        { name: "GST", value: org.gst, url: org.gstUrl, verified: gstVerified, type: "GST" },
+        { name: "TAN", value: org.tan, url: org.tanUrl, verified: tanVerified, type: "TAN" }
     ];
 
     const docRows = docs.map(doc => {
-      const valueHtml = formatDocumentValue(doc.value);
-      const linkHtml = getDocumentLink(doc.url, doc.name);
-      const statusBadge = getVerificationStatusBadge(doc.verified);
-      const verifyBtn = getVerifyButton(org.id, doc.type, doc.value, doc.verified);
+        const valueHtml = formatDocumentValue(doc.value);
+        const linkHtml = getDocumentLink(doc.url, doc.name);
+        const statusHtml = doc.verified
+            ? getVerificationStatusBadge(true)
+            : getVerifyButton(org.id, doc.type, doc.value, doc.verified);
 
-      // If verified, show value + link + Verified badge
-      // If not verified, show value + link + Verify button (if value exists)
-      const actionHtml = doc.verified ? statusBadge : verifyBtn;
-
-      return `
-        <div class="doc-row d-flex align-items-center mb-1">
-          <span class="doc-label text-secondary small fw-bold me-2" style="min-width: 60px;">${doc.name}:</span>
-          <span class="doc-value flex-grow-1 small">${valueHtml}</span>
-          ${linkHtml}
-          ${actionHtml}
-        </div>`;
-    }).join('');
+        return `
+            <div class="doc-row">
+                <span class="doc-label">${escapeHtml(doc.name)}:</span>
+                <span class="doc-value small">${valueHtml}</span>
+                <span class="doc-actions d-inline-flex align-items-center gap-1">
+                    ${linkHtml}
+                    ${statusHtml}
+                </span>
+            </div>`;
+    }).join("");
 
     return `<div class="documents-container">${docRows}</div>`;
-  }
+}
 
   function getVerificationSummary(verifiedCount, allVerified) {
     if (allVerified) {
